@@ -5,7 +5,7 @@ const getSummoner = async (accountName, tagLine, region) => {
     try {
         const { rows: existingSummoner } = await db.query(
             `SELECT * FROM summoners
-             WHERE name = $1 AND tagLine = $2 AND region = $3`,
+             WHERE gameName = $1 AND tagLine = $2 AND region = $3`,
             [accountName, tagLine, region]
         );
 
@@ -26,17 +26,17 @@ const getSummoner = async (accountName, tagLine, region) => {
 
         const currentTime = new Date();
         const { rows: updatedSummoner } = await db.query(
-            `INSERT INTO summoners (puuid, name, tagLine, region, updatedAt)
+            `INSERT INTO summoners (puuid, gameName, tagLine, region, updatedAt)
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (puuid) DO UPDATE 
-             SET name = EXCLUDED.name, tagLine = EXCLUDED.tagLine, region = EXCLUDED.region, updatedAt = EXCLUDED.updatedAt
+             SET gameName = EXCLUDED.gameName, tagLine = EXCLUDED.tagLine, region = EXCLUDED.region, updatedAt = EXCLUDED.updatedAt
              RETURNING *`,
             [account.puuid, account.gameName, account.tagLine, region, currentTime]
         );
 
         return updatedSummoner[0];
     } catch (error) {
-        console.error('Error in getSummoner:', error);
+        // console.error('Error in getSummoner:', error);
         throw new Error('Failed to retrieve summoner details.');
     }
 };

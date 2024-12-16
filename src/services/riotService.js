@@ -21,19 +21,22 @@ const getRegion = (region) => {
 };
 
 const getAccountByAccountName = async (summonerName, tagLine, region) => {
-    const regionConst = getRegion(region);
-    const resByRiotId = (await riotApi.Account.getByRiotId(summonerName, tagLine, regionConst)).response;
-    resByRiotId.set('region', region);
-    return resByRiotId;
+    // const regionConst = getRegion(region);
+    const resByRiotId = (await riotApi.Account.getByRiotId(summonerName, tagLine, Constants.RegionGroups.EUROPE)).response;
+    let summonerObj = {}
+    summonerObj = resByRiotId
+    summonerObj['region'] = region
+    return summonerObj;
 };
 
 const getMatchesByPUUID = async (puuid, count = 20) => {
-    const matchIds = await (lolApi.MatchV5.getMatchIdsByPUUID(puuid, count)).response;
+    const matchIds = (await (lolApi.MatchV5.list(puuid, Constants.RegionGroups.EUROPE)).response)
+    console.log(matchIds)
     return matchIds;
 };
 
 const getMatchDataById = async (matchId) => {
-    const matchData = (await lolApi.MatchV5.getMatchById(matchId)).response;
+    const matchData = (await lolApi.MatchV5.timeline(matchId, Constants.RegionGroups.EUROPE)).response
     return matchData;
 };
 

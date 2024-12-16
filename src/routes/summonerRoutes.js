@@ -3,7 +3,7 @@ const { fetchSummonerData, fetchMatchIds, fetchMatchIdDetails } = require('../co
 const router = express.Router();
 
 router.get('/:accountName/:tagLine/:region', fetchSummonerData);
-router.get('/:puuid/matches', fetchMatchIds);
-router.get('/:matchId', fetchMatchIdDetails);
+router.get('/matches/:puuid', fetchMatchIds);
+router.get('/match/:matchId', fetchMatchIdDetails);
 
 module.exports = router;

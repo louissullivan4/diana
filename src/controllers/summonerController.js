@@ -17,35 +17,31 @@ const fetchSummonerData = async (req, res) => {
 
         res.status(200).json({ summoner });
     } catch (error) {
-        console.error('Error fetching summoner data:', error);
+        // console.error('Error fetching summoner data:', error);
         res.status(500).json({ error: 'Failed to fetch summoner data.' });
     }
 };
 
 const fetchMatchIds = async (req, res) => {
     try {
-        const { accountName, tagLine, region } = req.params;
+        const { puuid } = req.params;
+        console.log(puuid)
         const { numberOfMatches } = req.query || 20;
 
-        if (!accountName || !tagLine || !region ) {
+        if (!puuid ) {
             return res.status(400).json({
-                error: 'Missing required parameters: accountName, tagLine, or region.',
+                error: 'Missing required parameters: puuid.',
             });
         }
 
-        const summoner = await getSummoner(accountName, tagLine, region);
-        if (!summoner || Object.keys(summoner).length === 0) {
-            return res.status(404).json({ error: 'Summoner not found.' });
-        }
-
-        const matchIds = await getMatchIds(summoner.puuid, parseInt(numberOfMatches, 10));
+        const matchIds = await getMatchIds(puuid, numberOfMatches);
         if (!matchIds || matchIds.length === 0) {
             return res.status(404).json({ error: 'No match IDs found for the summoner.' });
         }
 
         res.status(200).json({ matchIds });
     } catch (error) {
-        console.error('Error fetching match IDs:', error);
+        // console.error('Error fetching match IDs:', error);
         res.status(500).json({ error: 'Failed to fetch match IDs.' });
     }
 };
@@ -63,7 +59,7 @@ const fetchMatchIdDetails = async (req, res) => {
         const match = await getMatchDetailsById(matchId)
         res.status(200).json({ match });
     } catch (error) {
-        console.error('Error fetching match details:', error);
+        console.error('Error fetching match details:');
     }
 };
 

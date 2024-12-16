@@ -15,7 +15,7 @@ try {
         console.log(`Server running on port ${PORT}`);
     });
 } catch (error) {
-    console.error('Error starting server: ', error);
+    // console.error('Error starting server: ', error);
     process.exit(1);
 }
 
