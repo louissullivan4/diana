@@ -99,8 +99,7 @@ Current Rank: **${rankString}**
 
       } else {
         // -- USER IS NOT IN GAME --
-        // const storedGameId = getSummonerCurrentGame(puuid);
-        const storedGameId = "7263098496";
+        const storedGameId = getSummonerCurrentGame(puuid);
 
         if (storedGameId) {
           console.log(`[Info] [${summonerName}] Match ended (previous gameId=${storedGameId}). Fetching final match data...`);
