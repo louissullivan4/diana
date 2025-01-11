@@ -36,7 +36,6 @@ const getSummoner = async (accountName, tagLine, region) => {
 
         return updatedSummoner[0];
     } catch (error) {
-        // console.error('Error in getSummoner:', error);
         throw new Error('Failed to retrieve summoner details.');
     }
 };

@@ -17,7 +17,6 @@ const fetchSummonerData = async (req, res) => {
 
         res.status(200).json({ summoner });
     } catch (error) {
-        // console.error('Error fetching summoner data:', error);
         res.status(500).json({ error: 'Failed to fetch summoner data.' });
     }
 };

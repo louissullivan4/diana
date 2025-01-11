@@ -42,7 +42,6 @@ const getMatchIds = async (summoner, numberOfMatches) => {
 
         return updatedMatches.map((result) => result.rows[0]);
     } catch (error) {
-        // console.error('Error in getMatchIds:', error);
         throw new Error('Failed to retrieve match IDs.');
     }
 };
@@ -56,7 +55,7 @@ const getMatchDetailsById = async (matchId) => {
 
         if (existingMatch.length > 0) {
             const lastUpdated = new Date(existingMatch[0].lastUpdated);
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
             if (lastUpdated > thirtyDaysAgo) {
                 return existingMatch[0];
@@ -203,7 +202,6 @@ const getMatchDetailsById = async (matchId) => {
 
         return matchDetails;
     } catch (error) {
-        // console.error('Error in getMatchDetailsById:', error);
         throw new Error('Failed to retrieve match details.');
     }
 };
