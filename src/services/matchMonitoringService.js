@@ -21,6 +21,7 @@ const { getChampionInfoById } = require('./championLookup');
 const { getQueueNameById } = require('./queueLookup');
 
 const trackedSummoners = require('../config/trackedSummoners');
+const { notifyMatchEnd, notifyMatchStart } = require('./notificationService'); // Import the notification service
 
 cron.schedule('*/5 * * * * *', async () => {
   console.log(`[Info] [${new Date().toISOString()}] Starting cron check for active matches...`);
@@ -67,8 +68,7 @@ cron.schedule('*/5 * * * * *', async () => {
             console.log(`[Info] [${summonerName}] User is unranked or has no RANKED_SOLO_5x5 data.`);
           }
 
-          const participant = activeGameData.participants
-            .find(p => p.puuid === puuid);
+          const participant = activeGameData.participants.find(p => p.puuid === puuid);
 
           let championDisplay = 'Unknown Champion';
           let championTag = 'Unknown';
@@ -79,22 +79,27 @@ cron.schedule('*/5 * * * * *', async () => {
             championDisplay = champInfo.name;
             championTag = champInfo.tagString;
 
-            role = participant.individualPosition 
-              || participant.teamPosition 
+            role = participant.individualPosition
+              || participant.teamPosition
               || 'N/A';
           }
 
           const queueId = activeGameData.gameQueueConfigId;
           const queueName = getQueueNameById(queueId);
 
-          const startMessage = `
-**${summonerName}** is now in a **${queueName}** match!
-Champion: **${championDisplay}**
-Current Rank: **${rankString}**
-          `.trim();
+          // Prepare match start information
+          const matchStartInfo = {
+            summonerName,
+            queueName,
+            championDisplay,
+            rankString,
+            discordChannelId,
+            championTag, // Optional
+            role // Optional
+          };
 
-          console.log(`[Info] Sending start-of-match message for ${summonerName}:`, startMessage);
-          await sendDiscordMessage(discordChannelId, startMessage);
+          console.log(`[Info] Sending start-of-match message for ${summonerName}:`, matchStartInfo);
+          await notifyMatchStart(matchStartInfo);
         }
 
       } else {
@@ -105,14 +110,14 @@ Current Rank: **${rankString}**
           console.log(`[Info] [${summonerName}] Match ended (previous gameId=${storedGameId}). Fetching final match data...`);
           const fullMatchId = `${matchRegionPrefix}_${storedGameId}`;
 
-          const matchSummary = await getMatchSummary(fullMatchId);
-          if (!matchSummary?.info) {
+          const matchSummaryData = await getMatchSummary(fullMatchId);
+          if (!matchSummaryData?.info) {
             console.log(`[Warning] No final match data for matchId=${fullMatchId}`);
           } else {
-            const participant = matchSummary.info.participants.find(p => p.puuid === puuid);
+            const participant = matchSummaryData.info.participants.find(p => p.puuid === puuid);
 
             let result = 'Lose';
-            if (matchSummary.info.gameDuration < 300) {
+            if (matchSummaryData.info.gameDuration < 300) {
               result = 'Remake';
             } else if (participant?.win) {
               result = 'Win';
@@ -162,26 +167,28 @@ Current Rank: **${rankString}**
               lpChangeMsg = '0';
             }
 
-            const endMessage = `
-**${summonerName}'s match has ended!**  
+            // Prepare match summary object for notification
+            const matchSummary = {
+              summonerName,
+              result,
+              rankChangeMsg,
+              lpChangeMsg,
+              champion,
+              role,
+              kdaStr,
+              damage,
+              discordChannelId
+            };
 
-:checkered_flag: **Result:** \`${result}\`  
-:chart_with_upwards_trend: **Rank Update:** \`${rankChangeMsg}\`  
-:arrow_up_down: **LP Change:** \`${lpChangeMsg}\`  
-:shield: **Champion:** \`${champion}\`  
-:video_game: **Role:** \`${role}\`  
-:crossed_swords: **KDA:** \`${kdaStr}\`  
-:boom: **Damage Dealt:** \`${damage}\`
-`;
-            console.log(`[Info] Sending end-of-match message for ${summonerName}:`, endMessage);
-            await sendDiscordMessage(discordChannelId, endMessage);
+            console.log(`[Info] Sending end-of-match message for ${summonerName}:`, matchSummary);
+            await notifyMatchEnd(matchSummary);
           }
 
           clearSummonerCurrentGame(puuid);
           clearPreviousRank(puuid);
 
         } else {
-          console.log(`[Info] ${summonerName} is not in game:`);
+          console.log(`[Info] ${summonerName} is not in game.`);
         }
       }
     } catch (error) {
