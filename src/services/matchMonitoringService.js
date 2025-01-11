@@ -90,7 +90,6 @@ cron.schedule('*/5 * * * * *', async () => {
           const startMessage = `
 **${summonerName}** is now in a **${queueName}** match!
 Champion: **${championDisplay}**
-Role: **${role}**
 Current Rank: **${rankString}**
           `.trim();
 
