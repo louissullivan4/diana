@@ -105,7 +105,7 @@ Current Rank: **${rankString}**
           console.log(`[Info] [${summonerName}] Match ended (previous gameId=${storedGameId}). Fetching final match data...`);
           const fullMatchId = `${matchRegionPrefix}_${storedGameId}`;
 
-          const matchSummary = await getMatchSummary(fullMatchId, regionGroup);
+          const matchSummary = await getMatchSummary(fullMatchId);
           if (!matchSummary?.info) {
             console.log(`[Warning] No final match data for matchId=${fullMatchId}`);
           } else {
@@ -129,7 +129,7 @@ Current Rank: **${rankString}**
             let rankChangeMsg = 'Unranked -> Unranked';
             let lpChangeMsg = 'N/A';
 
-            const rankEntriesPost = await getRankEntriesByPUUID(puuid, regionGroup);
+            const rankEntriesPost = await getRankEntriesByPUUID(puuid);
             const soloRankPost = rankEntriesPost.find(e => e.queueType === 'RANKED_SOLO_5x5');
             const oldRankInfo = getPreviousRank(puuid);
 
