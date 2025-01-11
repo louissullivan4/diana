@@ -10,6 +10,14 @@ const trackedSummoners = [
     regionGroup: Constants.RegionGroups.EUROPE,
     matchRegionPrefix: 'EUW1',
   },
+  {
+    puuid: 'ywqK5bySVAUGZXGcDAZns5wSZkKSL2gUA3_wBZQ57VdMm5UbeTNrN3J1YNaH97CACg7pe5g0oxkGdA',
+    summonerName: 'I miss her',
+    tagLine: 'Ascd',
+    discordChannelId: '1263016855455531021',
+    regionGroup: Constants.RegionGroups.EUROPE,
+    matchRegionPrefix: 'EUW1',
+  },
 ];
 
 module.exports = trackedSummoners;
