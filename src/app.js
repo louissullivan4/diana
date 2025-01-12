@@ -1,7 +1,6 @@
 const express = require('express');
 require('./discord/matchMonitoringService');
-const summonerRoutes = require('./routes/summonerRoutes');
-const discordRouter = require('./routes/discordRouter');
+// const summonerRoutes = require('./routes/summonerRoutes');
 
 const app = express();
 app.use(express.json());
