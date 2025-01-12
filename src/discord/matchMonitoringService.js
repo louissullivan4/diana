@@ -16,7 +16,7 @@ const {
   getPreviousRank,
   calculateRankChange
 } = require('./rankService');
-const { notifyMatchEnd, notifyMatchStart } = require('./discordService');
+const { notifyMatchEnd, notifyMatchStart, notifyRankChange } = require('./discordService');
 
 const { getChampionInfoById, getQueueNameById } = require('./dataDragonService');
 
