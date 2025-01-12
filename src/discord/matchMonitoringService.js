@@ -76,16 +76,11 @@ cron.schedule('*/5 * * * * *', async () => {
 
             let championDisplay = 'Unknown Champion';
             let championTag = 'Unknown';
-            let role = 'N/A';
 
             if (participant) {
               const champInfo = await getChampionInfoById(participant.championId);
               championDisplay = champInfo.name;
               championTag = champInfo.tagString;
-
-              role = participant.individualPosition
-                || participant.teamPosition
-                || 'N/A';
             }
 
             const queueId = activeGameData.gameQueueConfigId;
@@ -151,7 +146,8 @@ cron.schedule('*/5 * * * * *', async () => {
                 };
                 rankChange = calculateRankChange(oldRankInfo, newRankInfo);
                 setPreviousRank(puuid, newRankInfo);
-                newRankMsg = divisionString;
+                newRankMsg = newRankInfo.divisionString;
+                lpChangeMsg = (rankChange.lpChange).toString();
 
                 checkForRankUp = await determineRankMovement(oldRankInfo, newRankInfo)
               }
@@ -176,7 +172,7 @@ cron.schedule('*/5 * * * * *', async () => {
                 const rankChangeInfo = {
                   summonerName,
                   direction: checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
-                  rankChangeMsg,
+                  newRankMsg,
                   lpChangeMsg,
                   discordChannelId,
                   deepLolLink
