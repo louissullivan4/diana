@@ -1,5 +1,0 @@
-Account info by Riot Id:  {
-  puuid: '01XS0CtuZCXjlubxeCMW3RFZTS7WAo38zHvFWeokv3rGK6XDYVW4pPG586vKrKdccA3Ru2KA0OtQag',
-  gameName: 'YngStew',
-  tagLine: '1495'
-}

@@ -25,7 +25,7 @@ async function notifyMatchEnd(matchSummary) {
   const {
     summonerName,
     result,
-    rankChangeMsg,
+    rankMsg,
     lpChangeMsg,
     champion,
     role,
@@ -38,12 +38,13 @@ async function notifyMatchEnd(matchSummary) {
   const embed = createMatchEndEmbed(
     summonerName,
     result,
-    rankChangeMsg,
+    rankMsg,
     lpChangeMsg,
     champion,
     role,
     kdaStr,
     damage,
+    discordChannelId,
     deepLolLink
   );
 
@@ -91,7 +92,6 @@ function createMatchStartEmbed(
 ) {
   let embedColor = 0x3498db;
 
-  const rankLevels = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
   const rankColors = {
     'IRON': 0x7f8c8d,        // Gray
     'BRONZE': 0xe67e22,      // Orange
@@ -228,12 +228,12 @@ function createRankChangeEmbed(
   let embedColor;
   let title;
 
-  if (direction === 'up') {
+  if (direction === 'promoted') {
     embedColor = 0x28a745; // Green
-    title = '📈 **Rank Up!**';
-  } else if (direction === 'down') {
+    title = '📈 **Rank Promotion!**';
+  } else if (direction === 'demoted') {
     embedColor = 0xe74c3c; // Red
-    title = '📉 **Rank Demoted!**';
+    title = '📉 **Rank Demotion...**';
   } else {
     return null;
   }
