@@ -143,7 +143,7 @@ function createMatchStartEmbed(
 function createMatchEndEmbed(
   summonerName,
   result,
-  rankChangeMsg,
+  newRankMsg,
   lpChangeMsg,
   champion,
   role,
@@ -184,7 +184,7 @@ function createMatchEndEmbed(
     },
     {
       name: '📈 **Rank Update**',
-      value: `**${rankChangeMsg}**`,
+      value: `**${newRankMsg}**`,
       inline: true,
     },
     {
@@ -221,7 +221,7 @@ function createMatchEndEmbed(
 function createRankChangeEmbed(
   summonerName,
   direction,
-  rankChangeMsg,
+  newRankMsg,
   lpChangeMsg,
   deepLolLink
 ) {
@@ -246,7 +246,7 @@ function createRankChangeEmbed(
     .addFields(
       {
         name: '🏆 **Rank Change**',
-        value: `**${rankChangeMsg}**`,
+        value: `**${newRankMsg}**`,
         inline: true,
       },
       {
@@ -264,7 +264,7 @@ async function notifyRankChange(rankChangeInfo) {
   const {
     summonerName,
     direction,
-    rankChangeMsg,
+    newRankMsg,
     lpChangeMsg,
     discordChannelId,
     deepLolLink
@@ -273,7 +273,7 @@ async function notifyRankChange(rankChangeInfo) {
   const embed = createRankChangeEmbed(
     summonerName,
     direction,
-    rankChangeMsg,
+    newRankMsg,
     lpChangeMsg,
     deepLolLink
   );
