@@ -1,5 +1,5 @@
 // services/matchMonitoringService.js
-
+require('dotenv').config();
 const cron = require('node-cron');
 const {
   getMatchSummary,
