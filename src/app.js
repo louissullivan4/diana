@@ -1,18 +1,15 @@
 const express = require('express');
+require('./discord/matchMonitoringService');
 const summonerRoutes = require('./routes/summonerRoutes');
 const discordRouter = require('./routes/discordRouter');
-require('./services/matchMonitoringService');
 
 const app = express();
 app.use(express.json());
 // app.use('/summoners', summonerRoutes);
 // app.use('/discord', discordRouter);
 
-
 const PORT = 3000;
-// Start the server and store the server instance
 let server;
-
 try {
     server = app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
@@ -33,6 +30,5 @@ const shutdown = () => {
     }
 };
 
-// Handle termination signals
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

@@ -40,7 +40,6 @@ const fetchMatchIds = async (req, res) => {
 
         res.status(200).json({ matchIds });
     } catch (error) {
-        // console.error('Error fetching match IDs:', error);
         res.status(500).json({ error: 'Failed to fetch match IDs.' });
     }
 };

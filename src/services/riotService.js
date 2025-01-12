@@ -22,7 +22,6 @@ const getRegion = (region) => {
 };
 
 const getAccountByAccountName = async (summonerName, tagLine, region) => {
-    // const regionConst = getRegion(region);
     const resByRiotId = (await riotApi.Account.getByRiotId(summonerName, tagLine, Constants.RegionGroups.EUROPE)).response;
     let summonerObj = {}
     summonerObj = resByRiotId
@@ -68,7 +67,6 @@ async function getRankEntriesByPUUID(puuid, region = 'euw1') {
       throw error;
     }
 }
-
 
 async function getActiveGameByPuuid(puuid, region = 'euw1') {
     try {

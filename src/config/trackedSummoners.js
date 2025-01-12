@@ -10,6 +10,7 @@ const trackedSummoners = [
     discordChannelId: process.env.DISCORD_CHANNEL_ID,
     regionGroup: Constants.RegionGroups.EUROPE,
     matchRegionPrefix: 'EUW1',
+    deepLolLink: 'https://www.deeplol.gg/summoner/euw/YngStew-1495'
   },
   {
     puuid: 'ywqK5bySVAUGZXGcDAZns5wSZkKSL2gUA3_wBZQ57VdMm5UbeTNrN3J1YNaH97CACg7pe5g0oxkGdA',
@@ -18,6 +19,7 @@ const trackedSummoners = [
     discordChannelId: process.env.DISCORD_CHANNEL_ID,
     regionGroup: Constants.RegionGroups.EUROPE,
     matchRegionPrefix: 'EUW1',
+    deepLolLink: 'https://www.deeplol.gg/summoner/euw/I%20miss%20her-Ascd'
   },
 ];
 

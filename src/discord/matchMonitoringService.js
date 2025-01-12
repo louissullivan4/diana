@@ -1,10 +1,11 @@
 // services/matchMonitoringService.js
+
 const cron = require('node-cron');
 const {
   getMatchSummary,
   getRankEntriesByPUUID,
   getActiveGameByPuuid
-} = require('./riotService');
+} = require('../services/riotService');
 const {
   setSummonerCurrentGame,
   getSummonerCurrentGame,
@@ -13,15 +14,13 @@ const {
 const {
   setPreviousRank,
   getPreviousRank,
-  clearPreviousRank
-} = require('./rankTracker');
-const { sendDiscordMessage } = require('./discordService');
+  calculateRankChange
+} = require('./rankService');
+const { notifyMatchEnd, notifyMatchStart } = require('./discordService');
 
-const { getChampionInfoById } = require('./championLookup');
-const { getQueueNameById } = require('./queueLookup');
+const { getChampionInfoById, getQueueNameById } = require('./dataDragonService');
 
 const trackedSummoners = require('../config/trackedSummoners');
-const { notifyMatchEnd, notifyMatchStart } = require('./notificationService'); // Import the notification service
 
 cron.schedule('*/5 * * * * *', async () => {
   console.log(`[Info] [${new Date().toISOString()}] Starting cron check for active matches...`);
@@ -33,7 +32,8 @@ cron.schedule('*/5 * * * * *', async () => {
       tagLine,
       discordChannelId,
       regionGroup,
-      matchRegionPrefix
+      matchRegionPrefix,
+      deepLolLink
     } = player;
 
     try {
@@ -53,16 +53,16 @@ cron.schedule('*/5 * * * * *', async () => {
 
           let rankString = 'Unranked';
           if (soloRank) {
-            const preRankInfo = {
+            const currentRankInfo = {
               tier: soloRank.tier,
               rank: soloRank.rank,
               lp: soloRank.leaguePoints,
               divisionString: `${soloRank.tier} ${soloRank.rank}`,
             };
-            setPreviousRank(puuid, preRankInfo);
+            setPreviousRank(puuid, currentRankInfo);
 
             rankString = `${soloRank.tier} ${soloRank.rank} (${soloRank.leaguePoints} LP)`;
-            console.log(`[Info] [${summonerName}] Found existing rank: ${preRankInfo.divisionString} ${preRankInfo.lp} LP`);
+            console.log(`[Info] [${summonerName}] Found existing rank: ${currentRankInfo.divisionString} ${currentRankInfo.lp} LP`);
           } else {
             setPreviousRank(puuid, null);
             console.log(`[Info] [${summonerName}] User is unranked or has no RANKED_SOLO_5x5 data.`);
@@ -87,15 +87,13 @@ cron.schedule('*/5 * * * * *', async () => {
           const queueId = activeGameData.gameQueueConfigId;
           const queueName = getQueueNameById(queueId);
 
-          // Prepare match start information
           const matchStartInfo = {
             summonerName,
             queueName,
             championDisplay,
             rankString,
             discordChannelId,
-            championTag, // Optional
-            role // Optional
+            deepLolLink
           };
 
           console.log(`[Info] Sending start-of-match message for ${summonerName}:`, matchStartInfo);
@@ -131,43 +129,54 @@ cron.schedule('*/5 * * * * *', async () => {
             const role = participant?.individualPosition || participant?.teamPosition || 'N/A';
             const damage = participant?.totalDamageDealtToChampions || 0;
 
-            let rankChangeMsg = 'Unranked -> Unranked';
-            let lpChangeMsg = 'N/A';
-
             const rankEntriesPost = await getRankEntriesByPUUID(puuid);
             const soloRankPost = rankEntriesPost.find(e => e.queueType === 'RANKED_SOLO_5x5');
             const oldRankInfo = getPreviousRank(puuid);
 
+            let rankChangeMsg = 'Unranked -> Unranked';
+            let lpChangeMsg = 'N/A';
+            let rankChange;
+
             if (soloRankPost) {
-              const newTier = soloRankPost.tier;
-              const newRank = soloRankPost.rank;
-              const newLp = soloRankPost.leaguePoints;
+              const newRankInfo = {
+                tier: soloRankPost.tier,
+                rank: soloRankPost.rank,
+                lp: soloRankPost.leaguePoints,
+              };
 
-              let oldTier = 'UNRANKED';
-              let oldRank = '';
-              let oldLp = 0;
+              rankChange = calculateRankChange(oldRankInfo, newRankInfo);
 
-              if (oldRankInfo) {
-                oldTier = oldRankInfo.tier;
-                oldRank = oldRankInfo.rank;
-                oldLp = oldRankInfo.lp;
+              setPreviousRank(puuid, newRankInfo);
+
+              const oldTier = oldRankInfo ? oldRankInfo.tier : 'UNRANKED';
+              const oldRank = oldRankInfo ? `${oldRankInfo.rank} ${oldRankInfo.lp} LP` : '';
+              const newTier = newRankInfo.tier;
+              const newRank = `${newRankInfo.rank} ${newRankInfo.lp} LP`;
+
+            if (rankChange.direction === 'up') {
+                rankChangeMsg = `${oldTier} -> ${newTier}`;
+                lpChangeMsg = `+${rankChange.lpChange}`;
+              } else if (rankChange.direction === 'down') {
+                rankChangeMsg = `${oldTier} -> ${newTier}`;
+                lpChangeMsg = `${rankChange.lpChange}`;
+              } else if (rankChange.direction === 'same') {
+                rankChangeMsg = `${newTier}`;
+                lpChangeMsg = `LP Change: ${rankChange.lpChange}`;
+              } else if (rankChange.direction === 'new') {
+                rankChangeMsg = `New Rank: ${newTier}`;
+                lpChangeMsg = `+${rankChange.lpChange} LP`;
               }
 
-              const oldRankStr = oldRankInfo
-                ? `${oldTier} ${oldRank} ${oldLp} LP`
-                : 'UNRANKED';
-              const newRankStr = `${newTier} ${newRank} ${newLp} LP`;
-              rankChangeMsg = `${oldRankStr} -> ${newRankStr}`;
-
-              const lpDiff = newLp - oldLp;
-              const sign = lpDiff >= 0 ? '+' : '';
-              lpChangeMsg = `${sign}${lpDiff}`;
             } else {
-              rankChangeMsg = 'Unranked -> Unranked';
-              lpChangeMsg = '0';
+              if (oldRankInfo) {
+                rankChangeMsg = `${oldRankInfo.tier} ${oldRankInfo.rank} -> Unranked`;
+                lpChangeMsg = `- ${oldRankInfo.lp} LP`;
+              } else {
+                rankChangeMsg = 'Unranked -> Unranked';
+                lpChangeMsg = '0';
+              }
             }
 
-            // Prepare match summary object for notification
             const matchSummary = {
               summonerName,
               result,
@@ -177,16 +186,26 @@ cron.schedule('*/5 * * * * *', async () => {
               role,
               kdaStr,
               damage,
-              discordChannelId
+              discordChannelId,
+              deepLolLink
             };
 
             console.log(`[Info] Sending end-of-match message for ${summonerName}:`, matchSummary);
             await notifyMatchEnd(matchSummary);
+
+            if (rankChange.direction === 'up' || rankChange.direction === 'down') {
+              const rankChangeInfo = {
+                summonerName,
+                direction: rankChange.direction === 'up' ? 'up' : 'down',
+                rankChangeMsg,
+                lpChangeMsg,
+                discordChannelId,
+                deepLolLink
+              };
+              await notifyRankChange(rankChangeInfo);
+            }
           }
-
           clearSummonerCurrentGame(puuid);
-          clearPreviousRank(puuid);
-
         } else {
           console.log(`[Info] ${summonerName} is not in game.`);
         }
