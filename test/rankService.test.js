@@ -4,7 +4,7 @@ const {
     getPreviousRank,
     clearPreviousRank,
     calculateRankChange
-  } = require('../src/discord/rankService');
+  } = require('../src/services/rankService');
   
   describe('Rank Service Tests', () => {
     beforeEach(() => {

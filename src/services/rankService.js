@@ -1,4 +1,4 @@
-// discord/rankService.js
+// services/rankService.js
 const previousRankState = new Map();
 
 const tierOrder = [
@@ -57,12 +57,24 @@ const calculateRankChange = (previousRank, currentRank) => {
 };
 
 const determineRankMovement = (previousRank, currentRank) => {
-  if (!previousRank) return 'promoted';
+  if (!previousRank || !currentRank) {
+    return 'no_change';
+  }
+
   const previousTierValue = getTierValue(previousRank.tier);
   const currentTierValue = getTierValue(currentRank.tier);
-  if (currentTierValue > previousTierValue) return 'promoted';
-  if (currentTierValue < previousTierValue) return 'demoted';
-  return 'no_change';
+
+  if (previousTierValue === -1 || currentTierValue === -1) {
+    return 'no_change';
+  }
+
+  if (currentTierValue > previousTierValue) {
+    return 'promoted';
+  } else if (currentTierValue < previousTierValue) {
+    return 'demoted';
+  } else {
+    return 'no_change';
+  }
 };
 
 module.exports = {

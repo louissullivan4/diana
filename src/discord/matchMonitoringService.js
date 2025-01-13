@@ -16,9 +16,9 @@ const {
   getPreviousRank,
   calculateRankChange,
   determineRankMovement
-} = require('./rankService');
+} = require('../services/rankService');
 const { notifyMatchEnd, notifyMatchStart, notifyRankChange } = require('./discordService');
-const { getChampionInfoById, getQueueNameById } = require('./dataDragonService');
+const { getChampionInfoById, getQueueNameById } = require('../services/dataDragonService');
 const trackedSummoners = require('../config/trackedSummoners');
 
 const checkAndHandleSummoner = async (player) => {
@@ -128,7 +128,7 @@ const handleMatchEnd = async (player) => {
 
       let lpChangeMsg = 'N/A';
       let newRankMsg = 'Unranked';
-      let checkForRankUp = 'no change';
+      let checkForRankUp = 'no_change';
 
       if (soloRankPost) {
         const newRankInfo = {
@@ -160,7 +160,7 @@ const handleMatchEnd = async (player) => {
       console.log(`[Info] Sending end-of-match message for ${summonerName}:`, matchSummary);
       await notifyMatchEnd(matchSummary);
 
-      if (checkForRankUp !== 'no change') {
+      if (checkForRankUp !== 'no_change') {
         const rankChangeInfo = {
           summonerName,
           direction: checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
