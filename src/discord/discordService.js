@@ -104,8 +104,8 @@ const notifyMatchStart = async ({ summonerName, queueName, championDisplay, rank
   }
 };
 
-const notifyMatchEnd = async ({ summonerName, result, rankMsg, lpChangeMsg, champion, role, kdaStr, damage, discordChannelId, deepLolLink }) => {
-  const embed = createMatchEndEmbed(summonerName, result, rankMsg, lpChangeMsg, champion, role, kdaStr, damage, deepLolLink);
+const notifyMatchEnd = async ({ summonerName, result, newRankMsg, lpChangeMsg, champion, role, kdaStr, damage, discordChannelId, deepLolLink }) => {
+  const embed = createMatchEndEmbed(summonerName, result, newRankMsg, lpChangeMsg, champion, role, kdaStr, damage, deepLolLink);
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match end message for ${summonerName}.`);
