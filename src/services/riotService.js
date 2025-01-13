@@ -31,7 +31,6 @@ const getAccountByAccountName = async (summonerName, tagLine, region) => {
 
 const getMatchesByPUUID = async (puuid, count = 20) => {
     const matchIds = (await (lolApi.MatchV5.list(puuid, Constants.RegionGroups.EUROPE)).response)
-    console.log(matchIds)
     return matchIds;
 };
 

@@ -24,7 +24,6 @@ const fetchSummonerData = async (req, res) => {
 const fetchMatchIds = async (req, res) => {
     try {
         const { puuid } = req.params;
-        console.log(puuid)
         const { numberOfMatches } = req.query || 20;
 
         if (!puuid ) {

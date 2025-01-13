@@ -1,68 +1,52 @@
 // services/dataDragonService.js
 const axios = require('axios');
+
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
+const CHAMPION_URL = (version) => `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
 
-async function getLatestVersion() {
-  let cachedLatestVersion = null;
-  if (cachedLatestVersion) {
-    return cachedLatestVersion;
+let cachedLatestVersion = null;
+let championDataCache = null;
+let championIdMapCache = null;
+
+const fetchLatestVersion = async () => {
+  if (!cachedLatestVersion) {
+    const { data: versions } = await axios.get(VERSIONS_URL);
+    cachedLatestVersion = versions[0];
   }
-  const { data: versions } = await axios.get(VERSIONS_URL);
-  cachedLatestVersion = versions[0];
   return cachedLatestVersion;
-}
+};
 
-async function getChampionData() {
-  let championDataCache = null;
-  if (championDataCache) {
-    return championDataCache;
+const fetchChampionData = async () => {
+  if (!championDataCache) {
+    const version = await fetchLatestVersion();
+    const { data } = await axios.get(CHAMPION_URL(version));
+    championDataCache = data.data;
   }
-
-  const version = await getLatestVersion();
-  const url = `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
-  const { data } = await axios.get(url);
-
-  championDataCache = data.data;
   return championDataCache;
-}
+};
 
-async function loadChampionIdMap() {
-  let championIdMapCache = null;
+const buildChampionIdMap = async () => {
   if (!championIdMapCache) {
-    const allChampData = await getChampionData(); 
-
-    championIdMapCache = {};
-    Object.keys(allChampData).forEach(champName => {
-      const championInfo = allChampData[champName];
-      championIdMapCache[championInfo.key] = championInfo;
-    });
+    const champions = await fetchChampionData();
+    championIdMapCache = Object.values(champions).reduce((acc, champ) => {
+      acc[champ.key] = champ;
+      return acc;
+    }, {});
   }
   return championIdMapCache;
-}
+};
 
-async function getChampionInfoById(championId) {
-  const champIdMap = await loadChampionIdMap();
-  const championInfo = champIdMap[String(championId)];
-
-  if (!championInfo) {
-    return {
-      name: 'Unknown Champion',
-      tagString: 'Unknown',
-    };
+const getChampionInfoById = async (championId) => {
+  const champIdMap = await buildChampionIdMap();
+  const champion = champIdMap[String(championId)];
+  if (!champion) {
+    return { name: 'Unknown Champion', tagString: 'Unknown' };
   }
+  const tagString = champion.tags && champion.tags.length ? champion.tags.join('/') : 'Unknown';
+  return { name: champion.name, tagString };
+};
 
-  const { name, tags } = championInfo;
-  const tagString = Array.isArray(tags) && tags.length > 0 
-    ? tags.join('/')
-    : 'Unknown';
-
-  return {
-    name,
-    tagString,
-  };
-}
-
-function getQueueNameById(queueId) {
+const getQueueNameById = (queueId) => {
   const queueMap = {
     0: 'Custom Game',
     420: 'Ranked Solo',
@@ -72,9 +56,9 @@ function getQueueNameById(queueId) {
     700: 'Clash',
   };
   return queueMap[queueId] || `Unknown Queue (ID: ${queueId})`;
-}
+};
 
 module.exports = {
   getChampionInfoById,
-  getQueueNameById
+  getQueueNameById,
 };
