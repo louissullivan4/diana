@@ -30,6 +30,16 @@ const trackedSummoners = [
     matchRegionPrefix: 'EUW1',
     deepLolLink: 'https://www.deeplol.gg/summoner/euw/I%20miss%20her-Ascd'
   },
+  {
+    puuid: 'wsedDXW_ao6vCxfpdxBXohBYLZghQMtg7YxWtnVo9p_H3iv-M7ibWM2fU7MkK6Vn8LgXTOCLveex7w',
+    summonerName: 'LouLou',
+    tagLine: 'ATTIC',
+    discordChannelId: process.env.DISCORD_CHANNEL_ID,
+    regionGroup: Constants.RegionGroups.EUROPE,
+    matchRegionPrefix: 'EUW1',
+    deepLolLink: 'https://www.deeplol.gg/summoner/euw/LouLou'
+  },
+
 ];
 
 module.exports = trackedSummoners;
