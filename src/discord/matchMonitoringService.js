@@ -139,7 +139,7 @@ const handleMatchEnd = async (player) => {
         };
         const rankChange = calculateRankChange(oldRankInfo, newRankInfo);
         setPreviousRank(puuid, newRankInfo);
-        newRankMsg =`${soloRankPost.tier} ${soloRankPost.rank} (${soloRankPost.rank} LP)`
+        newRankMsg =`${soloRankPost.tier} ${soloRankPost.rank} (${soloRankPost.leaguePoints} LP)`
         lpChangeMsg = rankChange.lpChange.toString();
         checkForRankUp = await determineRankMovement(oldRankInfo, newRankInfo);
       }
