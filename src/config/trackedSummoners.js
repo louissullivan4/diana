@@ -37,9 +37,17 @@ const trackedSummoners = [
     discordChannelId: process.env.DISCORD_CHANNEL_ID,
     regionGroup: Constants.RegionGroups.EUROPE,
     matchRegionPrefix: 'EUW1',
-    deepLolLink: 'https://www.deeplol.gg/summoner/euw/LouLou'
+    deepLolLink: 'https://www.deeplol.gg/summoner/euw/LouLou-ATTIC'
   },
-
+  {
+    puuid: 'rKCZwiocEjGVQp7pLq9WkrxhN5VGddJh-TX3NRa7LXslIZsWygt2r3UXdfg2DSwoY4Q3NpKTcbrkWg',
+    summonerName: 'FishyMelon',
+    tagLine: 'Fishy',
+    discordChannelId: process.env.DISCORD_CHANNEL_ID,
+    regionGroup: Constants.RegionGroups.EUROPE,
+    matchRegionPrefix: 'EUW1',
+    deepLolLink: 'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy'
+  }
 ];
 
 module.exports = trackedSummoners;
