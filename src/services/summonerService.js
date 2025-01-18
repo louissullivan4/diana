@@ -1,43 +1,75 @@
 const db = require('../models/db');
-const { getAccountByAccountName } = require('../services/riotService');
 
-const getSummoner = async (accountName, tagLine, region) => {
+const getSummonerByAccountName = async (accountName, tagLine, region) => {
     try {
-        const { rows: existingSummoner } = await db.query(
-            `SELECT * FROM summoners
-             WHERE gameName = $1 AND tagLine = $2 AND region = $3`,
-            [accountName, tagLine, region]
-        );
+        const query = `
+            SELECT * FROM summoners
+            WHERE gameName = $1 AND tagLine = $2 AND region = $3
+        `;
+        const params = [accountName, tagLine, region];
+        const result = await db.query(query, params);
 
-        const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-
-        if (existingSummoner.length) {
-            const lastUpdated = new Date(existingSummoner[0].updatedAt).getTime();
-
-            if (lastUpdated > twentyFourHoursAgo) {
-                return existingSummoner[0];
-            }
+        const summoner = result.rows[0];
+        if (!summoner) {
+            console.info(`Summoner ${accountName}#${tagLine} (${region}) not found.`);
+            return { msg: "No summoner found" };
         }
 
-        const account = await getAccountByAccountName(accountName, tagLine, region);
-        if (!account || !account.puuid) {
-            throw new Error('Failed to retrieve account details from Riot API');
-        }
-
-        const currentTime = new Date();
-        const { rows: updatedSummoner } = await db.query(
-            `INSERT INTO summoners (puuid, gameName, tagLine, region, updatedAt)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (puuid) DO UPDATE 
-             SET gameName = EXCLUDED.gameName, tagLine = EXCLUDED.tagLine, region = EXCLUDED.region, updatedAt = EXCLUDED.updatedAt
-             RETURNING *`,
-            [account.puuid, account.gameName, account.tagLine, region, currentTime]
-        );
-
-        return updatedSummoner[0];
+        return summoner;
     } catch (error) {
+        console.error('Error retrieving summoner details:', error);
         throw new Error('Failed to retrieve summoner details.');
     }
 };
 
-module.exports = { getSummoner };
+const getSummonerByPuuid = async (puuid) => {
+    try {
+        const query = `
+            SELECT * FROM summoners
+            WHERE puuid = $1
+        `;
+        const params = [puuid];
+        const result = await db.query(query, params);
+
+        const summoner = result.rows[0];
+        if (!summoner) {
+            console.info(`Summoner with PUUID ${puuid} not found.`);
+            return { msg: "No summoner found" };
+        }
+
+        return summoner;
+    } catch (error) {
+        console.error('Error retrieving summoner by PUUID:', error);
+        throw new Error('Failed to retrieve summoner details.');
+    }
+};
+
+const updateSummonerRank = async (summoner) => {
+    try {
+        const query = `
+            UPDATE summoners
+            SET 
+                tier = $1,
+                rank = $2,
+                lp = $3,
+                lastUpdated = NOW()
+            WHERE puuid = $4
+            RETURNING *;
+        `;
+        const params = [summoner.tier, summoner.rank, summoner.lp, summoner.puuid];
+        const result = await db.query(query, params);
+
+        const updatedSummoner = result.rows[0];
+        if (!updatedSummoner) {
+            console.info(`Summoner with PUUID ${summoner.puuid} not found.`);
+            return { msg: "No summoner found" };
+        }
+
+        return updatedSummoner;
+    } catch (error) {
+        console.error('Error updating summoner rank:', error);
+        throw new Error('Failed to update summoner rank.');
+    }
+};
+
+module.exports = { getSummonerByAccountName, getSummonerByPuuid, updateSummonerRank };
