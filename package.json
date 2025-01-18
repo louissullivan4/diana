@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "start-bot": "node src/discord/bot.js",
     "test": "jest",
     "lint": "eslint ."
   },

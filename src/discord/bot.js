@@ -1,11 +1,9 @@
 const express = require('express');
-// const summonerRoutes = require('./routes/summonerRoutes');
+require('./matchMonitoringService');
 
 const app = express();
 app.use(express.json());
-// app.use('/summoners', summonerRoutes);
-
-const PORT = 3000;
+const PORT = 3001;
 let server;
 try {
     server = app.listen(PORT, () => {
