@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start-bot"]
+CMD ["npm", "run", "start-bot"]
