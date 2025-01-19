@@ -8,13 +8,11 @@ const getSummonerByAccountName = async (accountName, tagLine, region) => {
         `;
         const params = [accountName, tagLine, region];
         const result = await db.query(query, params);
-
         const summoner = result.rows[0];
         if (!summoner) {
             console.info(`Summoner ${accountName}#${tagLine} (${region}) not found.`);
             return { msg: "No summoner found" };
         }
-
         return summoner;
     } catch (error) {
         console.error('Error retrieving summoner details:', error);
@@ -30,17 +28,39 @@ const getSummonerByPuuid = async (puuid) => {
         `;
         const params = [puuid];
         const result = await db.query(query, params);
-
         const summoner = result.rows[0];
         if (!summoner) {
             console.info(`Summoner with PUUID ${puuid} not found.`);
             return { msg: "No summoner found" };
         }
-
         return summoner;
     } catch (error) {
         console.error('Error retrieving summoner by PUUID:', error);
         throw new Error('Failed to retrieve summoner details.');
+    }
+};
+
+const createSummoner = async (summonerData) => {
+    try {
+        const query = `
+            INSERT INTO summoners (gameName, tagLine, region, puuid, tier, rank, lp, lastUpdated)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            RETURNING *;
+        `;
+        const params = [
+            summonerData.gameName,
+            summonerData.tagLine,
+            summonerData.region,
+            summonerData.puuid,
+            summonerData.tier,
+            summonerData.rank,
+            summonerData.lp
+        ];
+        const result = await db.query(query, params);
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error creating summoner:', error);
+        throw new Error('Failed to create summoner.');
     }
 };
 
@@ -58,13 +78,11 @@ const updateSummonerRank = async (summoner) => {
         `;
         const params = [summoner.tier, summoner.rank, summoner.lp, summoner.puuid];
         const result = await db.query(query, params);
-
         const updatedSummoner = result.rows[0];
         if (!updatedSummoner) {
             console.info(`Summoner with PUUID ${summoner.puuid} not found.`);
             return { msg: "No summoner found" };
         }
-
         return updatedSummoner;
     } catch (error) {
         console.error('Error updating summoner rank:', error);
@@ -72,4 +90,24 @@ const updateSummonerRank = async (summoner) => {
     }
 };
 
-module.exports = { getSummonerByAccountName, getSummonerByPuuid, updateSummonerRank };
+const deleteSummoner = async (puuid) => {
+    try {
+        const query = `
+            DELETE FROM summoners
+            WHERE puuid = $1
+            RETURNING *;
+        `;
+        const params = [puuid];
+        const result = await db.query(query, params);
+        const deletedSummoner = result.rows[0];
+        if (!deletedSummoner) {
+            return { msg: "No summoner found" };
+        }
+        return deletedSummoner;
+    } catch (error) {
+        console.error('Error deleting summoner:', error);
+        throw new Error('Failed to delete summoner.');
+    }
+};
+
+module.exports = { getSummonerByAccountName, getSummonerByPuuid, createSummoner, updateSummonerRank, deleteSummoner };

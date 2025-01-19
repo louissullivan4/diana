@@ -116,7 +116,7 @@ const handleMatchEnd = async (player) => {
       } else if (participant?.win) {
         result = 'Win';
       }
-
+      
       const kdaStr = `${participant?.kills ?? 0}/${participant?.deaths ?? 0}/${participant?.assists ?? 0}`;
       const champion = participant?.championName || 'Unknown';
       const role = participant?.individualPosition || participant?.teamPosition || 'N/A';
