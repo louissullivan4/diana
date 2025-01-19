@@ -1,9 +1,9 @@
 const express = require('express');
-// const summonerRoutes = require('./routes/summonerRoutes');
+const summonerRoutes = require('./routes/summonerRoutes');
 
 const app = express();
 app.use(express.json());
-// app.use('/summoners', summonerRoutes);
+app.use('/summoners', summonerRoutes);
 
 const PORT = 3000;
 let server;
