@@ -80,7 +80,7 @@ INSERT INTO summoners (
     'Unranked',
     'N/A',
     0,
-    '1330320105657208942',
+    '1235932324781359105',
     'EUROPE'
 ),
 (
@@ -93,7 +93,7 @@ INSERT INTO summoners (
     'Unranked',
     'N/A',
      0,
-    '1330320105657208942',
+    '1235932324781359105',
     'EUROPE'
 ),
 (
@@ -106,7 +106,7 @@ INSERT INTO summoners (
     'Unranked',
     'N/A',
      0,
-    '1330320105657208942',
+    '1235932324781359105',
     'EUROPE'
 )
 ON CONFLICT (puuid) DO NOTHING;

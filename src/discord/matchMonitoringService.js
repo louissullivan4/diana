@@ -103,9 +103,7 @@ const handleMatchEnd = async (player) => {
   const matchRegionPrefix = player.matchregionprefix;
   if (currentMatchId) {
     const fullMatchId = `${matchRegionPrefix}_${currentMatchId}`;
-    console.log(fullMatchId)
     const matchSummaryData = await getMatchSummary(fullMatchId);
-    console.log(matchSummaryData);
     if (matchSummaryData?.info) {
       const matchDetails = {
         matchId: fullMatchId,
