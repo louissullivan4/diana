@@ -140,8 +140,10 @@ CREATE TABLE IF NOT EXISTS match_timeline (
 CREATE INDEX IF NOT EXISTS idx_match_details_entryPlayerPuuid ON match_details (entryPlayerPuuid);
 CREATE INDEX IF NOT EXISTS idx_match_timeline_matchId ON match_timeline (matchId);
 CREATE INDEX IF NOT EXISTS idx_summoners_region_code ON summoners (region_code);
-CREATE INDEX IF NOT EXISTS idx_match_details_participants ON match_details USING GIN (participants);
-CREATE INDEX IF NOT EXISTS idx_match_timeline_events ON match_timeline USING GIN (events);
+CREATE INDEX IF NOT EXISTS idx_match_details_participants USING GIN (participants);
+CREATE INDEX IF NOT EXISTS idx_match_details_teams USING GIN (teams);
+CREATE INDEX IF NOT EXISTS idx_match_timeline_events USING GIN (events);
+CREATE INDEX IF NOT EXISTS idx_match_timeline_participantFrames USING GIN (participantFrames);
 
 -- ====================================
 -- 6. Create Roles and Assign Permissions

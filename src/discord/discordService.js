@@ -9,8 +9,13 @@ const client = new Client({
 let clientHasLoggedIn = false;
 const loginClient = async () => {
   if (!clientHasLoggedIn) {
-    await client.login(process.env.DISCORD_BOT_TOKEN);
-    clientHasLoggedIn = true;
+    try {
+      await client.login(process.env.DISCORD_BOT_TOKEN);
+      clientHasLoggedIn = true;
+    } catch (error) {
+      console.error('Could not login to Discord client:', error);
+      throw new Error('Could not login to Discord client.');
+    }
   }
 }
 
