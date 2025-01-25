@@ -1,10 +1,29 @@
 -- data.sql
 
 -- ====================================
+-- Drop existing objects
+-- ====================================
+
+DROP INDEX IF EXISTS idx_match_details_entryPlayerPuuid;
+DROP INDEX IF EXISTS idx_match_timeline_matchId;
+DROP INDEX IF EXISTS idx_summoners_region_code;
+DROP INDEX IF EXISTS idx_match_details_participants;
+DROP INDEX IF EXISTS idx_match_details_teams;
+DROP INDEX IF EXISTS idx_match_timeline_events;
+DROP INDEX IF EXISTS idx_match_timeline_participantFrames;
+
+DROP TABLE IF EXISTS match_timeline CASCADE;
+DROP TABLE IF EXISTS match_details CASCADE;
+DROP TABLE IF EXISTS summoners CASCADE;
+DROP TABLE IF EXISTS regions CASCADE;
+
+DROP ROLE IF EXISTS web_user;
+
+-- ====================================
 -- 1. Create Regions Table for Normalization
 -- ====================================
 
-CREATE TABLE IF NOT EXISTS regions (
+CREATE TABLE regions (
     region_code VARCHAR(20) PRIMARY KEY,
     region_name VARCHAR(50) NOT NULL
 );
@@ -20,7 +39,7 @@ ON CONFLICT (region_code) DO NOTHING;
 -- ====================================
 -- 2. Create Summoners Table
 -- ====================================
-CREATE TABLE IF NOT EXISTS summoners (
+CREATE TABLE summoners (
     puuid VARCHAR(200) PRIMARY KEY,
     gameName VARCHAR(100) NOT NULL UNIQUE,
     tagLine VARCHAR(10) NOT NULL,
@@ -96,7 +115,7 @@ ON CONFLICT (puuid) DO NOTHING;
 -- 3. Create Match_Details Table
 -- ====================================
 
-CREATE TABLE IF NOT EXISTS match_details (
+CREATE TABLE match_details (
     matchId VARCHAR(50) PRIMARY KEY,
     entryPlayerPuuid VARCHAR(200) NOT NULL,
     gameVersion VARCHAR(50),
@@ -119,7 +138,7 @@ CREATE TABLE IF NOT EXISTS match_details (
 -- 4. Create Match_Timeline Table
 -- ====================================
 
-CREATE TABLE IF NOT EXISTS match_timeline (
+CREATE TABLE match_timeline (
     matchId VARCHAR(50) NOT NULL,
     entryParticipantId VARCHAR(200) NOT NULL,
     frameIndex INT,
@@ -137,13 +156,14 @@ CREATE TABLE IF NOT EXISTS match_timeline (
 -- ====================================
 -- 75. Create Indexes
 -- ====================================
-CREATE INDEX IF NOT EXISTS idx_match_details_entryPlayerPuuid ON match_details (entryPlayerPuuid);
-CREATE INDEX IF NOT EXISTS idx_match_timeline_matchId ON match_timeline (matchId);
-CREATE INDEX IF NOT EXISTS idx_summoners_region_code ON summoners (region_code);
-CREATE INDEX IF NOT EXISTS idx_match_details_participants USING GIN (participants);
-CREATE INDEX IF NOT EXISTS idx_match_details_teams USING GIN (teams);
-CREATE INDEX IF NOT EXISTS idx_match_timeline_events USING GIN (events);
-CREATE INDEX IF NOT EXISTS idx_match_timeline_participantFrames USING GIN (participantFrames);
+CREATE INDEX idx_match_details_entryPlayerPuuid ON match_details (entryPlayerPuuid);
+CREATE INDEX idx_match_timeline_matchId ON match_timeline (matchId);
+CREATE INDEX idx_summoners_region_code ON summoners (region_code);
+CREATE INDEX idx_match_details_participants ON match_details USING GIN (participants);
+CREATE INDEX idx_match_details_teams ON match_details USING GIN (teams);
+CREATE INDEX idx_match_timeline_events ON match_timeline USING GIN (events);
+CREATE INDEX idx_match_timeline_participantFrames ON match_timeline USING GIN (participantFrames);
+
 
 -- ====================================
 -- 6. Create Roles and Assign Permissions
