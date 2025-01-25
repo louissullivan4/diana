@@ -5,7 +5,7 @@
 -- ====================================
 
 DROP INDEX IF EXISTS idx_match_details_entryPlayerPuuid;
-DROP INDEX IF EXISTS idx_match_timeline_matchId;
+DROP INDEX IF EXISTS idx_match_timeline_mid;
 DROP INDEX IF EXISTS idx_summoners_region_code;
 DROP INDEX IF EXISTS idx_match_details_participants;
 DROP INDEX IF EXISTS idx_match_details_teams;
@@ -116,7 +116,8 @@ ON CONFLICT (puuid) DO NOTHING;
 -- ====================================
 
 CREATE TABLE match_details (
-    matchId VARCHAR(50) PRIMARY KEY,
+    mid SERIAL PRIMARY KEY,
+    matchId VARCHAR(50) NOT NULL,
     entryPlayerPuuid VARCHAR(200) NOT NULL,
     gameVersion VARCHAR(50),
     gameCreation BIGINT,
@@ -139,7 +140,8 @@ CREATE TABLE match_details (
 -- ====================================
 
 CREATE TABLE match_timeline (
-    matchId VARCHAR(50) NOT NULL,
+    tid SERIAL PRIMARY KEY,
+    mid INT NOT NULL,
     entryParticipantId VARCHAR(200) NOT NULL,
     frameIndex INT,
     timestamp BIGINT,
@@ -147,9 +149,7 @@ CREATE TABLE match_timeline (
     events JSONB,
     lastUpdated TIMESTAMPTZ DEFAULT NOW(),
     
-    PRIMARY KEY (matchId, entryParticipantId),
-    
-    FOREIGN KEY (matchId) REFERENCES match_details (matchId) ON DELETE CASCADE,
+    FOREIGN KEY (mid) REFERENCES match_details (mid) ON DELETE CASCADE,
     FOREIGN KEY (entryParticipantId) REFERENCES summoners (puuid) ON DELETE CASCADE
 );
 
@@ -157,22 +157,21 @@ CREATE TABLE match_timeline (
 -- 75. Create Indexes
 -- ====================================
 CREATE INDEX idx_match_details_entryPlayerPuuid ON match_details (entryPlayerPuuid);
-CREATE INDEX idx_match_timeline_matchId ON match_timeline (matchId);
+CREATE INDEX idx_match_timeline_mid ON match_timeline (mid);
 CREATE INDEX idx_summoners_region_code ON summoners (region_code);
 CREATE INDEX idx_match_details_participants ON match_details USING GIN (participants);
 CREATE INDEX idx_match_details_teams ON match_details USING GIN (teams);
 CREATE INDEX idx_match_timeline_events ON match_timeline USING GIN (events);
 CREATE INDEX idx_match_timeline_participantFrames ON match_timeline USING GIN (participantFrames);
 
-
 -- ====================================
 -- 6. Create Roles and Assign Permissions
 -- ====================================
--- CREATE ROLE web_user WITH LOGIN PASSWORD '<PUT_PASSWORD_HERE>';
--- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO web_user;
--- REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
+CREATE ROLE web_user WITH LOGIN PASSWORD '<PUT_PASSWORD_HERE>';
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO web_user;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
 
 -- ====================================
 -- 7. Change Password for Admin User 'postgres'
 -- ====================================
--- ALTER USER postgres WITH PASSWORD '<PUT_ADMIN_PASSWORD_HERE>';
+ALTER USER postgres WITH PASSWORD '<PUT_ADMIN_PASSWORD_HERE>';
