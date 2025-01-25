@@ -48,7 +48,6 @@ const checkAndHandleSummoner = async (player) => {
     await loginClient();
     const activeGameData = await getActiveGameByPuuid(player.puuid);
     if (activeGameData) {
-      await setSummonerActiveMatchIdByPuuid(player.puuid, activeGameData.gameId)
       await handleMatchStart(player, activeGameData);
     } else {
       console.log(`[Info] Summoner [${player.gamename}] is not in an active game...`);
@@ -89,7 +88,10 @@ const handleMatchStart = async (player, activeGameData) => {
       discordChannelId: player.discordchannelid || '',
       deepLolLink: player.deeplollink || ''
     };
-    await notifyMatchStart(matchStartInfo);
+    const messageSent = await notifyMatchStart(matchStartInfo);
+    if (messageSent) {
+      await setSummonerActiveMatchIdByPuuid(puuid, activeGameData.gameId);
+    }
   }
 };
 
@@ -164,8 +166,10 @@ const handleMatchEnd = async (player) => {
         discordChannelId: player.discordchannelid || '',
         deepLolLink: player.deeplollink || ''
       };
-      await notifyMatchEnd(matchSummary);
-      await setSummonerActiveMatchIdByPuuid(puuid, "");
+      const messageSent = await notifyMatchEnd(matchSummary);
+      if (messageSent) {
+        await setSummonerActiveMatchIdByPuuid(puuid, "");
+      }
       if (checkForRankUp !== 'no_change') {
         const rankChangeInfo = {
           summonerName,

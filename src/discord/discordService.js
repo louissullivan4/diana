@@ -42,13 +42,12 @@ const sendDiscordMessage = async (channelId, message) => {
   return channel.send(message);
 };
 
-const createMatchStartEmbed = async (summonerName, queueName, championDisplay, rankString, deepLolLink) => {
+const createMatchStartEmbed = (summonerName, queueName, championDisplay, rankString, deepLolLink) => {
   const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
   const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
     championDisplay.replace(/\s+/g, '')
   )}.png`;
-
   return new EmbedBuilder()
     .setTitle('🎮 **Match Started!**')
     .setDescription(`${summonerName} has started a match!`)
@@ -77,8 +76,8 @@ const createMatchEndEmbed = (
 ) => {
   const resultColors = { win: 0x28a745, lose: 0xe74c3c, remake: 0xe67e22 };
   const embedColor = resultColors[result.toLowerCase()] || 0x95a5a6;
-  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/13.6.1/img/champion/${encodeURIComponent(
-    champion
+  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
+    championDisplay.replace(/\s+/g, '')
   )}.png`;
 
   return new EmbedBuilder()
@@ -148,8 +147,10 @@ const notifyMatchStart = async ({
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match start message for ${summonerName}.`);
+    return true
   } catch (error) {
-    console.error(`[Notification Error] Could not send message for ${summonerName}:`, error);
+    console.error(`[Notification Error] Could not send message for ${summonerName}:`, JSON.stringify(error, null, 2));
+    return false
   }
 };
 
@@ -179,8 +180,10 @@ const notifyMatchEnd = async ({
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match end message for ${summonerName}.`);
+    return true
   } catch (error) {
     console.error(`[Notification Error] Could not send message for ${summonerName}:`, error);
+    return false
   }
 };
 
