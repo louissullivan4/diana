@@ -21,16 +21,6 @@ const divisionOrder = {
   I: 4
 };
 
-const setPreviousRank = (puuid, rankInfo) => {
-  previousRankState.set(puuid, rankInfo);
-};
-
-const getPreviousRank = (puuid) => previousRankState.get(puuid) || null;
-
-const clearPreviousRank = (puuid) => {
-  previousRankState.delete(puuid);
-};
-
 const getTierValue = (tier) => {
   const index = tierOrder.indexOf(tier.toUpperCase());
   return index !== -1 ? index : -1;
@@ -78,9 +68,6 @@ const determineRankMovement = (previousRank, currentRank) => {
 };
 
 module.exports = {
-  setPreviousRank,
-  getPreviousRank,
-  clearPreviousRank,
   calculateRankChange,
   determineRankMovement
 };

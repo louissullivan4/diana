@@ -1,6 +1,7 @@
 const {
     createMatchDetail,
     getMatchDetailsByPuuid,
+    getMatchDetailsByMatchId,
     updateMatchDetail,
     deleteMatchDetail,
 } = require('../services/matchService');
@@ -15,7 +16,7 @@ const createMatchDetailHandler = async (req, res) => {
     }
 };
 
-const fetchMatchDetailsHandler = async (req, res) => {
+const getMatchDetailsHandler = async (req, res) => {
     try {
         const { puuid } = req.params;
         const numberOfMatches = req.query.numberOfMatches || 20;
@@ -32,6 +33,30 @@ const fetchMatchDetailsHandler = async (req, res) => {
 
         res.status(200).json(matchDetails);
     } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to fetch match details.`);
+        res.status(500).json({ error: 'Failed to fetch match details.' });
+    }
+};
+
+const getMatchDetailsByMatchIdHandler = async (req, res) => {
+    try {
+        const { matchId } = req.params;
+
+        if (!matchId) {
+            console.log(`[WARN] Error Code 400 - Missing required parameter: matchId.`);
+            return res.status(400).json({ error: 'Missing required parameter: matchId.' });
+        }
+
+        const matchDetails = await getMatchDetailsByMatchId(puuid);
+
+        if (!matchDetails || matchDetails.length === 0) {
+            console.log(`[WARN] Error Code 404 - No match details found.`);
+            return res.status(404).json({ error: 'No match details found.' });
+        }
+
+        res.status(200).json(matchDetails);
+    } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to fetch match details.`);
         res.status(500).json({ error: 'Failed to fetch match details.' });
     }
 };
@@ -44,11 +69,13 @@ const updateMatchDetailHandler = async (req, res) => {
         const updatedMatch = await updateMatchDetail(matchId, updatedDetails);
 
         if (!updatedMatch) {
+            console.log(`[WARN] Error Code 404 - Match Details not found.`);
             return res.status(404).json({ error: 'Match detail not found.' });
         }
 
         res.status(200).json(updatedMatch);
     } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to update match details.`);
         res.status(500).json({ error: 'Failed to update match detail.' });
     }
 };
@@ -60,18 +87,82 @@ const deleteMatchDetailHandler = async (req, res) => {
         const deletedMatch = await deleteMatchDetail(matchId);
 
         if (!deletedMatch) {
+            console.log(`[WARN] Error Code 404 - Match Details not found.`);
             return res.status(404).json({ error: 'Match detail not found.' });
         }
 
         res.status(200).json({ message: 'Match detail deleted successfully.' });
     } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to delete match detail.`);
         res.status(500).json({ error: 'Failed to delete match detail.' });
     }
 };
 
+const createMatchTimelineHandler = async (req, res) => {
+    try {
+        const data = req.body
+        const created = await createMatchTimeline(data)
+        res.status(201).json(created)
+    } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to delete match detail.`);
+        res.status(500).json({ error: 'Failed to create match timeline.' })
+    }
+}
+
+const fetchMatchTimelineHandler = async (req, res) => {
+    try {
+        const { matchId } = req.params
+        const timeline = await getMatchTimeline(matchId)
+        if (!timeline.length) {
+            console.log(`[WARN] Error Code 404 - No timeline found.`);
+            return res.status(404).json({ error: 'No timeline found.' })
+        }
+        res.status(200).json(timeline)
+    } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to fetch match timeline.`);
+        res.status(500).json({ error: 'Failed to fetch match timeline.' })
+    }
+}
+
+const updateMatchTimelineHandler = async (req, res) => {
+    try {
+        const { timelineId } = req.params
+        const data = req.body
+        const updated = await updateMatchTimeline(timelineId, data)
+        if (!updated) {
+            console.log(`[WARN] Error Code 404 - Timeline not found.`);
+            return res.status(404).json({ error: 'Timeline not found.' })
+        }
+        res.status(200).json(updated)
+    } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to update match timeline.`);
+        res.status(500).json({ error: 'Failed to update match timeline.' })
+    }
+}
+
+const deleteMatchTimelineHandler = async (req, res) => {
+    try {
+        const { timelineId } = req.params
+        const deleted = await deleteMatchTimeline(timelineId)
+        if (!deleted) {
+            console.log(`[WARN] Error Code 404 - Timeline not found.`);
+            return res.status(404).json({ error: 'Timeline not found.' })
+        }
+        res.status(200).json({ message: 'Match timeline deleted successfully.' })
+    } catch (error) {
+        console.log(`[ERROR] Error Code 500 - Failed to delete match timeline.`);
+        res.status(500).json({ error: 'Failed to delete match timeline.' })
+    }
+}
+
 module.exports = {
     createMatchDetailHandler,
-    fetchMatchDetailsHandler,
+    getMatchDetailsHandler,
+    getMatchDetailsByMatchIdHandler,
     updateMatchDetailHandler,
     deleteMatchDetailHandler,
+    createMatchTimelineHandler,
+    fetchMatchTimelineHandler,
+    updateMatchTimelineHandler,
+    deleteMatchTimelineHandler
 };

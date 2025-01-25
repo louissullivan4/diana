@@ -53,7 +53,9 @@ const getQueueNameById = (queueId) => {
     430: 'Normal Blind',
     440: 'Ranked Flex',
     450: 'ARAM',
+    480: 'Swiftplay',
     700: 'Clash',
+    900: 'ARURF',
   };
   return queueMap[queueId] || `Unknown Queue (ID: ${queueId})`;
 };

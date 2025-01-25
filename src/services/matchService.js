@@ -53,6 +53,23 @@ const getMatchDetailsByPuuid = async (puuid, numberOfMatches = 20) => {
     }
 };
 
+const getMatchDetailsByMatchId = async (matchId) => {
+    try {
+        const query = `
+            SELECT * 
+            FROM match_details
+            WHERE matchId = $1
+        `;
+        const params = [matchId];
+        const result = await db.query(query, params);
+        return result.rows;
+    } catch (error) {
+        console.error('Error retrieving match details by matchID:', error);
+        throw new Error('Failed to retrieve match details.');
+    }
+};
+
+
 const updateMatchDetail = async (matchId, updatedDetails) => {
     try {
         const query = `
@@ -111,9 +128,69 @@ const deleteMatchDetail = async (matchId) => {
     }
 };
 
+const createMatchTimeline = async (data) => {
+    const query = `
+        INSERT INTO match_timeline (
+            matchId, timelineData, createdAt
+        ) VALUES ($1, $2, NOW())
+        RETURNING *
+    `
+    const params = [
+        data.matchId,
+        data.timelineData
+    ]
+    const result = await db.query(query, params)
+    return result.rows[0]
+}
+
+const getMatchTimeline = async (matchId) => {
+    const query = `
+        SELECT *
+        FROM match_timeline
+        WHERE matchId = $1
+    `
+    const params = [matchId]
+    const result = await db.query(query, params)
+    return result.rows
+}
+
+const updateMatchTimeline = async (timelineId, data) => {
+    const query = `
+        UPDATE match_timeline
+        SET matchId = $1,
+            timelineData = $2,
+            updatedAt = NOW()
+        WHERE id = $3
+        RETURNING *
+    `
+    const params = [
+        data.matchId,
+        data.timelineData,
+        timelineId
+    ]
+    const result = await db.query(query, params)
+    return result.rows[0]
+}
+
+const deleteMatchTimeline = async (timelineId) => {
+    const query = `
+        DELETE FROM match_timeline
+        WHERE id = $1
+        RETURNING *
+    `
+    const params = [timelineId]
+    const result = await db.query(query, params)
+    return result.rows[0]
+}
+
 module.exports = {
     createMatchDetail,
     getMatchDetailsByPuuid,
+    getMatchDetailsByMatchId,
     updateMatchDetail,
     deleteMatchDetail,
+    createMatchTimeline,
+    getMatchTimeline,
+    updateMatchTimeline,
+    deleteMatchTimeline
 };
