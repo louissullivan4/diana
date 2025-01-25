@@ -63,4 +63,5 @@ const getQueueNameById = (queueId) => {
 module.exports = {
   getChampionInfoById,
   getQueueNameById,
+  fetchLatestVersion
 };

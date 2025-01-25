@@ -1,6 +1,9 @@
 // services/discordService.js
 require('dotenv').config();
 const { Client, IntentsBitField, EmbedBuilder } = require('discord.js');
+const {
+  fetchLatestVersion
+} = require('../services/dataDragonService');
 
 const client = new Client({
   intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages],
@@ -42,10 +45,11 @@ const sendDiscordMessage = async (channelId, message) => {
   return channel.send(message);
 };
 
-const createMatchStartEmbed = (summonerName, queueName, championDisplay, rankString, deepLolLink) => {
+const createMatchStartEmbed = async (summonerName, queueName, championDisplay, rankString, deepLolLink) => {
   const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
-  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/13.6.1/img/champion/${encodeURIComponent(
+  const version = await fetchLatestVersion();
+  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${encodeURIComponent(
     championDisplay.replace(/\s+/g, '')
   )}.png`;
 
