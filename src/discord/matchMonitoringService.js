@@ -7,108 +7,123 @@ const {
   getActiveGameByPuuid
 } = require('../services/riotService');
 const {
-  setSummonerCurrentGame,
+  createMatchDetail,
+  getMatchDetailsByPuuid,
+  getMatchDetailsByMatchId,
+  updateMatchDetail,
+  deleteMatchDetail,
+  createMatchTimeline,
+  getMatchTimeline,
+  updateMatchTimeline,
+  deleteMatchTimeline
+} = require('../services/matchService');
+const {
   getSummonerCurrentGame,
-  clearSummonerCurrentGame
-} = require('./gameTracker');
+  getSummonerByAccountName,
+  getSummonerByPuuid,
+  createSummoner,
+  updateSummonerRank,
+  setSummonerActiveMatchIdByPuuid
+} = require('../services/summonerService');
 const {
   setPreviousRank,
   getPreviousRank,
   calculateRankChange,
   determineRankMovement
 } = require('../services/rankService');
-const { notifyMatchEnd, notifyMatchStart, notifyRankChange } = require('./discordService');
-const { getChampionInfoById, getQueueNameById } = require('../services/dataDragonService');
+const {
+  loginClient,
+  notifyMatchEnd,
+  notifyMatchStart,
+  notifyRankChange
+} = require('./discordService');
+const {
+  getChampionInfoById,
+  getQueueNameById
+} = require('../services/dataDragonService');
 const trackedSummoners = require('../config/trackedSummoners');
 
 const checkAndHandleSummoner = async (player) => {
-  const {
-    puuid,
-    summonerName,
-    discordChannelId,
-    matchRegionPrefix,
-    deepLolLink
-  } = player;
-
   try {
-    const activeGameData = await getActiveGameByPuuid(puuid);
+    await loginClient();
+    const activeGameData = await getActiveGameByPuuid(player.puuid);
     if (activeGameData) {
+      await setSummonerActiveMatchIdByPuuid(player.puuid, activeGameData.gameId)
       await handleMatchStart(player, activeGameData);
     } else {
+      console.log(`[Info] Summoner [${player.gamename}] is not in an active game...`);
       await handleMatchEnd(player);
     }
   } catch (error) {
-    console.error(error);
-    console.error(`[Error] [${summonerName}] (PUUID=${puuid}): ${error?.message || error}`);
+    console.error(`[Error] [${player.gamename}] (PUUID=${player.puuid})`);
   }
 };
 
 const handleMatchStart = async (player, activeGameData) => {
-  const { puuid, summonerName, discordChannelId, deepLolLink } = player;
-  const storedGameId = getSummonerCurrentGame(puuid);
-  console.log(`[Info] [${summonerName}] Active game ID from DB:`, storedGameId);
-
-  if (!storedGameId) {
-    const newGameId = activeGameData.gameId;
-    setSummonerCurrentGame(puuid, newGameId);
-    console.log(`[Info] [${summonerName}] Starting new match (gameId=${newGameId}). Fetching rank info...`);
-
+  const puuid = player.puuid;
+  const summonerName = player.gamename
+  const currentMatchId = player.currentmatchid
+  if (!currentMatchId) {
     const rankEntries = await getRankEntriesByPUUID(puuid);
     const soloRank = rankEntries.find(e => e.queueType === 'RANKED_SOLO_5x5');
-
-    let rankString = 'Unranked';
-    if (soloRank) {
-      const currentRankInfo = {
-        tier: soloRank.tier,
-        rank: soloRank.rank,
-        lp: soloRank.leaguePoints,
-        divisionString: `${soloRank.tier} ${soloRank.rank}`
-      };
-      setPreviousRank(puuid, currentRankInfo);
-      rankString = `${soloRank.tier} ${soloRank.rank} (${soloRank.leaguePoints} LP)`;
-      console.log(`[Info] [${summonerName}] Found existing rank: ${currentRankInfo.divisionString} ${currentRankInfo.lp} LP`);
-    } else {
-      setPreviousRank(puuid, null);
-      console.log(`[Info] [${summonerName}] User is unranked or has no RANKED_SOLO_5x5 data.`);
-    }
-
+    const summonerCurrentRankInfo = {
+      tier: soloRank ? soloRank.tier : 'Unranked',
+      rank: soloRank ? soloRank.rank : 'N/A',
+      lp: soloRank ? soloRank.leaguePoints : 0,
+      puuid
+    };
+    await updateSummonerRank(summonerCurrentRankInfo);
     const participant = activeGameData.participants.find(p => p.puuid === puuid);
     let championDisplay = 'Unknown Champion';
-
     if (participant) {
       const champInfo = await getChampionInfoById(participant.championId);
-      championDisplay = champInfo.name;
+      championDisplay = champInfo?.name || championDisplay;
     }
-
     const queueId = activeGameData.gameQueueConfigId;
     const queueName = getQueueNameById(queueId);
-
     const matchStartInfo = {
       summonerName,
       queueName,
       championDisplay,
-      rankString,
-      discordChannelId,
-      deepLolLink
+      rankString: `${summonerCurrentRankInfo.tier} ${summonerCurrentRankInfo.rank} (${summonerCurrentRankInfo.lp} LP)`,
+      discordChannelId: player.discordchannelid || '',
+      deepLolLink: player.deeplollink || ''
     };
-
-    console.log(`[Info] Sending start-of-match message for ${summonerName}:`, matchStartInfo);
     await notifyMatchStart(matchStartInfo);
   }
 };
 
 const handleMatchEnd = async (player) => {
-  const { puuid, summonerName, discordChannelId, matchRegionPrefix, deepLolLink } = player;
-  const storedGameId = getSummonerCurrentGame(puuid);
-
-  if (storedGameId) {
-    console.log(`[Info] [${summonerName}] Match ended (gameId=${storedGameId}). Fetching final match data...`);
-    const fullMatchId = `${matchRegionPrefix}_${storedGameId}`;
+  const puuid = player.puuid;
+  const summonerName = player.gamename;
+  const tier = player.tier;
+  const rank = player.rank;
+  const lp = player.lp;
+  const currentMatchId = player.currentmatchid;
+  const matchRegionPrefix = player.matchregionprefix;
+  if (currentMatchId) {
+    const fullMatchId = `${matchRegionPrefix}_${currentMatchId}`;
+    console.log(fullMatchId)
     const matchSummaryData = await getMatchSummary(fullMatchId);
-
-    if (!matchSummaryData?.info) {
-      console.log(`[Warning] No final match data for matchId=${fullMatchId}`);
-    } else {
+    console.log(matchSummaryData);
+    if (matchSummaryData?.info) {
+      const matchDetails = {
+        matchId: fullMatchId,
+        entryPlayerPuuid: puuid,
+        gameVersion: matchSummaryData.info.gameVersion,
+        gameCreation: matchSummaryData.info.gameCreation,
+        gameStartTime: matchSummaryData.info.gameStartTimestamp,
+        gameEndTime: matchSummaryData.info.gameEndTimestamp,
+        gameVersion: matchSummaryData.info.gameVersion,
+        gameDuration: matchSummaryData.info.gameDuration,
+        gameMode: matchSummaryData.info.gameMode,
+        gameType: matchSummaryData.info.gameType,
+        queueId: matchSummaryData.info.queueId,
+        mapName: matchSummaryData.info.mapName,
+        participants: matchSummaryData.participants,
+        teams: matchSummaryData.info.team,
+      }
+      await createMatchDetail(matchDetails);
       const participant = matchSummaryData.info.participants.find(p => p.puuid === puuid);
       let result = 'Lose';
       if (matchSummaryData.info.gameDuration < 300) {
@@ -116,34 +131,29 @@ const handleMatchEnd = async (player) => {
       } else if (participant?.win) {
         result = 'Win';
       }
-      
       const kdaStr = `${participant?.kills ?? 0}/${participant?.deaths ?? 0}/${participant?.assists ?? 0}`;
       const champion = participant?.championName || 'Unknown';
       const role = participant?.individualPosition || participant?.teamPosition || 'N/A';
       const damage = participant?.totalDamageDealtToChampions || 0;
-
+      const oldRankInfo = { tier, rank, lp };
       const rankEntriesPost = await getRankEntriesByPUUID(puuid);
       const soloRankPost = rankEntriesPost.find(e => e.queueType === 'RANKED_SOLO_5x5');
-      const oldRankInfo = getPreviousRank(puuid);
-
-      let lpChangeMsg = 'N/A';
-      let newRankMsg = 'Unranked';
+      let newRankMsg = 'Unranked N/A (0 LP)';
+      let lpChangeMsg = 0;
       let checkForRankUp = 'no_change';
-
       if (soloRankPost) {
-        const newRankInfo = {
+        const summonerNewRankInfo = {
           tier: soloRankPost.tier,
           rank: soloRankPost.rank,
           lp: soloRankPost.leaguePoints,
-          divisionString: `${soloRankPost.tier} ${soloRankPost.rank}`
+          puuid
         };
-        const rankChange = calculateRankChange(oldRankInfo, newRankInfo);
-        setPreviousRank(puuid, newRankInfo);
-        newRankMsg =`${soloRankPost.tier} ${soloRankPost.rank} (${soloRankPost.leaguePoints} LP)`
+        const rankChange = calculateRankChange(oldRankInfo, summonerNewRankInfo);
+        checkForRankUp = await determineRankMovement(oldRankInfo, summonerNewRankInfo);
+        await updateSummonerRank(summonerNewRankInfo);
+        newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
         lpChangeMsg = rankChange.lpChange.toString();
-        checkForRankUp = await determineRankMovement(oldRankInfo, newRankInfo);
       }
-
       const matchSummary = {
         summonerName,
         result,
@@ -153,42 +163,45 @@ const handleMatchEnd = async (player) => {
         role,
         kdaStr,
         damage,
-        discordChannelId,
-        deepLolLink
+        discordChannelId: player.discordchannelid || '',
+        deepLolLink: player.deeplollink || ''
       };
-
-      console.log(`[Info] Sending end-of-match message for ${summonerName}:`, matchSummary);
       await notifyMatchEnd(matchSummary);
-
+      await setSummonerActiveMatchIdByPuuid(puuid, "");
       if (checkForRankUp !== 'no_change') {
         const rankChangeInfo = {
           summonerName,
           direction: checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
           newRankMsg,
           lpChangeMsg,
-          discordChannelId,
-          deepLolLink
+          discordChannelId: player.discordchannelid || '',
+          deepLolLink: player.deeplollink || ''
         };
         await notifyRankChange(rankChangeInfo);
       }
     }
-    clearSummonerCurrentGame(puuid);
-  } else {
-    console.log(`[Info] ${summonerName} is not in game.`);
   }
 };
 
-cron.schedule('*/5 * * * * *', async () => {
+cron.schedule('*/10 * * * * *', async () => {
   if (process.env.STOP_BOT) {
     console.log(`[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`);
     return;
   }
-
   console.log(`[Info] [${new Date().toISOString()}] Starting cron check for active matches...`);
-
   for (const player of trackedSummoners) {
-    await checkAndHandleSummoner(player);
+    const summoner = await getSummonerByPuuid(player.puuid);
+    if (summoner) {
+      await checkAndHandleSummoner(summoner);
+    } else {
+      console.log(`[Info] Player PUUID[${player.puuid}] was not found in database.`);
+    }
   }
-
   console.log(`[Info] [${new Date().toISOString()}] Finished cron check.\n`);
 });
+
+module.exports = {
+  checkAndHandleSummoner,
+  handleMatchStart,
+  handleMatchEnd
+};

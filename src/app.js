@@ -1,9 +1,11 @@
 const express = require('express');
-const summonerRoutes = require('./routes/summonerRoutes');
+const summonerRouter = require('./routes/summonerRoutes');
+const matchRouter = require('./routes/matchRoutes');
 
 const app = express();
 app.use(express.json());
-app.use('/summoners', summonerRoutes);
+app.use('/summoners', summonerRouter);
+app.use('/match', matchRouter);
 
 const PORT = 3000;
 let server;

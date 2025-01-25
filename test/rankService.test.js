@@ -1,15 +1,10 @@
 // tests/rankService.test.js
 const {
-    setPreviousRank,
-    getPreviousRank,
-    clearPreviousRank,
     calculateRankChange
   } = require('../src/services/rankService');
   
   describe('Rank Service Tests', () => {
     beforeEach(() => {
-      // Clear any existing data before each test
-      clearPreviousRank('test-puuid');
     });
   
     test('New Rank: No previous rank', () => {
