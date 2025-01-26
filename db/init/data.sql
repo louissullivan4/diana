@@ -157,7 +157,6 @@ CREATE TABLE match_timeline (
 -- 75. Create Indexes
 -- ====================================
 CREATE INDEX idx_match_details_entryPlayerPuuid ON match_details (entryPlayerPuuid);
-CREATE INDEX idx_match_timeline_mid ON match_timeline (mid);
 CREATE INDEX idx_summoners_region_code ON summoners (region_code);
 CREATE INDEX idx_match_details_participants ON match_details USING GIN (participants);
 CREATE INDEX idx_match_details_teams ON match_details USING GIN (teams);
