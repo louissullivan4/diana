@@ -72,7 +72,7 @@ function createMatchStartEmbed(
     { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
     { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
   ];
-  if (!queueName.toLowerCase().includes('ranked')) {
+  if (queueName.toLowerCase().includes('ranked')) {
     fields.push({
       name: '🏆 **Current Rank**',
       value: `**${rankString}**`,
@@ -143,7 +143,8 @@ function createRankChangeEmbed(
 ) {
   const isPromotion = direction === 'promoted';
   const isDemotion = direction === 'demoted';
-  const embedColor = isPromotion ? 0x28a745 : isDemotion ? 0xe74c3c : null;
+  const tier = newRankMsg.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
+  const embedColor = rankColors[tier] || 0x3498db;
   const title = isPromotion
     ? '📈 **Rank Promotion!**'
     : isDemotion

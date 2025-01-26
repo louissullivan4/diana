@@ -54,15 +54,36 @@ const determineRankMovement = (previousRank, currentRank) => {
   const previousTierValue = getTierValue(previousRank.tier);
   const currentTierValue = getTierValue(currentRank.tier);
 
-  if (previousTierValue === -1 || currentTierValue === -1) {
+  const previousDivisionValue = getDivisionValue(previousRank.rank);
+  const currentDivisionValue = getDivisionValue(currentRank.rank);
+
+  if (
+    previousTierValue === -1 ||
+    currentTierValue === -1 ||
+    previousDivisionValue === -1 ||
+    currentDivisionValue === -1
+  ) {
     return 'no_change';
-  } else if (currentTierValue > previousTierValue) {
+  }
+
+  if (currentTierValue > previousTierValue) {
     return 'promoted';
   } else if (currentTierValue < previousTierValue) {
     return 'demoted';
-  } else {
-    return 'no_change';
   }
+
+  if (currentDivisionValue > previousDivisionValue) {
+    return 'promoted';
+  } else if (currentDivisionValue < previousDivisionValue) {
+    return 'demoted';
+  }
+
+  if (currentRank.lp > previousRank.lp) {
+    return 'up';
+  } else if (currentRank.lp < previousRank.lp) {
+    return 'down';
+  }
+  return 'no_change';
 };
 
 module.exports = {
