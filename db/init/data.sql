@@ -108,6 +108,19 @@ INSERT INTO summoners (
      0,
     '1235932324781359105',
     'EUROPE'
+),
+(
+    'wsedDXW_ao6vCxfpdxBXohBYLZghQMtg7YxWtnVo9p_H3iv-M7ibWM2fU7MkK6Vn8LgXTOCLveex7w',
+    'LouLou',
+    'ATTIC',
+    'EUW',
+    'EUW1',
+    'https://www.deeplol.gg/summoner/euw/LouLou-ATTIC',
+    'GOLD',
+    'III',
+    47,
+    '1235932324781359105',
+    'EUROPE'
 )
 ON CONFLICT (puuid) DO NOTHING;
 

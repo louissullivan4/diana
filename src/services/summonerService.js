@@ -94,7 +94,7 @@ const updateSummonerRank = async (summoner) => {
             WHERE puuid = $4
             RETURNING *;
         `;
-        const params = [summoner.tier, summoner.rank, summoner.leaguePoints, summoner.puuid];
+        const params = [summoner.tier, summoner.rank, summoner.lp, summoner.puuid];
         const result = await db.query(query, params);
         const updatedSummoner = result.rows[0];
         if (!updatedSummoner) {
