@@ -9,7 +9,6 @@ let hasClientLoggedIn = false;
 
 const loginClient = async () => {
   if (hasClientLoggedIn) return;
-
   try {
     await client.login(process.env.DISCORD_BOT_TOKEN);
     hasClientLoggedIn = true;
@@ -37,6 +36,14 @@ const resultColors = {
   remake: 0xe67e22,
 };
 
+const roleQueues = [
+  'Ranked Solo',
+  'Normal Blind',
+  'Ranked Flex',
+  'Swiftplay',
+  'Clash',
+];
+
 function getChampionThumbnail(championName) {
   const sanitized = championName.replace(/\s+/g, '');
   return `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
@@ -47,34 +54,45 @@ function getChampionThumbnail(championName) {
 const sendDiscordMessage = async (channelId, message) => {
   if (!channelId) throw new Error('Channel ID not provided.');
   if (!message) throw new Error('Message content not provided.');
-
   const channel = await client.channels.fetch(channelId);
   if (!channel) throw new Error(`Channel with ID ${channelId} not found.`);
-
   return channel.send(message);
 };
 
-function createMatchStartEmbed(summonerName, queueName, championDisplay, rankString, deepLolLink) {
+function createMatchStartEmbed(
+  summonerName,
+  queueName,
+  championDisplay,
+  rankString,
+  deepLolLink
+) {
   const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
-
+  const fields = [
+    { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
+    { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
+  ];
+  if (!queueName.toLowerCase().includes('ranked')) {
+    fields.push({
+      name: '🏆 **Current Rank**',
+      value: `**${rankString}**`,
+      inline: true,
+    });
+  }
   return new EmbedBuilder()
     .setTitle('🎮 **Match Started!**')
     .setDescription(`${summonerName} has started a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
     .setThumbnail(getChampionThumbnail(championDisplay))
-    .addFields(
-      { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
-      { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
-      { name: '🏆 **Current Rank**', value: `**${rankString}**`, inline: true }
-    )
+    .addFields(fields)
     .setTimestamp()
     .setFooter({ text: 'Match Started' });
 }
 
 function createMatchEndEmbed(
   summonerName,
+  queueName,
   result,
   newRankMsg,
   lpChangeMsg,
@@ -84,32 +102,34 @@ function createMatchEndEmbed(
   damage,
   deepLolLink
 ) {
-  console.log(summonerName,
-    result,
-    newRankMsg,
-    lpChangeMsg,
-    championDisplay,
-    role,
-    kdaStr,
-    damage,
-    deepLolLink)
   const embedColor = resultColors[result.toLowerCase()] || 0x95a5a6;
-
+  const fields = [
+    { name: '🏁 **Result**', value: `**${result}**`, inline: true },
+    { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
+    { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
+  ];
+  if (roleQueues.map(q => q.toLowerCase()).includes(queueName.toLowerCase())) {
+    fields.push({ name: '🎯 **Role**', value: `**${role}**`, inline: true });
+  }
+  fields.push(
+    { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
+    { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
+  );
+  if (queueName.toLowerCase().includes('ranked')) {
+    fields.splice(
+      1,
+      0,
+      { name: '📈 **Rank Update**', value: `**${newRankMsg}**`, inline: true },
+      { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true }
+    );
+  }
   return new EmbedBuilder()
     .setTitle('🎮 **Match Summary**')
     .setDescription(`${summonerName} has completed a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
     .setThumbnail(getChampionThumbnail(championDisplay))
-    .addFields(
-      { name: '🏁 **Result**', value: `**${result}**`, inline: true },
-      { name: '📈 **Rank Update**', value: `**${newRankMsg}**`, inline: true },
-      { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true },
-      { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
-      { name: '🎯 **Role**', value: `**${role}**`, inline: true },
-      { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
-      { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
-    )
+    .addFields(fields)
     .setTimestamp()
     .setFooter({ text: 'Match Summary' });
 }
@@ -123,16 +143,13 @@ function createRankChangeEmbed(
 ) {
   const isPromotion = direction === 'promoted';
   const isDemotion = direction === 'demoted';
-
   const embedColor = isPromotion ? 0x28a745 : isDemotion ? 0xe74c3c : null;
   const title = isPromotion
     ? '📈 **Rank Promotion!**'
     : isDemotion
     ? '📉 **Rank Demotion...**'
     : null;
-
   if (!embedColor || !title) return null;
-
   return new EmbedBuilder()
     .setTitle(title)
     .setDescription(
@@ -147,7 +164,6 @@ function createRankChangeEmbed(
     .setTimestamp()
     .setFooter({ text: 'Rank Change Notification' });
 }
-
 
 async function notifyMatchStart({
   summonerName,
@@ -164,7 +180,6 @@ async function notifyMatchStart({
     rankString,
     deepLolLink
   );
-
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match start message for ${summonerName}.`);
@@ -180,6 +195,7 @@ async function notifyMatchStart({
 
 async function notifyMatchEnd({
   summonerName,
+  queueName,
   result,
   newRankMsg,
   lpChangeMsg,
@@ -192,6 +208,7 @@ async function notifyMatchEnd({
 }) {
   const embed = createMatchEndEmbed(
     summonerName,
+    queueName,
     result,
     newRankMsg,
     lpChangeMsg,
@@ -201,7 +218,6 @@ async function notifyMatchEnd({
     damage,
     deepLolLink
   );
-
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match end message for ${summonerName}.`);
@@ -230,14 +246,10 @@ async function notifyRankChange({
     lpChangeMsg,
     deepLolLink
   );
-
   if (!embed) return;
-
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
-    console.log(
-      `[Notification] Sent rank change message for ${summonerName}.`
-    );
+    console.log(`[Notification] Sent rank change message for ${summonerName}.`);
   } catch (error) {
     console.error(
       `[Notification Error] Could not send rank change message for ${summonerName}:`,

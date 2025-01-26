@@ -2,7 +2,6 @@
 const previousRankState = new Map();
 
 const tierOrder = [
-  'UNRANKED',
   'IRON',
   'BRONZE',
   'SILVER',
@@ -16,7 +15,6 @@ const tierOrder = [
 ];
 
 const divisionOrder = {
-  'N/A': 0,
   IV: 1,
   III: 2,
   II: 3,
@@ -38,7 +36,7 @@ const getTotalPoints = (tier, division, lp) => {
 };
 
 const calculateRankChange = (previousRank, currentRank) => {
-  if (!previousRank) return { direction: 'new', lpChange: currentRank.lp };
+  if (!previousRank || previousRank.tier === 'Unranked' || previousRank.division === 'N/A') return { direction: 'up', lpChange: currentRank.lp };
   const previousTotalPoints = getTotalPoints(previousRank.tier, previousRank.rank, previousRank.lp);
   const currentTotalPoints = getTotalPoints(currentRank.tier, currentRank.rank, currentRank.lp);
   const lpChange = currentTotalPoints - previousTotalPoints;
@@ -58,9 +56,7 @@ const determineRankMovement = (previousRank, currentRank) => {
 
   if (previousTierValue === -1 || currentTierValue === -1) {
     return 'no_change';
-  }
-
-  if (currentTierValue > previousTierValue) {
+  } else if (currentTierValue > previousTierValue) {
     return 'promoted';
   } else if (currentTierValue < previousTierValue) {
     return 'demoted';
