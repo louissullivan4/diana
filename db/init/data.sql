@@ -116,7 +116,7 @@ ON CONFLICT (puuid) DO NOTHING;
 -- ====================================
 
 CREATE TABLE match_details (
-    mid SERIAL PRIMARY KEY,
+    mid INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     matchId VARCHAR(50) NOT NULL,
     entryPlayerPuuid VARCHAR(200) NOT NULL,
     gameVersion VARCHAR(50),
@@ -140,7 +140,7 @@ CREATE TABLE match_details (
 -- ====================================
 
 CREATE TABLE match_timeline (
-    tid SERIAL PRIMARY KEY,
+    tid INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     mid INT NOT NULL,
     entryParticipantId VARCHAR(200) NOT NULL,
     frameIndex INT,

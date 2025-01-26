@@ -2,6 +2,7 @@
 const previousRankState = new Map();
 
 const tierOrder = [
+  'UNRANKED',
   'IRON',
   'BRONZE',
   'SILVER',
@@ -15,6 +16,7 @@ const tierOrder = [
 ];
 
 const divisionOrder = {
+  'N/A': 0,
   IV: 1,
   III: 2,
   II: 3,

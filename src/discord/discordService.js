@@ -1,4 +1,3 @@
-// services/discordService.js
 require('dotenv').config();
 const { Client, IntentsBitField, EmbedBuilder } = require('discord.js');
 
@@ -6,19 +5,19 @@ const client = new Client({
   intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages],
 });
 
-let clientHasLoggedIn = false;
-const loginClient = async () => {
-  if (!clientHasLoggedIn) {
-    try {
-      await client.login(process.env.DISCORD_BOT_TOKEN);
-      clientHasLoggedIn = true;
-    } catch (error) {
-      console.error('Could not login to Discord client:', error);
-      throw new Error('Could not login to Discord client.');
-    }
-  }
-}
+let hasClientLoggedIn = false;
 
+const loginClient = async () => {
+  if (hasClientLoggedIn) return;
+
+  try {
+    await client.login(process.env.DISCORD_BOT_TOKEN);
+    hasClientLoggedIn = true;
+  } catch (error) {
+    console.error('Could not login to Discord client:', error);
+    throw new Error('Could not login to Discord client.');
+  }
+};
 
 const rankColors = {
   IRON: 0x7f8c8d,
@@ -32,6 +31,19 @@ const rankColors = {
   CHALLENGER: 0xf39c12,
 };
 
+const resultColors = {
+  win: 0x28a745,
+  lose: 0xe74c3c,
+  remake: 0xe67e22,
+};
+
+function getChampionThumbnail(championName) {
+  const sanitized = championName.replace(/\s+/g, '');
+  return `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
+    sanitized
+  )}.png`;
+}
+
 const sendDiscordMessage = async (channelId, message) => {
   if (!channelId) throw new Error('Channel ID not provided.');
   if (!message) throw new Error('Message content not provided.');
@@ -42,18 +54,16 @@ const sendDiscordMessage = async (channelId, message) => {
   return channel.send(message);
 };
 
-const createMatchStartEmbed = (summonerName, queueName, championDisplay, rankString, deepLolLink) => {
+function createMatchStartEmbed(summonerName, queueName, championDisplay, rankString, deepLolLink) {
   const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
-  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
-    championDisplay.replace(/\s+/g, '')
-  )}.png`;
+
   return new EmbedBuilder()
     .setTitle('🎮 **Match Started!**')
     .setDescription(`${summonerName} has started a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
-    .setThumbnail(championThumbnail)
+    .setThumbnail(getChampionThumbnail(championDisplay))
     .addFields(
       { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
       { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
@@ -61,56 +71,63 @@ const createMatchStartEmbed = (summonerName, queueName, championDisplay, rankStr
     )
     .setTimestamp()
     .setFooter({ text: 'Match Started' });
-};
+}
 
-const createMatchEndEmbed = (
+function createMatchEndEmbed(
   summonerName,
   result,
   newRankMsg,
   lpChangeMsg,
-  champion,
+  championDisplay,
   role,
   kdaStr,
   damage,
   deepLolLink
-) => {
-  const resultColors = { win: 0x28a745, lose: 0xe74c3c, remake: 0xe67e22 };
+) {
+  console.log(summonerName,
+    result,
+    newRankMsg,
+    lpChangeMsg,
+    championDisplay,
+    role,
+    kdaStr,
+    damage,
+    deepLolLink)
   const embedColor = resultColors[result.toLowerCase()] || 0x95a5a6;
-  const championThumbnail = `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
-    championDisplay.replace(/\s+/g, '')
-  )}.png`;
 
   return new EmbedBuilder()
     .setTitle('🎮 **Match Summary**')
     .setDescription(`${summonerName} has completed a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
-    .setThumbnail(championThumbnail)
+    .setThumbnail(getChampionThumbnail(championDisplay))
     .addFields(
       { name: '🏁 **Result**', value: `**${result}**`, inline: true },
       { name: '📈 **Rank Update**', value: `**${newRankMsg}**`, inline: true },
       { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true },
-      { name: '🛡️ **Champion**', value: `**${champion}**`, inline: true },
+      { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
       { name: '🎯 **Role**', value: `**${role}**`, inline: true },
       { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
       { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
     )
     .setTimestamp()
     .setFooter({ text: 'Match Summary' });
-};
+}
 
-const createRankChangeEmbed = (
+function createRankChangeEmbed(
   summonerName,
   direction,
   newRankMsg,
   lpChangeMsg,
   deepLolLink
-) => {
+) {
   const isPromotion = direction === 'promoted';
-  const embedColor = isPromotion ? 0x28a745 : direction === 'demoted' ? 0xe74c3c : null;
+  const isDemotion = direction === 'demoted';
+
+  const embedColor = isPromotion ? 0x28a745 : isDemotion ? 0xe74c3c : null;
   const title = isPromotion
     ? '📈 **Rank Promotion!**'
-    : direction === 'demoted'
+    : isDemotion
     ? '📉 **Rank Demotion...**'
     : null;
 
@@ -118,7 +135,9 @@ const createRankChangeEmbed = (
 
   return new EmbedBuilder()
     .setTitle(title)
-    .setDescription(`${summonerName} has ${isPromotion ? 'ranked up!' : 'been demoted.'}`)
+    .setDescription(
+      `${summonerName} has ${isPromotion ? 'ranked up!' : 'been demoted.'}`
+    )
     .setURL(deepLolLink)
     .setColor(embedColor)
     .addFields(
@@ -127,16 +146,17 @@ const createRankChangeEmbed = (
     )
     .setTimestamp()
     .setFooter({ text: 'Rank Change Notification' });
-};
+}
 
-const notifyMatchStart = async ({
+
+async function notifyMatchStart({
   summonerName,
   queueName,
   championDisplay,
   rankString,
   discordChannelId,
   deepLolLink,
-}) => {
+}) {
   const embed = createMatchStartEmbed(
     summonerName,
     queueName,
@@ -144,57 +164,65 @@ const notifyMatchStart = async ({
     rankString,
     deepLolLink
   );
+
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match start message for ${summonerName}.`);
-    return true
+    return true;
   } catch (error) {
-    console.error(`[Notification Error] Could not send message for ${summonerName}:`, JSON.stringify(error, null, 2));
-    return false
+    console.error(
+      `[Notification Error] Could not send message for ${summonerName}:`,
+      JSON.stringify(error, null, 2)
+    );
+    return false;
   }
-};
+}
 
-const notifyMatchEnd = async ({
+async function notifyMatchEnd({
   summonerName,
   result,
   newRankMsg,
   lpChangeMsg,
-  champion,
+  championDisplay,
   role,
   kdaStr,
   damage,
   discordChannelId,
   deepLolLink,
-}) => {
+}) {
   const embed = createMatchEndEmbed(
     summonerName,
     result,
     newRankMsg,
     lpChangeMsg,
-    champion,
+    championDisplay,
     role,
     kdaStr,
     damage,
     deepLolLink
   );
+
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
     console.log(`[Notification] Sent match end message for ${summonerName}.`);
-    return true
+    return true;
   } catch (error) {
-    console.error(`[Notification Error] Could not send message for ${summonerName}:`, error);
-    return false
+    console.error(
+      `[Notification Error] Could not send message for ${summonerName}:`,
+      error
+    );
+    return false;
   }
-};
+}
 
-const notifyRankChange = async ({
+async function notifyRankChange({
   summonerName,
   direction,
   newRankMsg,
   lpChangeMsg,
   discordChannelId,
   deepLolLink,
-}) => {
+}) {
   const embed = createRankChangeEmbed(
     summonerName,
     direction,
@@ -202,17 +230,21 @@ const notifyRankChange = async ({
     lpChangeMsg,
     deepLolLink
   );
-  if (!embed) return; // no_change scenario
+
+  if (!embed) return;
+
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
-    console.log(`[Notification] Sent rank change message for ${summonerName}.`);
+    console.log(
+      `[Notification] Sent rank change message for ${summonerName}.`
+    );
   } catch (error) {
     console.error(
       `[Notification Error] Could not send rank change message for ${summonerName}:`,
       error
     );
   }
-};
+}
 
 module.exports = {
   loginClient,

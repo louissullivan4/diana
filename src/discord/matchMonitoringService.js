@@ -54,7 +54,7 @@ const checkAndHandleSummoner = async (player) => {
       await handleMatchEnd(player);
     }
   } catch (error) {
-    console.error(`[Error] [${player.gamename}] (PUUID=${player.puuid})`);
+    console.error(`[Error] [${player.gamename}] (PUUID=${player.puuid}), ${error}`);
   }
 };
 
@@ -159,7 +159,7 @@ const handleMatchEnd = async (player) => {
         result,
         newRankMsg,
         lpChangeMsg,
-        champion,
+        championDisplay : champion,
         role,
         kdaStr,
         damage,
