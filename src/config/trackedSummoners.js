@@ -7,6 +7,9 @@ const trackedSummoners = [
   },
   {
     puuid: 'rKCZwiocEjGVQp7pLq9WkrxhN5VGddJh-TX3NRa7LXslIZsWygt2r3UXdfg2DSwoY4Q3NpKTcbrkWg',
+  },
+  {
+    puuid: 'wsedDXW_ao6vCxfpdxBXohBYLZghQMtg7YxWtnVo9p_H3iv-M7ibWM2fU7MkK6Vn8LgXTOCLveex7w',
   }
 ];
 
