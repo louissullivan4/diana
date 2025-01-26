@@ -19,15 +19,17 @@ const loginClient = async () => {
 };
 
 const rankColors = {
+  UNRANKED: 0x95a5a6,
   IRON: 0x7f8c8d,
-  BRONZE: 0xe67e22,
-  SILVER: 0x95a5a6,
-  GOLD: 0xf1c40f,
-  PLATINUM: 0x9b59b6,
-  DIAMOND: 0x2980b9,
-  MASTER: 0xe74c3c,
-  GRANDMASTER: 0xc0392b,
-  CHALLENGER: 0xf39c12,
+  BRONZE: 0xcd7f32,
+  SILVER: 0xc0c0c0,
+  GOLD: 0xffd700,
+  PLATINUM: 0x40e0d0,
+  EMERALD: 0x50c878,
+  DIAMOND: 0xb9f2ff,
+  MASTER: 0x800080,
+  GRANDMASTER: 0x8b0000,
+  CHALLENGER: 0x1e90ff,
 };
 
 const resultColors = {
@@ -49,6 +51,12 @@ function getChampionThumbnail(championName) {
   return `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
     sanitized
   )}.png`;
+}
+
+function getRankedEmblem(tier) {
+  if (!tier) return null;
+  const sanitized = tier.replace(/\s+/g, '').toString().toLowerCase();
+  return `https://raw.githubusercontent.com/louissullivan4/diana/refs/heads/main/assets/ranked-emblem/${sanitized}.webp`;
 }
 
 const sendDiscordMessage = async (channelId, message) => {
@@ -158,6 +166,7 @@ function createRankChangeEmbed(
     )
     .setURL(deepLolLink)
     .setColor(embedColor)
+    .setThumbnail(getRankedEmblem(tier))
     .addFields(
       { name: '🏆 **Rank Change**', value: `**${newRankMsg}**`, inline: true },
       { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true }

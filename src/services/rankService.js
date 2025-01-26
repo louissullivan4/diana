@@ -1,6 +1,4 @@
 // services/rankService.js
-const previousRankState = new Map();
-
 const tierOrder = [
   'IRON',
   'BRONZE',
