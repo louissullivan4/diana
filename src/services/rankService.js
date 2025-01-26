@@ -77,12 +77,6 @@ const determineRankMovement = (previousRank, currentRank) => {
   } else if (currentDivisionValue < previousDivisionValue) {
     return 'demoted';
   }
-
-  if (currentRank.lp > previousRank.lp) {
-    return 'up';
-  } else if (currentRank.lp < previousRank.lp) {
-    return 'down';
-  }
   return 'no_change';
 };
 
