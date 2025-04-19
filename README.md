@@ -1,1 +1,1 @@
-[![Diana CI & CD Pipeline](https://github.com/louissullivan4/diana/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/louissullivan4/diana/actions/workflows/ci.yml)
+# Diana - League of Legends Tracker Application and Bot [![Diana CI & CD Pipeline](https://github.com/louissullivan4/diana/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/louissullivan4/diana/actions/workflows/ci.yml)
