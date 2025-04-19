@@ -61,9 +61,11 @@ async function updateMissingData({
     return;
   }
   const existingDetails = await getMatchDetailsByPuuid(puuid, 50);
-  const storedIds = new Set(existingDetails.map(m => m.matchId));
+  const existingMatchIds = existingDetails.map(m => String(m.matchid));
 
-  if (!storedIds.size) {
+  const storedIds = new Set(existingMatchIds);
+
+  if (existingMatchIds.length === 0) {
     console.info(`[Info] No stored matches found for: ${summoner.gamename}`);
   }
 
@@ -73,7 +75,10 @@ async function updateMissingData({
     return;
   }
 
-  const missingIds = allIds.filter(id => !storedIds.has(id));
+  const missingIds = allIds
+    .map(id => String(id))
+    .filter(id => !storedIds.has(id));
+
   if (missingIds.length === 0) {
     console.info(`[Info] No missing matches to update for: ${summoner.gamename}`);
     return;
@@ -115,12 +120,10 @@ async function updateMissingData({
       };
 
       if (getQueueNameById(info.queueId) !== 'Ranked Solo') {
-        console.info(`[Info] Match ${matchId} is not Ranked Solo, skipping...`);
         continue;
       }
 
       if (record.gameDuration < 300) {
-        console.info(`[Info] Match ${matchId} is a remake, skipping...`);
         continue;
       }
 
@@ -142,7 +145,6 @@ async function updateMissingData({
       }
 
       await createMatchDetail(record);
-      console.info(`[Info] Saved match ${matchId}`);
     } catch (err) {
       console.error(`[Error] Failed to fetch/save match ${matchId}:`, err.message || err);
     }

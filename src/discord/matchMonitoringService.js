@@ -180,7 +180,7 @@ const handleMatchEnd = async (player) => {
   }
 };
 
-cron.schedule('*/10 * * * * *', async () => {
+cron.schedule('*/30 * * * * *', async () => {
   if (process.env.STOP_BOT) {
     console.log(`[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`);
     return;

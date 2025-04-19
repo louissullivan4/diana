@@ -155,10 +155,10 @@ async function updateSummonerMissingDataNotificationTimeByPuuid(summonerPuuid) {
     try {
         const query = `
             UPDATE summoners
-            SET missing_data_last_sent_time = $1
-            WHERE puuid = $2
+            SET missing_data_last_sent_time = NOW()
+            WHERE puuid = $1
         `;
-        const params = [new Date(), summonerPuuid];
+        const params = [summonerPuuid];
         await db.query(query, params);
         console.info(`[Info] Updated missing data notification time for PUUID: ${summonerPuuid}`);
     } catch (error) {
