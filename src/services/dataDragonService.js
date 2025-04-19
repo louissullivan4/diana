@@ -60,8 +60,20 @@ const getQueueNameById = (queueId) => {
   return queueMap[queueId] || `Unknown Queue (ID: ${queueId})`;
 };
 
+const getRoleNameTranslation = (role) => {
+  const roleMap = {
+    TOP: 'Top',
+    JUNGLE: 'Jungle',
+    MIDDLE: 'Mid',
+    BOTTOM: 'ADC',
+    UTILITY: 'Support',
+  };
+  return roleMap[role] || 'Unknown Role';
+};
+
 module.exports = {
   getChampionInfoById,
   getQueueNameById,
-  fetchLatestVersion
+  fetchLatestVersion,
+  getRoleNameTranslation
 };

@@ -268,10 +268,79 @@ async function notifyRankChange({
   }
 }
 
+function createNotifyMissingDataEmbed(summoner) {
+  const {
+    name,
+    tier,
+    rank,
+    lp,
+    totalGames,
+    wins,
+    losses,
+    winRate,
+    totalTimeInHours,
+    mostPlayedChampion,
+    averageDamageDealtToChampions,
+    mostPlayedRole
+  } = summoner;
+  
+  const embedColor = rankColors[tier] || 0x3498db;
+  const title = `📊 ${name}'s Summary`;
+  const description = `Missing data for ${name}.`;
+
+  const fields = [
+    { name: '🏅 **Rank**', value: `${tier} ${rank} (${lp} LP)`, inline: false },
+    { name: '🎮 **Missing Games Found**', value: `${totalGames}`, inline: false },
+    { name: '✅ **Wins / ❌ Losses**', value: `${wins} / ${losses}`, inline: false },
+    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: false },
+    { name: '⏱️ **Time Played**', value: totalTimeInHours, inline: false },
+    {
+      name: '💪 **Avg Damage**',
+      value: averageDamageDealtToChampions,
+      inline: false
+    },
+    {
+      name: '👑 **Most Played Champ**',
+      value: `${mostPlayedChampion.name}`,
+      inline: false
+    },
+    { name: '🧭 **Fav Role**', value: mostPlayedRole, inline: false }
+  ];
+
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(embedColor)
+    .setThumbnail(getChampionThumbnail(mostPlayedChampion.name))
+    .addFields(fields)
+    .setTimestamp()
+    .setFooter({ text: 'Summoner Stats Overview' });
+}
+
+async function notifyMissingData({
+  summoner
+}) {
+  const embed = createNotifyMissingDataEmbed(
+    summoner
+  );
+  if (!embed) return;
+  try {
+    await sendDiscordMessage(summoner.discordChannelId, { embeds: [embed] });
+    console.log(`[Notification] Sent notify missing data message for ${summoner.name}.`);
+  } catch (error) {
+    console.error(
+      `[Notification Error] Could not notify missing data message for ${summoner.name}:`,
+      error
+    );
+  }
+}
+
+
 module.exports = {
   loginClient,
   sendDiscordMessage,
   notifyMatchStart,
   notifyMatchEnd,
   notifyRankChange,
+  notifyMissingData
 };
