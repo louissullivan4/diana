@@ -132,7 +132,7 @@ async function updateMissingData({
         roleCount[player.teamPosition] = (roleCount[player.teamPosition] || 0) + 1;
       }
 
-      // await createMatchDetail(record);
+      await createMatchDetail(record);
       console.info(`[Info] Saved match ${matchId}`);
     } catch (err) {
       console.error(`[Error] Failed to fetch/save match ${matchId}:`, err.message || err);
