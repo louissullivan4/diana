@@ -10,12 +10,9 @@ const fetchSummonerByAccountName = async (req, res) => {
   try {
     const { accountName, tagLine, region } = req.params;
     if (!accountName || !tagLine || !region) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Missing required parameters: accountName, tagLine, or region.",
-        });
+      return res.status(400).json({
+        error: "Missing required parameters: accountName, tagLine, or region.",
+      });
     }
     const summoner = await getSummonerByAccountName(
       accountName,
@@ -59,11 +56,9 @@ const updateSummonerRankByPuuid = async (req, res) => {
     const { puuid } = req.params;
     const { tier, rank, lp } = req.body;
     if (!puuid || !tier || !rank || !lp) {
-      return res
-        .status(400)
-        .json({
-          error: "Missing required parameters: puuid, tier, rank, or lp.",
-        });
+      return res.status(400).json({
+        error: "Missing required parameters: puuid, tier, rank, or lp.",
+      });
     }
     const summoner = await getSummonerByPuuid(puuid);
     if (!summoner || Object.keys(summoner).length === 0) {
