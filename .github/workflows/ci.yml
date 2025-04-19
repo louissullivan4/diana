@@ -71,7 +71,10 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm run test:ci
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
 
       - name: Upload build & test artifacts
         uses: actions/upload-artifact@v4
@@ -112,7 +115,7 @@ jobs:
     environment: production
     steps:
       - name: Send Discord Success Notification
-        uses: tsickert/discord-webhook-action@v7
+        uses: tsickert/discord-webhook-action@v6
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
@@ -136,7 +139,7 @@ jobs:
     if: failure()
     steps:
       - name: Send Discord Failure Notification
-        uses: tsickert/discord-webhook-action@v7
+        uses: tsickert/discord-webhook-action@v6
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
