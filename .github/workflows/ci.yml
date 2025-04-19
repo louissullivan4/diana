@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript
 
@@ -33,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
   ########################################################
   # 2. Build (format, lint, install, artifacts)
@@ -119,13 +119,13 @@ jobs:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
             ✅ Deployment complete!
-            🟢 **Status**: Success
-            📦 **Repository**: ${{ github.repository }}
-            🔢 **Commit SHA**: ${{ github.sha }}
-            ✍️ **Author**: ${{ github.actor }}
-            💬 **Message**: ${{ github.event.head_commit.message }}
-            🔗 **View Run**: [Link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            🚀 **Docker image pushed**: `${{ secrets.DOCKER_USERNAME }}/diana-bot:latest`
+            
+            🟢 **Status**: Passed
+
+            📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
+
+            🔗 [**View Run**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
 
   ########################################################
   # 5. Notify Discord if Build Fails
@@ -143,9 +143,9 @@ jobs:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
             ❌ Deployment Failed...
-            🟢 **Status**: Failed
-            📦 **Repository**: ${{ github.repository }}
-            🔢 **Commit SHA**: ${{ github.sha }}
-            ✍️ **Author**: ${{ github.actor }}
-            💬 **Message**: ${{ github.event.head_commit.message }}
-            🔗 **View Run**: [Link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            🔴 **Status**: Failed
+
+            📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
+
+            🔗 [**View Run**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
