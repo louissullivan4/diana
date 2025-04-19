@@ -41,7 +41,8 @@ jobs:
   ci:
     name: 🛠️ Build & Test
     runs-on: ubuntu-latest
-    needs: codeql
+    needs: [codeql]
+    environment: production
     strategy:
       matrix:
         node-version: [18, 20]
@@ -69,6 +70,9 @@ jobs:
       - name: Lint code
         run: npm run lint
 
+      - name: Run tests
+        run: npm test
+
       - name: Upload build & test artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -83,7 +87,8 @@ jobs:
   build:
     name: 🐳 Docker build
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [codeql, ci]
+    environment: production
     steps:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -103,15 +108,42 @@ jobs:
   notify:
     name: 📣 Discord Notification
     runs-on: ubuntu-latest
-    needs: build
+    needs: [codeql, ci, build]
+    environment: production
     steps:
-      - name: Send Discord webhook
+      - name: Send Discord Success Notification
         uses: tsickert/discord-webhook-action@v7
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
             ✅ Deployment complete!
-            **Repository**: ${{ github.repository }}
-            **Commit SHA**: ${{ github.sha }}
-            **Branch**: ${{ github.ref_name }}
-            **Workflow**: ${{ github.workflow }}
+            🟢 **Status**: Success
+            📦 **Repository**: ${{ github.repository }}
+            🔢 **Commit SHA**: ${{ github.sha }}
+            ✍️ **Author**: ${{ github.actor }}
+            💬 **Message**: ${{ github.event.head_commit.message }}
+            🔗 **View Run**: [Link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🚀 **Docker image pushed**: `${{ secrets.DOCKER_USERNAME }}/diana-bot:latest`
+
+  ########################################################
+  # 5. Notify Discord if Build Fails
+  ########################################################
+  notify-failure:
+    name: ❌ Discord Failure Notification
+    runs-on: ubuntu-latest
+    needs: [codeql, ci, build]
+    environment: production
+    if: failure()
+    steps:
+      - name: Send Discord Failure Notification
+        uses: tsickert/discord-webhook-action@v7
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |
+            ❌ Deployment Failed...
+            🟢 **Status**: Failed
+            📦 **Repository**: ${{ github.repository }}
+            🔢 **Commit SHA**: ${{ github.sha }}
+            ✍️ **Author**: ${{ github.actor }}
+            💬 **Message**: ${{ github.event.head_commit.message }}
+            🔗 **View Run**: [Link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
