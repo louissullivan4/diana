@@ -6,7 +6,9 @@
     "dev": "nodemon src/app.js",
     "start-bot": "node src/discord/bot.js",
     "test": "jest",
-    "lint": "eslint ."
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix --ext .js,.jsx ."
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "express": "^4.21.2",
     "node-cron": "^3.0.3",
     "pg": "^8.13.1",
+    "prettier": "3.5.3",
     "twisted": "^1.61.5"
   },
   "devDependencies": {

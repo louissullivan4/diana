@@ -1,5 +1,5 @@
-require('dotenv').config();
-const { Client, IntentsBitField, EmbedBuilder } = require('discord.js');
+require("dotenv").config();
+const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
 
 const client = new Client({
   intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages],
@@ -13,8 +13,8 @@ const loginClient = async () => {
     await client.login(process.env.DISCORD_BOT_TOKEN);
     hasClientLoggedIn = true;
   } catch (error) {
-    console.error('Could not login to Discord client:', error);
-    throw new Error('Could not login to Discord client.');
+    console.error("Could not login to Discord client:", error);
+    throw new Error("Could not login to Discord client.");
   }
 };
 
@@ -39,29 +39,29 @@ const resultColors = {
 };
 
 const roleQueues = [
-  'Ranked Solo',
-  'Normal Blind',
-  'Ranked Flex',
-  'Swiftplay',
-  'Clash',
+  "Ranked Solo",
+  "Normal Blind",
+  "Ranked Flex",
+  "Swiftplay",
+  "Clash",
 ];
 
 function getChampionThumbnail(championName) {
-  const sanitized = championName.replace(/\s+/g, '');
+  const sanitized = championName.replace(/\s+/g, "");
   return `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
-    sanitized
+    sanitized,
   )}.png`;
 }
 
 function getRankedEmblem(tier) {
   if (!tier) return null;
-  const sanitized = tier.replace(/\s+/g, '').toString().toLowerCase();
+  const sanitized = tier.replace(/\s+/g, "").toString().toLowerCase();
   return `https://raw.githubusercontent.com/louissullivan4/diana/refs/heads/main/assets/ranked-emblem/${sanitized}.webp`;
 }
 
 const sendDiscordMessage = async (channelId, message) => {
-  if (!channelId) throw new Error('Channel ID not provided.');
-  if (!message) throw new Error('Message content not provided.');
+  if (!channelId) throw new Error("Channel ID not provided.");
+  if (!message) throw new Error("Message content not provided.");
   const channel = await client.channels.fetch(channelId);
   if (!channel) throw new Error(`Channel with ID ${channelId} not found.`);
   return channel.send(message);
@@ -72,30 +72,30 @@ function createMatchStartEmbed(
   queueName,
   championDisplay,
   rankString,
-  deepLolLink
+  deepLolLink,
 ) {
   const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
   const fields = [
-    { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
-    { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
+    { name: "🕹️ **Queue**", value: `**${queueName}**`, inline: true },
+    { name: "🛡️ **Champion**", value: `**${championDisplay}**`, inline: true },
   ];
-  if (queueName.toLowerCase().includes('ranked')) {
+  if (queueName.toLowerCase().includes("ranked")) {
     fields.push({
-      name: '🏆 **Current Rank**',
+      name: "🏆 **Current Rank**",
       value: `**${rankString}**`,
       inline: true,
     });
   }
   return new EmbedBuilder()
-    .setTitle('🎮 **Match Started!**')
+    .setTitle("🎮 **Match Started!**")
     .setDescription(`${summonerName} has started a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
     .setThumbnail(getChampionThumbnail(championDisplay))
     .addFields(fields)
     .setTimestamp()
-    .setFooter({ text: 'Match Started' });
+    .setFooter({ text: "Match Started" });
 }
 
 function createMatchEndEmbed(
@@ -108,38 +108,44 @@ function createMatchEndEmbed(
   role,
   kdaStr,
   damage,
-  deepLolLink
+  deepLolLink,
 ) {
   const embedColor = resultColors[result.toLowerCase()] || 0x95a5a6;
   const fields = [
-    { name: '🏁 **Result**', value: `**${result}**`, inline: true },
-    { name: '🛡️ **Champion**', value: `**${championDisplay}**`, inline: true },
-    { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
+    { name: "🏁 **Result**", value: `**${result}**`, inline: true },
+    { name: "🛡️ **Champion**", value: `**${championDisplay}**`, inline: true },
+    { name: "🕹️ **Queue**", value: `**${queueName}**`, inline: true },
   ];
-  if (roleQueues.map(q => q.toLowerCase()).includes(queueName.toLowerCase())) {
-    fields.push({ name: '🎯 **Role**', value: `**${role}**`, inline: true });
+  if (
+    roleQueues.map((q) => q.toLowerCase()).includes(queueName.toLowerCase())
+  ) {
+    fields.push({ name: "🎯 **Role**", value: `**${role}**`, inline: true });
   }
   fields.push(
-    { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
-    { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
+    { name: "⚔️ **KDA**", value: `**${kdaStr}**`, inline: true },
+    { name: "💥 **Damage Dealt**", value: `**${damage}**`, inline: true },
   );
-  if (queueName.toLowerCase().includes('ranked')) {
+  if (queueName.toLowerCase().includes("ranked")) {
     fields.splice(
       1,
       0,
-      { name: '📈 **Rank Update**', value: `**${newRankMsg}**`, inline: true },
-      { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true }
+      { name: "📈 **Rank Update**", value: `**${newRankMsg}**`, inline: true },
+      {
+        name: "🔄 **LP Change**",
+        value: `**${lpChangeMsg} LP**`,
+        inline: true,
+      },
     );
   }
   return new EmbedBuilder()
-    .setTitle('🎮 **Match Summary**')
+    .setTitle("🎮 **Match Summary**")
     .setDescription(`${summonerName} has completed a match!`)
     .setURL(deepLolLink)
     .setColor(embedColor)
     .setThumbnail(getChampionThumbnail(championDisplay))
     .addFields(fields)
     .setTimestamp()
-    .setFooter({ text: 'Match Summary' });
+    .setFooter({ text: "Match Summary" });
 }
 
 function createRankChangeEmbed(
@@ -147,32 +153,36 @@ function createRankChangeEmbed(
   direction,
   newRankMsg,
   lpChangeMsg,
-  deepLolLink
+  deepLolLink,
 ) {
-  const isPromotion = direction === 'promoted';
-  const isDemotion = direction === 'demoted';
+  const isPromotion = direction === "promoted";
+  const isDemotion = direction === "demoted";
   const tier = newRankMsg.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase();
   const embedColor = rankColors[tier] || 0x3498db;
   const title = isPromotion
-    ? '📈 **Rank Promotion!**'
+    ? "📈 **Rank Promotion!**"
     : isDemotion
-    ? '📉 **Rank Demotion...**'
-    : null;
+      ? "📉 **Rank Demotion...**"
+      : null;
   if (!embedColor || !title) return null;
   return new EmbedBuilder()
     .setTitle(title)
     .setDescription(
-      `${summonerName} has ${isPromotion ? 'ranked up!' : 'been demoted.'}`
+      `${summonerName} has ${isPromotion ? "ranked up!" : "been demoted."}`,
     )
     .setURL(deepLolLink)
     .setColor(embedColor)
     .setThumbnail(getRankedEmblem(tier))
     .addFields(
-      { name: '🏆 **Rank Change**', value: `**${newRankMsg}**`, inline: true },
-      { name: '🔄 **LP Change**', value: `**${lpChangeMsg} LP**`, inline: true }
+      { name: "🏆 **Rank Change**", value: `**${newRankMsg}**`, inline: true },
+      {
+        name: "🔄 **LP Change**",
+        value: `**${lpChangeMsg} LP**`,
+        inline: true,
+      },
     )
     .setTimestamp()
-    .setFooter({ text: 'Rank Change Notification' });
+    .setFooter({ text: "Rank Change Notification" });
 }
 
 async function notifyMatchStart({
@@ -188,7 +198,7 @@ async function notifyMatchStart({
     queueName,
     championDisplay,
     rankString,
-    deepLolLink
+    deepLolLink,
   );
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
@@ -197,7 +207,7 @@ async function notifyMatchStart({
   } catch (error) {
     console.error(
       `[Notification Error] Could not send message for ${summonerName}:`,
-      JSON.stringify(error, null, 2)
+      JSON.stringify(error, null, 2),
     );
     return false;
   }
@@ -226,7 +236,7 @@ async function notifyMatchEnd({
     role,
     kdaStr,
     damage,
-    deepLolLink
+    deepLolLink,
   );
   try {
     await sendDiscordMessage(discordChannelId, { embeds: [embed] });
@@ -235,7 +245,7 @@ async function notifyMatchEnd({
   } catch (error) {
     console.error(
       `[Notification Error] Could not send message for ${summonerName}:`,
-      error
+      error,
     );
     return false;
   }
@@ -254,7 +264,7 @@ async function notifyRankChange({
     direction,
     newRankMsg,
     lpChangeMsg,
-    deepLolLink
+    deepLolLink,
   );
   if (!embed) return;
   try {
@@ -263,7 +273,7 @@ async function notifyRankChange({
   } catch (error) {
     console.error(
       `[Notification Error] Could not send rank change message for ${summonerName}:`,
-      error
+      error,
     );
   }
 }
@@ -281,30 +291,38 @@ function createNotifyMissingDataEmbed(summoner) {
     totalTimeInHours,
     mostPlayedChampion,
     averageDamageDealtToChampions,
-    mostPlayedRole
+    mostPlayedRole,
   } = summoner;
-  
+
   const embedColor = rankColors[tier] || 0x3498db;
   const title = `📊 ${name}'s Summary`;
   const description = `Missing data for ${name}.`;
 
   const fields = [
-    { name: '🏅 **Rank**', value: `${tier} ${rank} (${lp} LP)`, inline: false },
-    { name: '🎮 **Missing Games Found**', value: `${totalGames}`, inline: false },
-    { name: '✅ **Wins / ❌ Losses**', value: `${wins} / ${losses}`, inline: false },
-    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: false },
-    { name: '⏱️ **Time Played**', value: totalTimeInHours, inline: false },
+    { name: "🏅 **Rank**", value: `${tier} ${rank} (${lp} LP)`, inline: false },
     {
-      name: '💪 **Avg Damage**',
+      name: "🎮 **Missing Games Found**",
+      value: `${totalGames}`,
+      inline: false,
+    },
+    {
+      name: "✅ **Wins / ❌ Losses**",
+      value: `${wins} / ${losses}`,
+      inline: false,
+    },
+    { name: "📈 **Win Rate**", value: `${winRate}%`, inline: false },
+    { name: "⏱️ **Time Played**", value: totalTimeInHours, inline: false },
+    {
+      name: "💪 **Avg Damage**",
       value: averageDamageDealtToChampions,
-      inline: false
+      inline: false,
     },
     {
-      name: '👑 **Most Played Champ**',
+      name: "👑 **Most Played Champ**",
       value: `${mostPlayedChampion.name}`,
-      inline: false
+      inline: false,
     },
-    { name: '🧭 **Fav Role**', value: mostPlayedRole, inline: false }
+    { name: "🧭 **Fav Role**", value: mostPlayedRole, inline: false },
   ];
 
   return new EmbedBuilder()
@@ -314,27 +332,24 @@ function createNotifyMissingDataEmbed(summoner) {
     .setThumbnail(getChampionThumbnail(mostPlayedChampion.name))
     .addFields(fields)
     .setTimestamp()
-    .setFooter({ text: 'Summoner Stats Overview' });
+    .setFooter({ text: "Summoner Stats Overview" });
 }
 
-async function notifyMissingData({
-  summoner
-}) {
-  const embed = createNotifyMissingDataEmbed(
-    summoner
-  );
+async function notifyMissingData({ summoner }) {
+  const embed = createNotifyMissingDataEmbed(summoner);
   if (!embed) return;
   try {
     await sendDiscordMessage(summoner.discordChannelId, { embeds: [embed] });
-    console.log(`[Notification] Sent notify missing data message for ${summoner.name}.`);
+    console.log(
+      `[Notification] Sent notify missing data message for ${summoner.name}.`,
+    );
   } catch (error) {
     console.error(
       `[Notification Error] Could not notify missing data message for ${summoner.name}:`,
-      error
+      error,
     );
   }
 }
-
 
 module.exports = {
   loginClient,
@@ -342,5 +357,5 @@ module.exports = {
   notifyMatchStart,
   notifyMatchEnd,
   notifyRankChange,
-  notifyMissingData
+  notifyMissingData,
 };

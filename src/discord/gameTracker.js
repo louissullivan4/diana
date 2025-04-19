@@ -4,7 +4,7 @@ function setSummonerCurrentGame(puuid, gameId) {
   ongoingGames.set(puuid, gameId);
 }
 
-function  getSummonerCurrentGame(puuid) {
+function getSummonerCurrentGame(puuid) {
   return ongoingGames.get(puuid) || null;
 }
 
@@ -15,5 +15,5 @@ function clearSummonerCurrentGame(puuid) {
 module.exports = {
   setSummonerCurrentGame,
   getSummonerCurrentGame,
-  clearSummonerCurrentGame
+  clearSummonerCurrentGame,
 };

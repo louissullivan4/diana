@@ -1,8 +1,9 @@
 // services/dataDragonService.js
-const axios = require('axios');
+const axios = require("axios");
 
-const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
-const CHAMPION_URL = (version) => `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
+const VERSIONS_URL = "https://ddragon.leagueoflegends.com/api/versions.json";
+const CHAMPION_URL = (version) =>
+  `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
 
 let cachedLatestVersion = null;
 let championDataCache = null;
@@ -40,40 +41,41 @@ const getChampionInfoById = async (championId) => {
   const champIdMap = await buildChampionIdMap();
   const champion = champIdMap[String(championId)];
   if (!champion) {
-    return { name: 'Unknown Champion', tagString: 'Unknown' };
+    return { name: "Unknown Champion", tagString: "Unknown" };
   }
-  const tagString = champion.tags && champion.tags.length ? champion.tags.join('/') : 'Unknown';
+  const tagString =
+    champion.tags && champion.tags.length ? champion.tags.join("/") : "Unknown";
   return { name: champion.name, tagString };
 };
 
 const getQueueNameById = (queueId) => {
   const queueMap = {
-    0: 'Custom Game',
-    420: 'Ranked Solo',
-    430: 'Normal Blind',
-    440: 'Ranked Flex',
-    450: 'ARAM',
-    480: 'Swiftplay',
-    700: 'Clash',
-    900: 'ARURF',
+    0: "Custom Game",
+    420: "Ranked Solo",
+    430: "Normal Blind",
+    440: "Ranked Flex",
+    450: "ARAM",
+    480: "Swiftplay",
+    700: "Clash",
+    900: "ARURF",
   };
   return queueMap[queueId] || `Unknown Queue (ID: ${queueId})`;
 };
 
 const getRoleNameTranslation = (role) => {
   const roleMap = {
-    TOP: 'Top',
-    JUNGLE: 'Jungle',
-    MIDDLE: 'Mid',
-    BOTTOM: 'ADC',
-    UTILITY: 'Support',
+    TOP: "Top",
+    JUNGLE: "Jungle",
+    MIDDLE: "Mid",
+    BOTTOM: "ADC",
+    UTILITY: "Support",
   };
-  return roleMap[role] || 'Unknown Role';
+  return roleMap[role] || "Unknown Role";
 };
 
 module.exports = {
   getChampionInfoById,
   getQueueNameById,
   fetchLatestVersion,
-  getRoleNameTranslation
+  getRoleNameTranslation,
 };
