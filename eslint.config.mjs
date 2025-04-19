@@ -3,7 +3,7 @@ import globals from "globals";
 import pluginJs from "@eslint/js";
 
 export default defineConfig([
-  globalIgnores(["**/*.test.js", "**/*.spec.js"]),
+  globalIgnores(["**/*.test.js", "**/*.spec.js", "node_modules/**"]),
   {
     files: ["**/*.js"],
     languageOptions: {
