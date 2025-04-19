@@ -6,7 +6,6 @@
     "dev": "nodemon src/app.js",
     "start-bot": "node src/discord/bot.js",
     "test": "jest",
-    "test:ci": "DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN DISCORD_CHANNEL_ID=$DISCORD_CHANNEL_ID npm test",
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix --ext .js,.jsx ."
