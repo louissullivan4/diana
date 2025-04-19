@@ -114,7 +114,7 @@ jobs:
     environment: production
     steps:
       - name: Discord Webhook Action
-        uses: tsickert/discord-webhook-action@v7.0.0
+        uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
@@ -138,7 +138,7 @@ jobs:
     if: failure()
     steps:
       - name: Discord Webhook Action
-        uses: tsickert/discord-webhook-action@v7.0.0
+        uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
