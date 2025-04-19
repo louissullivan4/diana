@@ -21,6 +21,16 @@ const getRegion = (region) => {
     }
 };
 
+const checkConnection = async () => {
+    try {
+        await lolApi.StatusV4.get(Constants.Regions.EU_WEST);
+        return true
+    } catch (error) {
+        console.log('Error checking connection:', error);
+        return false;
+    }
+}
+
 const getAccountByAccountName = async (summonerName, tagLine, region) => {
     const resByRiotId = (await riotApi.Account.getByRiotId(summonerName, tagLine, Constants.RegionGroups.EUROPE)).response;
     let summonerObj = {}
@@ -29,9 +39,13 @@ const getAccountByAccountName = async (summonerName, tagLine, region) => {
     return summonerObj;
 };
 
-const getMatchesByPUUID = async (puuid, count = 20) => {
-    const matchIds = (await (lolApi.MatchV5.list(puuid, Constants.RegionGroups.EUROPE)).response)
-    return matchIds;
+const getMatchesByPUUID = async (puuid, count = 20, region = Constants.RegionGroups.EUROPE) => {
+    const { response: matchIds } = await lolApi.MatchV5.list(
+        puuid,
+        region,
+        { count }
+      )
+      return matchIds
 };
 
 const getMatchDataById = async (matchId) => {
@@ -44,7 +58,7 @@ async function getMatchSummary(matchId, regionGroup = Constants.RegionGroups.EUR
       const matchDetails = await lolApi.MatchV5.get(matchId, regionGroup);
       return matchDetails.response;
     } catch (error) {
-      console.error('Error in getMatchSummary:', error);
+      console.error('Error in getMatchSummary:');
       throw error;
     }
 }
@@ -90,4 +104,5 @@ module.exports = {
     getMatchSummary,
     getRankEntriesByPUUID,
     getActiveGameByPuuid,
+    checkConnection
 };

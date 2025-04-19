@@ -2,32 +2,20 @@
 require('dotenv').config();
 const cron = require('node-cron');
 const {
+  checkConnection,
   getMatchSummary,
   getRankEntriesByPUUID,
   getActiveGameByPuuid
 } = require('../services/riotService');
 const {
   createMatchDetail,
-  getMatchDetailsByPuuid,
-  getMatchDetailsByMatchId,
-  updateMatchDetail,
-  deleteMatchDetail,
-  createMatchTimeline,
-  getMatchTimeline,
-  updateMatchTimeline,
-  deleteMatchTimeline
 } = require('../services/matchService');
 const {
-  getSummonerCurrentGame,
-  getSummonerByAccountName,
   getSummonerByPuuid,
-  createSummoner,
   updateSummonerRank,
   setSummonerActiveMatchIdByPuuid
 } = require('../services/summonerService');
 const {
-  setPreviousRank,
-  getPreviousRank,
   calculateRankChange,
   determineRankMovement
 } = require('../services/rankService');
@@ -41,11 +29,15 @@ const {
   getChampionInfoById,
   getQueueNameById
 } = require('../services/dataDragonService');
+const {
+  updateMissingData
+} = require('../services/updateMissingDataService');
 const trackedSummoners = require('../config/trackedSummoners');
 
 const checkAndHandleSummoner = async (player) => {
   try {
     await loginClient();
+    await updateMissingData({ summoner: player });
     const activeGameData = await getActiveGameByPuuid(player.puuid);
     if (activeGameData) {
       await handleMatchStart(player, activeGameData);
@@ -119,9 +111,9 @@ const handleMatchEnd = async (player) => {
         gameMode: matchSummaryData.info.gameMode,
         gameType: matchSummaryData.info.gameType,
         queueId: matchSummaryData.info.queueId,
-        mapName: matchSummaryData.info.mapName,
-        participants: matchSummaryData.participants,
-        teams: matchSummaryData.info.team,
+        mapName: matchSummaryData.info.mapId,
+        participants: JSON.stringify(info.participants),
+        teams: JSON.stringify(info.teams),
       }
       await createMatchDetail(matchDetails);
       const participant = matchSummaryData.info.participants.find(p => p.puuid === puuid);
@@ -193,16 +185,21 @@ cron.schedule('*/10 * * * * *', async () => {
     console.log(`[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`);
     return;
   }
-  console.log(`[Info] [${new Date().toISOString()}] Starting cron check for active matches...`);
-  for (const player of trackedSummoners) {
-    const summoner = await getSummonerByPuuid(player.puuid);
-    if (summoner) {
-      await checkAndHandleSummoner(summoner);
-    } else {
-      console.log(`[Info] Player PUUID[${player.puuid}] was not found in database.`);
-    }
+  const apiValid = await checkConnection();
+    if (apiValid) {
+    console.log(`[Info] [${new Date().toISOString()}] Starting cron check for active matches...`);
+    for (const player of trackedSummoners) {
+        const summoner = await getSummonerByPuuid(player.puuid);
+        if (summoner) {
+          await checkAndHandleSummoner(summoner);
+        } else {
+          console.log(`[Info] Player PUUID[${player.puuid}] was not found in database.`);
+        }
+      }
+    console.log(`[Info] [${new Date().toISOString()}] Finished cron check.\n`);
+  } else {
+    console.log(`[Error] [${new Date().toISOString()}] API connection failed, skipping run...`);
   }
-  console.log(`[Info] [${new Date().toISOString()}] Finished cron check.\n`);
 });
 
 module.exports = {

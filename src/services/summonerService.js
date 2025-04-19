@@ -60,8 +60,8 @@ const getSummonerCurrentGame = async (puuid) => {
 const createSummoner = async (summonerData) => {
     try {
         const query = `
-            INSERT INTO summoners (gamename, tagline, region, puuid, tier, rank, lp, currentmatchid, lastupdated)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            INSERT INTO summoners (gamename, tagline, region, puuid, tier, rank, lp, currentmatchid, lastupdated, missing_data_last_sent_time)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
             RETURNING *;
         `;
         const params = [
@@ -151,6 +151,21 @@ const setSummonerActiveMatchIdByPuuid = async (puuid, matchId) => {
     }
 };
 
+async function updateSummonerMissingDataNotificationTimeByPuuid(summonerPuuid) {
+    try {
+        const query = `
+            UPDATE summoners
+            SET missing_data_last_sent_time = $1
+            WHERE puuid = $2
+        `;
+        const params = [new Date(), summonerPuuid];
+        await db.query(query, params);
+        console.info(`[Info] Updated missing data notification time for PUUID: ${summonerPuuid}`);
+    } catch (error) {
+        console.error('Error updating missing data notification time:', error);
+    }
+};
+
 module.exports = { 
     getSummonerCurrentGame, 
     getSummonerByAccountName, 
@@ -158,5 +173,6 @@ module.exports = {
     createSummoner, 
     updateSummonerRank, 
     deleteSummoner,
-    setSummonerActiveMatchIdByPuuid
+    setSummonerActiveMatchIdByPuuid,
+    updateSummonerMissingDataNotificationTimeByPuuid
 };
