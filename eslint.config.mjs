@@ -1,10 +1,20 @@
+import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
 import pluginJs from "@eslint/js";
 
-
-/** @type {import('eslint').Linter.Config[]} */
-export default [
-  {files: ["**/*.js"], languageOptions: {sourceType: "commonjs"}},
-  {languageOptions: { globals: globals.browser }},
+export default defineConfig([
+  globalIgnores(["**/*.test.js", "**/*.spec.js", "node_modules/**"]),
+  {
+    files: ["**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        process: "readonly",
+      },
+    },
+  },
+  {
+    languageOptions: { globals: globals.browser },
+  },
   pluginJs.configs.recommended,
-];
+]);
