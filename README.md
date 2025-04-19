@@ -1,0 +1,1 @@
+[![Diana CI & CD Pipeline](https://github.com/louissullivan4/diana/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/louissullivan4/diana/actions/workflows/ci.yml)
