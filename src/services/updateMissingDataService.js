@@ -45,6 +45,15 @@ async function missingDataNotificationDue(missing_data_last_sent_time) {
 async function updateMissingData({
   summoner
 }) {
+  // check if summoner has played in the last 7 days, send message if they have
+  const lastPlayedDate = new Date(summoner.lastupdated);
+  const currentDate = new Date();
+  const timeDiff = Math.abs(currentDate - lastPlayedDate);
+  const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  if (diffDays > 7) {
+    console.info(`[Info] Summoner ${summoner.gamename} has not played in the last 7 days, skipping...`);
+    return;
+  }
   const puuid = summoner.puuid;
   const notificationDue = await missingDataNotificationDue(summoner.missing_data_last_sent_time)
   if (!notificationDue) {
@@ -165,19 +174,9 @@ async function updateMissingData({
     discordChannelId: summoner.discordchannelid,
   };
 
-  // check if summoner has played in the last 7 days, send message if they have
-  const lastPlayedDate = new Date(summoner.lastupdated);
-  const currentDate = new Date();
-  const timeDiff = Math.abs(currentDate - lastPlayedDate);
-  const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-  if (diffDays <= 7) {
-    await notifyMissingData({
-      summoner: summonerSummary
-    });
-    await updateSummonerMissingDataNotificationTimeByPuuid(summoner.puuid);
-  } else {
-    console.info(`[Info] Summoner ${summoner.gamename} has not played in the last 7 days, skipping...`);
-  }
+  await notifyMissingData({ summoner: summonerSummary });
+  await updateSummonerMissingDataNotificationTimeByPuuid(summoner.puuid);
+
   return summonerSummary;
 }
 
