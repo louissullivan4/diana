@@ -178,7 +178,7 @@ async function updateMissingData({
   } else {
     console.info(`[Info] Summoner ${summoner.gamename} has not played in the last 7 days, skipping...`);
   }
-
+  return summonerSummary;
 }
 
 module.exports = {

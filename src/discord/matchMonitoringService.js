@@ -37,7 +37,7 @@ const trackedSummoners = require('../config/trackedSummoners');
 const checkAndHandleSummoner = async (player) => {
   try {
     await loginClient();
-    await updateMissingData({ summoner: player });
+    const summary = await updateMissingData({ summoner: player });
     const activeGameData = await getActiveGameByPuuid(player.puuid);
     if (activeGameData) {
       await handleMatchStart(player, activeGameData);
