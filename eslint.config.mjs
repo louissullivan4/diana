@@ -3,7 +3,12 @@ import globals from "globals";
 import pluginJs from "@eslint/js";
 
 export default defineConfig([
-  globalIgnores(["**/*.test.js", "**/*.spec.js", "node_modules/**"]),
+  globalIgnores([
+    "**/*.test.js",
+    "**/*.spec.js",
+    "node_modules/**",
+    "diana-frontend/**",
+  ]),
   {
     files: ["**/*.js"],
     languageOptions: {
