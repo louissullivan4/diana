@@ -10,7 +10,7 @@ const checkConnection = async () => {
   try {
     await lolApi.StatusV4.get(Constants.Regions.EU_WEST);
     return true;
-  // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
     return false;
   }
