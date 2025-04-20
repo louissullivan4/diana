@@ -1,154 +1,146 @@
 name: Diana CI & CD Pipeline
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 permissions:
-  contents: read
-  security-events: write
+    contents: read
+    security-events: write
 
 jobs:
-  ########################################################
-  # 1. Static Code Security Scan with CodeQL
-  ########################################################
-  codeql:
-    name: 🔒 CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    ########################################################
+    # 1. Static Code Security Scan with CodeQL
+    ########################################################
+    codeql:
+        name: 🔒 CodeQL Analysis
+        runs-on: ubuntu-latest
+        permissions:
+            security-events: write
+            actions: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: javascript
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+            - name: Perform CodeQL analysis
+              uses: github/codeql-action/analyze@v3
 
-  ########################################################
-  # 2. Build (format, lint, install, artifacts)
-  ########################################################
-  ci:
-    name: 🛠️ Build & Test
-    runs-on: ubuntu-latest
-    needs: [codeql]
-    environment: production
-    strategy:
-      matrix:
-        node-version: [18, 20]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    ########################################################
+    # 2. Build (format, lint, install, artifacts)
+    ########################################################
+    ci:
+        name: 🛠️ Build & Test
+        runs-on: ubuntu-latest
+        needs: [codeql]
+        environment: production
+        strategy:
+            matrix:
+                node-version: [18, 20]
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
+            - name: Setup Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ matrix.node-version }}
 
-      - name: Cache npm modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+            - name: Cache npm modules
+              uses: actions/cache@v4
+              with:
+                  path: ~/.npm
+                  key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Check formatting
-        run: npm run format -- --check
+            - name: Check formatting
+              run: npm run format -- --check
 
-      - name: Lint code
-        run: npm run lint
+            - name: Lint code
+              run: npm run lint
 
-      - name: Upload build & test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-artifacts
-          path: |
-            coverage/
-            test-results/
+            - name: Upload build & test artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ci-artifacts
+                  path: |
+                      coverage/
+                      test-results/
 
-  ########################################################
-  # 3. Build, Tag & Push Docker Image
-  ########################################################
-  build:
-    name: 🐳 Docker build
-    runs-on: ubuntu-latest
-    needs: [codeql, ci]
-    environment: production
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    ########################################################
+    # 3. Build, Tag & Push Docker Image
+    ########################################################
+    build:
+        name: 🐳 Docker build
+        runs-on: ubuntu-latest
+        needs: [codeql, ci]
+        environment: production
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image
-        run: docker build -t diana-bot:${{ github.sha }} .
+            - name: Build Docker image
+              run: docker build -t diana-bot:${{ github.sha }} .
 
-      - name: Tag & Push Docker image
-        run: |
-          docker tag diana-bot:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
+            - name: Tag & Push Docker image
+              run: |
+                  docker tag diana-bot:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
+                  docker push ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
 
-  ########################################################
-  # 4. Notify via Discord
-  ########################################################
-  notify:
-    name: 📣 Discord Notification
-    runs-on: ubuntu-latest
-    needs: [codeql, ci, build]
-    environment: production
-    steps:
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          content: |
-            ✅ Deployment complete!
+    ########################################################
+    # 4. Notify via Discord
+    ########################################################
+    notify:
+        name: 📣 Discord Notification
+        runs-on: ubuntu-latest
+        needs: [codeql, ci, build]
+        environment: production
+        steps:
+            - name: Discord Webhook Action
+              uses: tsickert/discord-webhook@v7.0.0
+              with:
+                  webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+                  content: |
+                      ✅ Deployment complete!
+                      🟢 **Status**: Passed
+                      📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
+                      🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
+                      ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
 
-            🟢 **Status**: Passed
-
-            📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
-
-            🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
-
-            ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
-
-  ########################################################
-  # 5. Notify Discord if Build Fails
-  ########################################################
-  notify-failure:
-    name: ❌ Discord Failure Notification
-    runs-on: ubuntu-latest
-    needs: [codeql, ci, build]
-    environment: production
-    if: failure()
-    steps:
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v7.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          content: |
-            ❌ Deployment Failed...
-
-            🔴 **Status**: Failed
-
-            📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
-
-            🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
-
-            ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
+    ########################################################
+    # 5. Notify Discord if Build Fails
+    ########################################################
+    notify-failure:
+        name: ❌ Discord Failure Notification
+        runs-on: ubuntu-latest
+        needs: [codeql, ci, build]
+        environment: production
+        if: failure()
+        steps:
+            - name: Discord Webhook Action
+              uses: tsickert/discord-webhook@v7.0.0
+              with:
+                  webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+                  content: |
+                      ❌ Deployment Failed...
+                      🔴 **Status**: Failed
+                      📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
+                      🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
+                      ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
