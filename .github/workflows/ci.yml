@@ -119,13 +119,12 @@ jobs:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |
             ✅ Deployment complete!
-            
+
             🟢 **Status**: Passed
 
             📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
 
             🔗 [**View Run**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
 
   ########################################################
   # 5. Notify Discord if Build Fails
