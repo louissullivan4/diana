@@ -124,9 +124,9 @@ jobs:
 
             📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
 
-            🔗 [**View Run**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
 
-            💦 [**View Pull Request**](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
+            ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
 
   ########################################################
   # 5. Notify Discord if Build Fails
@@ -149,6 +149,6 @@ jobs:
 
             📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
 
-            🔗 [**View Run**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
 
-            💦 [**View Pull Request**](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
+            ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
