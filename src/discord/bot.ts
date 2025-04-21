@@ -1,5 +1,5 @@
 import express from 'express';
-require("./matchMonitoringService");
+import './matchMonitoringService';
 
 const app = express();
 app.use(express.json());
