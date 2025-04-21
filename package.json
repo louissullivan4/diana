@@ -2,9 +2,10 @@
     "name": "diana",
     "version": "0.0.1",
     "scripts": {
-        "start": "node src/api/app.js",
-        "dev": "nodemon src/api/app.js",
-        "start-bot": "npm run build & node dist/discord/bot.js",
+        "dev": "npm run build & nodemon dist/api/app.js",
+        "dev:bot": "npm run build & nodemon dist/api/app.js",
+        "start": "node dist/api/app.js",
+        "start-bot": "node dist/discord/bot.js",
         "test": "jest",
         "format": "prettier --write .",
         "lint": "eslint .",
