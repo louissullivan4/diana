@@ -1,20 +1,16 @@
-# Use the official Node.js LTS image
-FROM node:20
+FROM node:20.9.0-bullseye-slim
 
-# Create and set the working directory
-WORKDIR /usr/src/app
+WORKDIR /usr/app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
 RUN npm install
 
-# Copy the rest of the application code
-COPY . .
+COPY tsconfig.json ./
+COPY src ./src
 
-# Expose the application port
 EXPOSE 3000
 
-# Start the application
+RUN npm run build
+
 CMD ["npm", "run", "start-bot"]
