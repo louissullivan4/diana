@@ -1,4 +1,4 @@
-import { db } from '../models/db';
+import { db } from '../utils/db';
 
 interface MatchDetail {
     gameVersion: string;

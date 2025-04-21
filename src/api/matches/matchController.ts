@@ -9,7 +9,7 @@ import {
     getMatchTimeline,
     updateMatchTimeline,
     deleteMatchTimeline,
-} from '../services/matchService';
+} from './matchService';
 
 export const createMatchDetailHandler = async (
     req: Request,

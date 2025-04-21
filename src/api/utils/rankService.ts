@@ -1,5 +1,5 @@
 import { Constants } from 'twisted';
-import { Rank } from '../types';
+import { Rank } from '../../types';
 
 const tierOrder = [
     'IRON',

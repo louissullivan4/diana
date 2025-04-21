@@ -4,7 +4,7 @@ import {
     getSummonerByAccountName,
     getSummonerByPuuid,
     updateSummonerRank,
-} from '../services/summonerService';
+} from './summonerService';
 import { Request, Response } from 'express';
 
 export const fetchSummonerByAccountName = async (

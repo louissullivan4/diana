@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Role } from '../types';
+import { Role } from '../../types';
 
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
 const CHAMPION_URL = (version: string) =>

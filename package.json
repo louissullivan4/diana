@@ -4,11 +4,12 @@
     "scripts": {
         "start": "node src/app.js",
         "dev": "nodemon src/app.js",
-        "start-bot": "node src/discord/bot.js",
+        "start-bot": "npm run build & node dist/discord/bot.js",
         "test": "jest",
         "format": "prettier --write .",
         "lint": "eslint .",
-        "lint:fix": "eslint --fix --ext .js,.jsx ."
+        "lint:fix": "eslint --fix --ext .js,.jsx .",
+        "build": "tsc"
     },
     "keywords": [],
     "author": "",

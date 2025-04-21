@@ -1,5 +1,5 @@
-import { db } from '../models/db';
-import { Summoner } from '../types';
+import { db } from '../utils/db'
+import { Summoner } from '../../types';
 
 export const getSummonerByAccountName = async (
     accountName: string,

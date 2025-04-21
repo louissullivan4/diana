@@ -3,31 +3,31 @@ import { trackedSummoners } from '../config/trackedSummoners';
 import {
     getChampionInfoById,
     getQueueNameById,
-} from '../services/dataDragonService';
-import { createMatchDetail } from '../services/matchService';
+} from '../api/utils/dataDragonService';
+import { createMatchDetail } from '../api/matches/matchService';
 import {
     calculateRankChange,
     determineRankMovement,
-} from '../services/rankService';
+} from '../api/utils/rankService';
 import {
     getActiveGameByPuuid,
     getRankEntriesByPUUID,
     getMatchSummary,
     checkConnection,
-} from '../services/riotService';
+} from '../api/utils/riotService';
 import {
     updateSummonerRank,
     setSummonerActiveMatchIdByPuuid,
     getSummonerByPuuid,
-} from '../services/summonerService';
-import { updateMissingData } from '../services/updateMissingDataService';
+} from '../api/summoners/summonerService';
+import { updateMissingData } from './updateMissingDataService';
 import {
     loginClient,
     notifyMatchStart,
     notifyMatchEnd,
     notifyRankChange,
 } from './discordService';
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { Summoner } from '../types';
 import { MatchDto } from 'twisted/dist/models-dto';
 
