@@ -77,7 +77,13 @@ export const sendDiscordMessage = async (
     channelId: string,
     message: MessageBody
 ) => {
-    if (!channelId) throw new Error('Channel ID not provided.');
+    if (!channelId) {
+        if (process.env.DISCORD_CHANNEL_ID) {
+            channelId = process.env.DISCORD_CHANNEL_ID;
+        } else {
+            throw new Error('Channel ID not provided.');
+        }
+    }
     if (!message) throw new Error('Message content not provided.');
     const channel = await client.channels.fetch(channelId);
     if (!channel) throw new Error(`Channel with ID ${channelId} not found.`);

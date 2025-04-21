@@ -27,7 +27,7 @@ import {
     notifyMatchEnd,
     notifyRankChange,
 } from './discordService';
-import * as cron from 'node-cron';
+import cron from 'node-cron';
 import { Summoner } from '../types';
 import { MatchDto } from 'twisted/dist/models-dto';
 

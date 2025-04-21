@@ -1,4 +1,6 @@
 import express from 'express';
+require("./matchMonitoringService");
+
 const app = express();
 app.use(express.json());
 const PORT = 3001;
