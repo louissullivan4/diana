@@ -2,8 +2,8 @@
     "name": "diana",
     "version": "0.0.1",
     "scripts": {
-        "start": "node src/app.js",
-        "dev": "nodemon src/app.js",
+        "start": "node src/api/app.js",
+        "dev": "nodemon src/api/app.js",
         "start-bot": "npm run build & node dist/discord/bot.js",
         "test": "jest",
         "format": "prettier --write .",
