@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Summoner, SummonerSummary } from '../types';
+import { Role, Summoner, SummonerSummary } from '../types';
 import { createMatchDetail, getMatchDetailsByPuuid } from '../api/matches/matchService';
 import { getMatchesByPUUID, getMatchSummary } from '../api/utils/riotService';
 import { notifyMissingData } from './discordService';
@@ -159,37 +159,41 @@ export async function updateMissingData(summoner: Summoner) {
         }
     }
 
-    const totalTimeInHours = (totalDuration / 3600 || 0).toFixed(0) + ' hours';
-    const mostPlayedChampionId = Object.keys(championCount).reduce((a, b) =>
-        championCount[a] > championCount[b] ? a : b
-    );
-    const mostPlayedChampion = (await getChampionInfoById(
-        mostPlayedChampionId
-    )) || {
-        name: 'Unknown Champion',
-        tagString: 'Unknown',
-    };
-    const averageDamageDealtToChampions =
-        (totalDamageDealtToChampions / totalGames).toFixed(0) || '0';
-    const mostPlayedRole = Object.keys(roleCount).reduce(
-        (a: any, b: any) => (roleCount[a] > roleCount[b] ? a : b),
-        {}
-    );
-    const winRate = ((wins / totalGames) * 100).toFixed(2) || 0 + '%';
-
+    const getMostPlayed = (countObj: Record<string, number>) => 
+        Object.keys(countObj).reduce((a, b) => (countObj[+a] > countObj[+b] ? a : b), '') || '0';
+    
+    const formatWinRate = (wins: number, totalGames: number) => 
+        ((wins / totalGames) * 100).toFixed(2) + '%';
+    
+    const formatDamage = (totalDamage: number, totalGames: number) => 
+        (totalDamage / totalGames).toFixed(0) || '0';
+    
+    const formatTime = (totalDuration: number) => 
+        (totalDuration / 3600 || 0).toFixed(0) + ' hours';
+    
+    const getMostPlayedChampionInfo = async (championId: string) => 
+        (await getChampionInfoById(championId)) || { name: 'Unknown Champion', tagString: 'Unknown' };
+    
+    const mostPlayedChampionId = getMostPlayed(championCount);
+    const mostPlayedChampion = await getMostPlayedChampionInfo(mostPlayedChampionId);
+    const mostPlayedRole = getMostPlayed(roleCount);
+    const winRate = formatWinRate(wins, totalGames);
+    const averageDamageDealtToChampions = formatDamage(totalDamageDealtToChampions, totalGames);
+    const totalTimeInHours = formatTime(totalDuration);
+    
     let summonerSummary: SummonerSummary = {
         name: summoner.gameName,
         tier: summoner.tier,
         rank: summoner.rank,
         lp: summoner.lp,
-        totalGames: totalGames,
-        wins: wins,
-        losses: losses,
-        winRate: winRate,
-        totalTimeInHours: totalTimeInHours,
-        mostPlayedChampion: mostPlayedChampion,
-        averageDamageDealtToChampions: averageDamageDealtToChampions,
-        mostPlayedRole: getRoleNameTranslation(mostPlayedRole),
+        totalGames,
+        wins,
+        losses,
+        winRate,
+        totalTimeInHours,
+        mostPlayedChampion,
+        averageDamageDealtToChampions,
+        mostPlayedRole: getRoleNameTranslation(mostPlayedRole as unknown as Role),
         discordChannelId: summoner.discordChannelId,
     };
 
