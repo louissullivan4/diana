@@ -1,7 +1,7 @@
 import { LolApi, Constants, RiotApi } from 'twisted';
 import 'dotenv/config';
 import axios from 'axios';
-import { Account } from '../types';
+import { Account } from '../../types';
 import { LeagueEntryDTO, MatchDto } from 'twisted/dist/models-dto';
 
 const riotApi = new RiotApi({ key: process.env.RIOT_API_KEY });

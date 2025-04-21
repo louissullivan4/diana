@@ -4,7 +4,7 @@ import {
     createSummonerHandler,
     updateSummonerRankByPuuid,
     deleteSummonerByPuuid,
-} from '../controllers/summonerController';
+} from './summonerController';
 
 export const summonerRouter = express.Router();
 

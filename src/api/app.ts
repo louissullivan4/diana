@@ -1,6 +1,6 @@
 import express from 'express';
-import { matchRouter } from './routes/matchRoutes';
-import { summonerRouter } from './routes/summonerRoutes';
+import { matchRouter } from './matches/matchRoutes';
+import { summonerRouter } from './summoners/summonerRoutes';
 
 const app = express();
 app.use(express.json());

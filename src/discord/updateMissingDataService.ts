@@ -1,14 +1,14 @@
 import 'dotenv/config';
 import { Summoner, SummonerSummary } from '../types';
-import { createMatchDetail, getMatchDetailsByPuuid } from './matchService';
-import { getMatchesByPUUID, getMatchSummary } from './riotService';
-import { notifyMissingData } from '../discord/discordService';
+import { createMatchDetail, getMatchDetailsByPuuid } from '../api/matches/matchService';
+import { getMatchesByPUUID, getMatchSummary } from '../api/utils/riotService';
+import { notifyMissingData } from './discordService';
 import {
     getQueueNameById,
     getChampionInfoById,
     getRoleNameTranslation,
-} from './dataDragonService';
-import { updateSummonerMissingDataNotificationTimeByPuuid } from './summonerService';
+} from '../api/utils/dataDragonService';
+import { updateSummonerMissingDataNotificationTimeByPuuid } from '../api/summoners/summonerService';
 
 async function missingDataNotificationDue(missing_data_last_sent_time: number) {
     try {

@@ -9,7 +9,7 @@ import {
     fetchMatchTimelineHandler,
     updateMatchTimelineHandler,
     deleteMatchTimelineHandler,
-} from '../controllers/matchController';
+} from './matchController';
 
 export const matchRouter = Router();
 
