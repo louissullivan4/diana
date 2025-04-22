@@ -9,12 +9,7 @@ import {
     calculateRankChange,
     determineRankMovement,
 } from '../api/utils/rankService';
-import {
-    getActiveGameByPuuid,
-    getRankEntriesByPUUID,
-    getMatchSummary,
-    checkConnection,
-} from '../api/utils/riotService';
+import { createLolService } from '../api/utils/lolService/lolServiceFactory';
 import {
     updateSummonerRank,
     setSummonerActiveMatchIdByPuuid,
@@ -29,13 +24,16 @@ import {
 } from './discordService';
 import cron from 'node-cron';
 import { Summoner } from '../types';
-import { MatchDto } from 'twisted/dist/models-dto';
+
+const lolService = createLolService();
 
 const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
         await loginClient();
         await updateMissingData(summoner);
-        const activeGameData = await getActiveGameByPuuid(summoner.puuid);
+        const activeGameData = await lolService.getActiveGameByPuuid(
+            summoner.puuid
+        );
         if (activeGameData) {
             await handleMatchStart(summoner, activeGameData);
         } else {
@@ -56,10 +54,9 @@ const handleMatchStart = async (summoner: Summoner, activeGameData: any) => {
     const summonerName = summoner.gameName;
     const currentMatchId = summoner.currentMatchId;
     if (!currentMatchId) {
-        const rankEntries = await getRankEntriesByPUUID(puuid);
-        const soloRank = rankEntries.find(
-            (e) => e.queueType === 'RANKED_SOLO_5x5'
-        );
+        const rankEntries = await lolService.getRankEntriesByPUUID(puuid);
+        const soloRank =
+            rankEntries?.find((e) => e.queueType === 'RANKED_SOLO_5x5') || null;
         const summonerCurrentRankInfo = {
             tier: soloRank ? soloRank.tier : 'Unranked',
             rank: soloRank ? soloRank.rank : 'N/A',
@@ -102,7 +99,7 @@ const handleMatchEnd = async (summoner: Summoner) => {
     const matchRegionPrefix = summoner.matchRegionPrefix;
     if (currentMatchId) {
         const fullMatchId = `${matchRegionPrefix}_${currentMatchId}`;
-        const matchSummaryData = await getMatchSummary(fullMatchId);
+        const matchSummaryData = await lolService.getMatchSummary(fullMatchId);
         if (matchSummaryData?.info) {
             const matchDetails = {
                 matchId: fullMatchId,
@@ -141,10 +138,12 @@ const handleMatchEnd = async (summoner: Summoner) => {
                 'N/A';
             const damage = participant?.totalDamageDealtToChampions || 0;
             const oldRankInfo = { tier, rank, lp };
-            const rankEntriesPost = await getRankEntriesByPUUID(puuid);
-            const soloRankPost = rankEntriesPost.find(
-                (e) => e.queueType === 'RANKED_SOLO_5x5'
-            );
+            const rankEntriesPost =
+                await lolService.getRankEntriesByPUUID(puuid);
+            const soloRankPost =
+                rankEntriesPost?.find(
+                    (e) => e.queueType === 'RANKED_SOLO_5x5'
+                ) || null;
             let newRankMsg = 'Unranked N/A (0 LP)';
             let lpChangeMsg = 0;
             let checkForRankUp = 'no_change';
@@ -200,14 +199,14 @@ const handleMatchEnd = async (summoner: Summoner) => {
     }
 };
 
-cron.schedule('*/30 * * * * *', async () => {
+cron.schedule('*/20 * * * * *', async () => {
     if (process.env.STOP_BOT) {
         console.log(
             `[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`
         );
         return;
     }
-    const apiValid = await checkConnection();
+    const apiValid = await lolService.checkConnection();
     if (apiValid) {
         console.log(
             `[Info] [${new Date().toISOString()}] Starting cron check for active matches...`

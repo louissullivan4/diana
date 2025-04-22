@@ -8,6 +8,13 @@ let server;
 try {
     server = app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
+        if (process.env.USE_RIOT_API === 'true') {
+            if (process.env.RIOT_API_KEY) {
+                console.log('Using Riot API');
+            }
+        } else {
+            console.log('Using Mock API');
+        }
     });
 } catch (error) {
     console.error('Error starting server:', error);

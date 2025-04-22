@@ -1,4 +1,10 @@
 import { AccountDto } from 'twisted/dist/models-dto/account/account.dto';
+import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
+import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
+import {
+    MatchV5DTOs,
+    MatchV5TimelineDTOs,
+} from 'twisted/dist/models-dto/matches/match-v5';
 
 export interface Account extends AccountDto {
     region: string;
@@ -30,7 +36,7 @@ export interface Summoner {
     lp: number;
     currentMatchId: string;
     lastUpdated: string;
-    missingDataLastSentTime: number;
+    lastMissingDataNotification: number;
     discordChannelId: string;
     deepLolLink: string;
     matchRegionPrefix: string;
@@ -49,4 +55,15 @@ export interface Rank {
     division?: string;
     lp: number;
     rank: string;
+}
+
+export interface ILolService {
+    checkConnection(): Promise<boolean>;
+    getMatchesByPUUID(puuid: string, count?: number): Promise<string[]>;
+    getMatchDataById(
+        matchId: string
+    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto | null>;
+    getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto | null>;
+    getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[] | null>;
+    getActiveGameByPuuid(puuid: string): Promise<CurrentGameInfoDTO | null>;
 }

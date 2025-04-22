@@ -8,6 +8,7 @@ export default defineConfig([
         '**/*.spec.js',
         'node_modules/**',
         'diana-frontend/**',
+        'dist/**'
     ]),
     {
         files: ['**/*.js'],

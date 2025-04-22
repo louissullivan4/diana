@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import { Role, Summoner, SummonerSummary } from '../types';
-import { createMatchDetail, getMatchDetailsByPuuid } from '../api/matches/matchService';
-import { getMatchesByPUUID, getMatchSummary } from '../api/utils/riotService';
+import {
+    createMatchDetail,
+    getMatchDetailsByPuuid,
+} from '../api/matches/matchService';
 import { notifyMissingData } from './discordService';
 import {
     getQueueNameById,
@@ -9,13 +11,16 @@ import {
     getRoleNameTranslation,
 } from '../api/utils/dataDragonService';
 import { updateSummonerMissingDataNotificationTimeByPuuid } from '../api/summoners/summonerService';
+import { createLolService } from '../api/utils/lolService/lolServiceFactory';
 
-async function missingDataNotificationDue(missing_data_last_sent_time: number) {
+const lolService = createLolService();
+
+async function missingDataNotificationDue(lastMissingDataNotification: number) {
     try {
-        if (!missing_data_last_sent_time) {
+        if (!lastMissingDataNotification) {
             return true;
         }
-        const lastSentTime = new Date(missing_data_last_sent_time);
+        const lastSentTime = new Date(lastMissingDataNotification);
         const currentTime = new Date();
         const timeDiff = Math.abs(
             currentTime.getTime() - lastSentTime.getTime()
@@ -45,7 +50,7 @@ export async function updateMissingData(summoner: Summoner) {
     }
     const puuid = summoner.puuid;
     const notificationDue = await missingDataNotificationDue(
-        summoner.missingDataLastSentTime
+        summoner.lastMissingDataNotification
     );
     if (!notificationDue) {
         console.info(
@@ -64,7 +69,7 @@ export async function updateMissingData(summoner: Summoner) {
         );
     }
 
-    const allIds = await getMatchesByPUUID(puuid, 50);
+    const allIds = await lolService.getMatchesByPUUID(puuid, 50);
     if (!Array.isArray(allIds) || allIds.length === 0) {
         console.info(
             `[Info] Riot returned no matches for: ${summoner.gameName}`
@@ -97,8 +102,8 @@ export async function updateMissingData(summoner: Summoner) {
 
     for (const matchId of missingIds) {
         try {
-            const data = await getMatchSummary(matchId);
-            const info = data.info;
+            const data = await lolService.getMatchSummary(matchId);
+            const info = data?.info || null;
             if (!info) {
                 console.warn(`[Warn] No info block for match ${matchId}`);
                 continue;
@@ -159,28 +164,38 @@ export async function updateMissingData(summoner: Summoner) {
         }
     }
 
-    const getMostPlayed = (countObj: Record<string, number>) => 
-        Object.keys(countObj).reduce((a, b) => (countObj[+a] > countObj[+b] ? a : b), '') || '0';
-    
-    const formatWinRate = (wins: number, totalGames: number) => 
+    const getMostPlayed = (countObj: Record<string, number>) =>
+        Object.keys(countObj).reduce(
+            (a, b) => (countObj[+a] > countObj[+b] ? a : b),
+            ''
+        ) || '0';
+
+    const formatWinRate = (wins: number, totalGames: number) =>
         ((wins / totalGames) * 100).toFixed(2) + '%';
-    
-    const formatDamage = (totalDamage: number, totalGames: number) => 
+
+    const formatDamage = (totalDamage: number, totalGames: number) =>
         (totalDamage / totalGames).toFixed(0) || '0';
-    
-    const formatTime = (totalDuration: number) => 
+
+    const formatTime = (totalDuration: number) =>
         (totalDuration / 3600 || 0).toFixed(0) + ' hours';
-    
-    const getMostPlayedChampionInfo = async (championId: string) => 
-        (await getChampionInfoById(championId)) || { name: 'Unknown Champion', tagString: 'Unknown' };
-    
+
+    const getMostPlayedChampionInfo = async (championId: string) =>
+        (await getChampionInfoById(championId)) || {
+            name: 'Unknown Champion',
+            tagString: 'Unknown',
+        };
+
     const mostPlayedChampionId = getMostPlayed(championCount);
-    const mostPlayedChampion = await getMostPlayedChampionInfo(mostPlayedChampionId);
+    const mostPlayedChampion =
+        await getMostPlayedChampionInfo(mostPlayedChampionId);
     const mostPlayedRole = getMostPlayed(roleCount);
     const winRate = formatWinRate(wins, totalGames);
-    const averageDamageDealtToChampions = formatDamage(totalDamageDealtToChampions, totalGames);
+    const averageDamageDealtToChampions = formatDamage(
+        totalDamageDealtToChampions,
+        totalGames
+    );
     const totalTimeInHours = formatTime(totalDuration);
-    
+
     let summonerSummary: SummonerSummary = {
         name: summoner.gameName,
         tier: summoner.tier,
@@ -193,7 +208,9 @@ export async function updateMissingData(summoner: Summoner) {
         totalTimeInHours,
         mostPlayedChampion,
         averageDamageDealtToChampions,
-        mostPlayedRole: getRoleNameTranslation(mostPlayedRole as unknown as Role),
+        mostPlayedRole: getRoleNameTranslation(
+            mostPlayedRole as unknown as Role
+        ),
         discordChannelId: summoner.discordChannelId,
     };
 
