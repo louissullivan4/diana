@@ -104,6 +104,19 @@ INSERT INTO "summoners" (
     '1328406947677995099',
     'EUROPE'
 )
+(
+    'VcKXZg_8LUk4vkqL_M93rKfOQCqzmTAMFIoJ7SwLXv56zpDOl2gsN9z05R8iFqwHx-InF6hJyqekSw',
+    'Yez',
+    '1234',
+    'EU_WEST',
+    'EUW1',
+    'https://www.deeplol.gg/summoner/euw/Yez-1234',
+    'Unranked',
+    'N/A',
+    0,
+    '1328406947677995099',
+    'EUROPE'
+)
 ON CONFLICT ("puuid") DO NOTHING;
 
 -- ====================================

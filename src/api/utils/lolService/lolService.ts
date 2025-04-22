@@ -42,9 +42,6 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            console.error(
-                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
-            );
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'
@@ -63,9 +60,6 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            console.error(
-                `[Error] [${matchId}] [${error?.status}]: ${error?.message}`
-            );
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'
@@ -84,9 +78,6 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            console.error(
-                `[Error] [${matchId}] [${error?.status}]: ${error?.message}`
-            );
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'
@@ -105,9 +96,6 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            console.error(
-                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
-            );
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'
@@ -126,9 +114,11 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            console.error(
-                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
-            );
+            if (error?.status !== 404) {
+                console.error(
+                    `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
+                );
+            }
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'
