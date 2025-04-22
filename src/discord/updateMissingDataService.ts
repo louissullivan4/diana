@@ -58,9 +58,19 @@ export async function updateMissingData(summoner: Summoner) {
         );
         return;
     }
-    const existingDetails = await getMatchDetailsByPuuid(puuid, 50);
-    const existingMatchIds = existingDetails.map((m) => String(m.matchid));
+    await updateSummonerMissingDataNotificationTimeByPuuid(summoner.puuid);
 
+    let existingDetails;
+    try {
+        existingDetails = await getMatchDetailsByPuuid(puuid, 50);
+    } catch {
+        console.error(
+            `[Error] Failed to fetch existing match details for: ${summoner.gameName}. Skipping today's update.`
+        );
+        return;
+    }
+
+    const existingMatchIds = existingDetails.map((m) => String(m.matchid));
     const storedIds = new Set(existingMatchIds);
 
     if (existingMatchIds.length === 0) {
@@ -69,10 +79,18 @@ export async function updateMissingData(summoner: Summoner) {
         );
     }
 
-    const allIds = await lolService.getMatchesByPUUID(puuid, 50);
-    if (!Array.isArray(allIds) || allIds.length === 0) {
-        console.info(
-            `[Info] Riot returned no matches for: ${summoner.gameName}`
+    let allIds;
+    try {
+        allIds = await lolService.getMatchesByPUUID(puuid, 50);
+        if (!Array.isArray(allIds) || allIds.length === 0) {
+            console.info(
+                `[Info] Riot returned no matches for: ${summoner.gameName}`
+            );
+            return;
+        }
+    } catch {
+        console.error(
+            `[Error] Failed to fetch matches for: ${summoner.gameName}`
         );
         return;
     }
@@ -180,10 +198,7 @@ export async function updateMissingData(summoner: Summoner) {
         (totalDuration / 3600 || 0).toFixed(0) + ' hours';
 
     const getMostPlayedChampionInfo = async (championId: string) =>
-        (await getChampionInfoById(championId)) || {
-            name: 'Unknown Champion',
-            tagString: 'Unknown',
-        };
+        await getChampionInfoById(championId);
 
     const mostPlayedChampionId = getMostPlayed(championCount);
     const mostPlayedChampion =

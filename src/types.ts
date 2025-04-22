@@ -40,6 +40,7 @@ export interface Summoner {
     discordChannelId: string;
     deepLolLink: string;
     matchRegionPrefix: string;
+    regionGroup: string;
 }
 
 export enum Role {
@@ -57,13 +58,23 @@ export interface Rank {
     rank: string;
 }
 
+export class LolApiError extends Error {
+    constructor(
+        public status: number,
+        message: string
+    ) {
+        super(message);
+        this.name = 'LolApiError';
+    }
+}
+
 export interface ILolService {
     checkConnection(): Promise<boolean>;
     getMatchesByPUUID(puuid: string, count?: number): Promise<string[]>;
     getMatchDataById(
         matchId: string
-    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto | null>;
-    getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto | null>;
-    getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[] | null>;
-    getActiveGameByPuuid(puuid: string): Promise<CurrentGameInfoDTO | null>;
+    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto>;
+    getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto>;
+    getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
+    getActiveGameByPuuid(puuid: string): Promise<CurrentGameInfoDTO>;
 }

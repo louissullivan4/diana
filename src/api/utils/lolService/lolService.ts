@@ -1,5 +1,5 @@
 import { LolApi, Constants } from 'twisted';
-import { ILolService } from '../../../types';
+import { ILolService, LolApiError } from '../../../types';
 import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
@@ -42,20 +42,20 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            if (error.status === 404) return [];
-            else {
-                console.error(
-                    `[Error] [${puuid}]: ${error.message}`
-                );
-                throw error;
-            }
+            console.error(
+                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
+            );
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
         }
     }
 
     async getMatchDataById(
         matchId: string,
         regionGroup: RegionGroup = Constants.RegionGroups.EUROPE
-    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto | null> {
+    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto> {
         try {
             const { response } = await this.lolApi.MatchV5.timeline(
                 matchId,
@@ -63,20 +63,20 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            if (error.status === 404) return null;
-            else {
-                console.error(
-                    `[Error] [${matchId}]: ${error.message}`
-                );
-                throw error;
-            }
+            console.error(
+                `[Error] [${matchId}] [${error?.status}]: ${error?.message}`
+            );
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
         }
     }
 
     async getMatchSummary(
         matchId: string,
         regionGroup: RegionGroup = Constants.RegionGroups.EUROPE
-    ): Promise<MatchV5DTOs.MatchDto | null> {
+    ): Promise<MatchV5DTOs.MatchDto> {
         try {
             const { response } = await this.lolApi.MatchV5.get(
                 matchId,
@@ -84,20 +84,20 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            if (error.status === 404) return null;
-            else {
-                console.error(
-                    `[Error] [${matchId}]: ${error.message}`
-                );
-                throw error;
-            }
+            console.error(
+                `[Error] [${matchId}] [${error?.status}]: ${error?.message}`
+            );
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
         }
     }
 
     async getRankEntriesByPUUID(
         puuid: string,
         region: Region = Constants.Regions.EU_WEST
-    ): Promise<SummonerLeagueDto[] | null> {
+    ): Promise<SummonerLeagueDto[]> {
         try {
             const { response } = await this.lolApi.League.byPUUID(
                 puuid,
@@ -105,20 +105,20 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            if (error.status === 404) return null;
-            else {
-                console.error(
-                    `[Error] [${puuid}]: ${error.message}`
-                );
-                throw error;
-            }
+            console.error(
+                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
+            );
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
         }
     }
 
     async getActiveGameByPuuid(
         puuid: string,
         region: Region = Constants.Regions.EU_WEST
-    ): Promise<CurrentGameInfoDTO | null> {
+    ): Promise<CurrentGameInfoDTO> {
         try {
             const { response } = await this.lolApi.SpectatorV5.activeGame(
                 puuid,
@@ -126,13 +126,13 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
-            if (error.status === 404) return null;
-            else {
-                console.error(
-                    `[Error] [${puuid}]: ${error.message}`
-                );
-                throw error;
-            }
+            console.error(
+                `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
+            );
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
         }
     }
 }

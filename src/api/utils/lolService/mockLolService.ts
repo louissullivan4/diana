@@ -1,4 +1,4 @@
-import { ILolService } from '../../../types';
+import { ILolService, LolApiError } from '../../../types';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
@@ -29,36 +29,30 @@ export class MockLolService implements ILolService {
 
     async getMatchDataById(
         matchId: string
-    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto | null> {
-        return JsonLoader.load<MatchV5TimelineDTOs.MatchTimelineDto | null>(
+    ): Promise<MatchV5TimelineDTOs.MatchTimelineDto> {
+        return JsonLoader.load<MatchV5TimelineDTOs.MatchTimelineDto>(
             'riot_match_timeline_by_match_id.json'
         );
     }
 
-    async getMatchSummary(
-        matchId: string
-    ): Promise<MatchV5DTOs.MatchDto | null> {
-        return JsonLoader.load<MatchV5DTOs.MatchDto | null>(
+    async getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto> {
+        return JsonLoader.load<MatchV5DTOs.MatchDto>(
             'riot_match_data_by_match_id.json'
         );
     }
 
-    async getRankEntriesByPUUID(
-        puuid: string
-    ): Promise<SummonerLeagueDto[] | null> {
-        return JsonLoader.load<SummonerLeagueDto[] | null>(
+    async getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]> {
+        return JsonLoader.load<SummonerLeagueDto[]>(
             'riot_league_account_info.json'
         );
     }
 
-    async getActiveGameByPuuid(
-        puuid: string
-    ): Promise<CurrentGameInfoDTO | null> {
+    async getActiveGameByPuuid(puuid: string): Promise<CurrentGameInfoDTO> {
         const randomValue = Math.random();
         if (randomValue < 0.5) {
-            return null;
+            throw new LolApiError(404, 'No active game found');
         }
-        return JsonLoader.load<CurrentGameInfoDTO | null>(
+        return JsonLoader.load<CurrentGameInfoDTO>(
             'riot_active_game_found.json'
         );
     }
