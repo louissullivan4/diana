@@ -57,17 +57,6 @@ export interface Rank {
     lp: number;
     rank: string;
 }
-
-export class LolApiError extends Error {
-    constructor(
-        public status: number,
-        message: string
-    ) {
-        super(message);
-        this.name = 'LolApiError';
-    }
-}
-
 export interface ILolService {
     checkConnection(): Promise<boolean>;
     getMatchesByPUUID(puuid: string, count?: number): Promise<string[]>;

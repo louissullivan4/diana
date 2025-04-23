@@ -121,7 +121,7 @@ export async function updateMissingData(summoner: Summoner) {
     for (const matchId of missingIds) {
         try {
             const data = await lolService.getMatchSummary(matchId);
-            const info = data?.info || null;
+            const info = data?.info
             if (!info) {
                 console.warn(`[Warn] No info block for match ${matchId}`);
                 continue;

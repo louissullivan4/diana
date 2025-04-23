@@ -1,4 +1,5 @@
-import { ILolService, LolApiError } from '../../../types';
+import { ILolService } from '../../../types';
+import { LolApiError } from './lolService';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';

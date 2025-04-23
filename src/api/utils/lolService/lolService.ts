@@ -1,5 +1,5 @@
 import { LolApi, Constants } from 'twisted';
-import { ILolService, LolApiError } from '../../../types';
+import { ILolService } from '../../../types';
 import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
@@ -10,6 +10,16 @@ import {
 type Region = (typeof Constants.Regions)[keyof typeof Constants.Regions];
 type RegionGroup =
     (typeof Constants.RegionGroups)[keyof typeof Constants.RegionGroups];
+
+export class LolApiError extends Error {
+    constructor(
+        public status: number,
+        message: string
+    ) {
+        super(message);
+        this.name = 'LolApiError';
+    }
+}
 
 export class LolService implements ILolService {
     private lolApi: LolApi;
