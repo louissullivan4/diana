@@ -1,4 +1,4 @@
-import { db } from '../utils/db'
+import { db } from '../utils/db';
 import { Summoner } from '../../types';
 
 export const getSummonerByAccountName = async (
@@ -9,7 +9,7 @@ export const getSummonerByAccountName = async (
     try {
         const query = `
             SELECT * FROM summoners
-            WHERE gamename = $1 AND tagLine = $2 AND region = $3
+            WHERE "gameName" = $1 AND "tagLine" = $2 AND "region" = $3
         `;
         const params = [accountName, tagLine, region];
         const result = await db.query(query, params);
@@ -29,7 +29,7 @@ export const getSummonerByAccountName = async (
 
 export const getSummonerByPuuid = async (puuid: string) => {
     try {
-        const query = `SELECT * FROM summoners WHERE puuid = $1`;
+        const query = `SELECT * FROM summoners WHERE "puuid" = $1`;
         const params = [puuid];
         const result = await db.query(query, params);
         const summoner = result.rows[0];
@@ -47,7 +47,7 @@ export const getSummonerByPuuid = async (puuid: string) => {
 export const getSummonerCurrentGame = async (puuid: string) => {
     try {
         const query = `
-            SELECT currentmatchid FROM summoners
+            SELECT "currentMatchId" FROM summoners
             WHERE puuid = $1
         `;
         const params = [puuid];
@@ -55,7 +55,7 @@ export const getSummonerCurrentGame = async (puuid: string) => {
         const matchId = result.rows[0];
         if (!matchId) {
             console.info(`Summoner with PUUID ${puuid} has no current game`);
-            return null;
+            return {};
         }
         return matchId;
     } catch (error) {
@@ -67,19 +67,22 @@ export const getSummonerCurrentGame = async (puuid: string) => {
 export const createSummoner = async (summonerData: Partial<Summoner>) => {
     try {
         const query = `
-            INSERT INTO summoners (gamename, tagline, region, puuid, tier, rank, lp, currentmatchid, lastupdated, missing_data_last_sent_time)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            INSERT INTO summoners ("puuid", "gameName", "tagLine", "region", "matchRegionPrefix", "deepLolLink", "tier", "rank", "lp", "discordChannelId", "regionGroup")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
         `;
         const params = [
+            summonerData.puuid,
             summonerData.gameName,
             summonerData.tagLine,
             summonerData.region,
-            summonerData.puuid,
+            summonerData.matchRegionPrefix,
+            summonerData.deepLolLink,
             summonerData.tier,
             summonerData.rank,
             summonerData.lp,
-            summonerData.currentMatchId,
+            summonerData.discordChannelId,
+            summonerData.regionGroup,
         ];
         const result = await db.query(query, params);
         return result.rows[0];
@@ -96,11 +99,11 @@ export const updateSummonerRank = async (
         const query = `
             UPDATE summoners
             SET 
-                tier = $1,
-                rank = $2,
-                lp = $3,
-                lastupdated = NOW()
-            WHERE puuid = $4
+                "tier" = $1,
+                "rank" = $2,
+                "lp" = $3,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $4
             RETURNING *;
         `;
         const params = [
@@ -126,7 +129,7 @@ export const deleteSummoner = async (puuid: string) => {
     try {
         const query = `
             DELETE FROM summoners
-            WHERE puuid = $1
+            WHERE "puuid" = $1
             RETURNING *;
         `;
         const params = [puuid];
@@ -150,9 +153,9 @@ export const setSummonerActiveMatchIdByPuuid = async (
         const query = `
             UPDATE summoners
             SET 
-                currentmatchid = $1,
-                lastupdated = NOW()
-            WHERE puuid = $2
+                "currentMatchId" = $1,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $2
             RETURNING *;
         `;
         const params = [matchId, puuid];
@@ -174,7 +177,7 @@ export async function updateSummonerMissingDataNotificationTimeByPuuid(
     try {
         const query = `
             UPDATE summoners
-            SET missing_data_last_sent_time = NOW()
+            SET "lastMissingDataNotification" = NOW()
             WHERE puuid = $1
         `;
         const params = [summonerPuuid];

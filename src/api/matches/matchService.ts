@@ -20,9 +20,9 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
     try {
         const query = `
             INSERT INTO match_details (
-                matchId, entryPlayerPuuid, gameVersion, gameCreation, 
-                gameStartTime, gameEndTime, gameDuration, gameMode, 
-                gameType, queueType, mapName, participants, teams, lastUpdated
+                "matchId", "entryPlayerPuuid", "gameVersion", "gameCreation", 
+                "gameStartTime", "gameEndTime", "gameDuration", "gameMode", 
+                "gameType", "queueType", "mapName", "participants", "teams", "lastUpdated"
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
             )
@@ -59,8 +59,8 @@ export const getMatchDetailsByPuuid = async (
         const query = `
             SELECT * 
             FROM match_details
-            WHERE entryPlayerPuuid = $1
-            ORDER BY gameCreation DESC
+            WHERE "entryPlayerPuuid" = $1
+            ORDER BY "gameCreation" DESC
             LIMIT $2;
         `;
         const params = [puuid, numberOfMatches.toString()];
@@ -77,7 +77,7 @@ export const getMatchDetailsByMatchId = async (matchId: string) => {
         const query = `
             SELECT * 
             FROM match_details
-            WHERE matchId = $1
+            WHERE "matchId" = $1
         `;
         const params = [matchId];
         const result = await db.query(query, params);
@@ -96,18 +96,18 @@ export const updateMatchDetail = async (
         const query = `
             UPDATE match_details
             SET 
-                gameVersion = $1,
-                gameCreation = $2,
-                gameStartTime = $3,
-                gameEndTime = $4,
-                gameDuration = $5,
-                gameMode = $6,
-                gameType = $7,
-                queueType = $8,
-                mapName = $9,
-                participants = $10,
-                teams = $11,
-                lastUpdated = NOW()
+                "gameVersion" = $1,
+                "gameCreation" = $2,
+                "gameStartTime" = $3,
+                "gameEndTime" = $4,
+                "gameDuration" = $5,
+                "gameMode" = $6,
+                "gameType" = $7,
+                "queueType" = $8,
+                "mapName" = $9,
+                "participants" = $10,
+                "teams" = $11,
+                "lastUpdated" = NOW()
             WHERE matchId = $12
             RETURNING *;
         `;
@@ -137,7 +137,7 @@ export const deleteMatchDetail = async (matchId: string) => {
     try {
         const query = `
             DELETE FROM match_details
-            WHERE matchId = $1
+            WHERE "matchId" = $1
             RETURNING *;
         `;
         const params = [matchId];
@@ -155,7 +155,7 @@ interface MatchTimelineData {
 export const createMatchTimeline = async (data: MatchTimelineData) => {
     const query = `
         INSERT INTO match_timeline (
-            matchId, timelineData, createdAt
+            "matchId", "timelineData", "createdAt"
         ) VALUES ($1, $2, NOW())
         RETURNING *
     `;
@@ -168,7 +168,7 @@ export const getMatchTimeline = async (matchId: string) => {
     const query = `
         SELECT *
         FROM match_timeline
-        WHERE matchId = $1
+        WHERE "matchId" = $1
     `;
     const params = [matchId];
     const result = await db.query(query, params);
@@ -181,10 +181,10 @@ export const updateMatchTimeline = async (
 ) => {
     const query = `
         UPDATE match_timeline
-        SET matchId = $1,
-            timelineData = $2,
-            updatedAt = NOW()
-        WHERE id = $3
+        SET "matchId" = $1,
+            "timelineData" = $2,
+            "updatedAt" = NOW()
+        WHERE "id" = $3
         RETURNING *
     `;
     const params = [data.matchId, data.timelineData, timelineId];
@@ -195,7 +195,7 @@ export const updateMatchTimeline = async (
 export const deleteMatchTimeline = async (timelineId: string) => {
     const query = `
         DELETE FROM match_timeline
-        WHERE id = $1
+        WHERE "id" = $1
         RETURNING *
     `;
     const params = [timelineId];
