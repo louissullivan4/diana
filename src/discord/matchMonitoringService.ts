@@ -23,8 +23,9 @@ import {
     notifyRankChange,
 } from './discordService';
 import cron from 'node-cron';
-import { LolApiError, Summoner } from '../types';
+import { Summoner } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
+import { LolApiError } from '../api/utils/lolService/lolService';
 
 const lolService = createLolService();
 
