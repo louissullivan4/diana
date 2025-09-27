@@ -8,10 +8,4 @@ export const trackedSummoners = [
     {
         puuid: 'rKCZwiocEjGVQp7pLq9WkrxhN5VGddJh-TX3NRa7LXslIZsWygt2r3UXdfg2DSwoY4Q3NpKTcbrkWg',
     },
-    {
-        puuid: 'wsedDXW_ao6vCxfpdxBXohBYLZghQMtg7YxWtnVo9p_H3iv-M7ibWM2fU7MkK6Vn8LgXTOCLveex7w',
-    },
-    {
-        puuid: 'VcKXZg_8LUk4vkqL_M93rKfOQCqzmTAMFIoJ7SwLXv56zpDOl2gsN9z05R8iFqwHx-InF6hJyqekSw',
-    },
 ];
