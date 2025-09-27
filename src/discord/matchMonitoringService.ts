@@ -32,7 +32,7 @@ const lolService = createLolService();
 const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
         await loginClient();
-        await updateMissingData(summoner);
+        // await updateMissingData(summoner);
 
         const activeGameData = await lolService.getActiveGameByPuuid(
             summoner.puuid
