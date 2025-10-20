@@ -3,6 +3,7 @@ import { trackedSummoners } from '../config/trackedSummoners';
 import {
     getChampionInfoById,
     getQueueNameById,
+    getRoleNameTranslation,
 } from '../api/utils/dataDragonService';
 import { createMatchDetail } from '../api/matches/matchService';
 import {
@@ -213,7 +214,7 @@ const handleNewMatchCompleted = async (
         newRankMsg,
         lpChangeMsg,
         championDisplay: champion,
-        role,
+        role: getRoleNameTranslation(role),
         kdaStr,
         damage,
         discordChannelId: summoner.discordChannelId || '',

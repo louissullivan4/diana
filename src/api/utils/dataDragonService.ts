@@ -64,13 +64,13 @@ export const getQueueNameById = (queueId: number) => {
     return queueMap.get(queueId) || `Unknown Queue (ID: ${queueId})`;
 };
 
-export const getRoleNameTranslation = (role: Role) => {
-    const roleMap = new Map<Role, string>([
-        [Role.TOP, 'Top'],
-        [Role.JUNGLE, 'Jungle'],
-        [Role.MIDDLE, 'Mid'],
-        [Role.BOTTOM, 'ADC'],
-        [Role.UTILITY, 'Support'],
+export const getRoleNameTranslation = (role: string) => {
+    const roleMap = new Map<string, string>([
+        ['TOP', 'Top'],
+        ['JUNGLE', 'Jungle'],
+        ['MIDDLE', 'Mid'],
+        ['BOTTOM', 'ADC'],
+        ['UTILITY', 'Support'],
     ]);
 
     return roleMap.get(role) || 'Unknown Role';

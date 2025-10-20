@@ -1,11 +1,11 @@
 export const trackedSummoners = [
     {
-        puuid: '01XS0CtuZCXjlubxeCMW3RFZTS7WAo38zHvFWeokv3rGK6XDYVW4pPG586vKrKdccA3Ru2KA0OtQag',
+        puuid: '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ',
     },
     {
-        puuid: 'ywqK5bySVAUGZXGcDAZns5wSZkKSL2gUA3_wBZQ57VdMm5UbeTNrN3J1YNaH97CACg7pe5g0oxkGdA',
+        puuid: '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g',
     },
     {
-        puuid: 'rKCZwiocEjGVQp7pLq9WkrxhN5VGddJh-TX3NRa7LXslIZsWygt2r3UXdfg2DSwoY4Q3NpKTcbrkWg',
+        puuid: 'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A',
     },
 ];

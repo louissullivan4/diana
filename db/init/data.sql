@@ -35,8 +35,7 @@ CREATE TABLE "summoners" (
     "currentMatchId" VARCHAR(50),
     "discordChannelId" VARCHAR(50),
     "regionGroup" VARCHAR(50),
-    "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    "lastMissingDataNotification" TIMESTAMPTZ DEFAULT NOW()
+    "lastUpdated" TIMESTAMPTZ DEFAULT NOW()
 );
 
 INSERT INTO "summoners" (
@@ -53,68 +52,42 @@ INSERT INTO "summoners" (
     "regionGroup"
 ) VALUES
 (
-    '01XS0CtuZCXjlubxeCMW3RFZTS7WAo38zHvFWeokv3rGK6XDYVW4pPG586vKrKdccA3Ru2KA0OtQag',
-    'LR Stew',
+    '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ',
+    'FM Stew',
     'RATS',
     'EU_WEST',
     'EUW1',
-    'https://www.deeplol.gg/summoner/euw/LR%20Stew-RATS',
+    'https://www.deeplol.gg/summoner/euw/FM%20Stew-RATS',
     'Unranked',
     'N/A',
     0,
-    '1328406947677995099',
+    '1424782745300893879',
     'EUROPE'
 ),
 (
-    'ywqK5bySVAUGZXGcDAZns5wSZkKSL2gUA3_wBZQ57VdMm5UbeTNrN3J1YNaH97CACg7pe5g0oxkGdA',
-    'LR Pruhaps',
+    '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g',
+    'FM Pruhaps',
     'BAUSS',
     'EU_WEST',
     'EUW1',
-    'https://www.deeplol.gg/summoner/EUW/LR%20Pruhaps-BAUSS',
+    'https://www.deeplol.gg/summoner/EUW/FM%20Pruhaps-BAUSS',
     'Unranked',
     'N/A',
      0,
-    '1328406947677995099',
+    '1424782745300893879',
     'EUROPE'
 ),
 (
-    'rKCZwiocEjGVQp7pLq9WkrxhN5VGddJh-TX3NRa7LXslIZsWygt2r3UXdfg2DSwoY4Q3NpKTcbrkWg',
-    'FishyMelon',
-    'Fishy',
+    'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A',
+    'Melon',
+    'FM Fishy',
     'EU_WEST',
     'EUW1',
     'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy',
     'Unranked',
     'N/A',
      0,
-    '1328406947677995099',
-    'EUROPE'
-),
-(
-    'wsedDXW_ao6vCxfpdxBXohBYLZghQMtg7YxWtnVo9p_H3iv-M7ibWM2fU7MkK6Vn8LgXTOCLveex7w',
-    'LouLou',
-    'ATTIC',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/euw/LouLou-ATTIC',
-    'GOLD',
-    'III',
-    47,
-    '1328406947677995099',
-    'EUROPE'
-)
-(
-    'VcKXZg_8LUk4vkqL_M93rKfOQCqzmTAMFIoJ7SwLXv56zpDOl2gsN9z05R8iFqwHx-InF6hJyqekSw',
-    'Yez',
-    '1234',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/euw/Yez-1234',
-    'Unranked',
-    'N/A',
-    0,
-    '1328406947677995099',
+    '1424782745300893879',
     'EUROPE'
 )
 ON CONFLICT ("puuid") DO NOTHING;
@@ -173,11 +146,4 @@ CREATE INDEX "idx_match_timeline_participantFrames" ON "match_timeline" USING GI
 -- ====================================
 -- 5. Create Roles and Assign Permissions
 -- ====================================
-CREATE ROLE "web_user" WITH LOGIN PASSWORD 'not_admin';
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "web_user";
-REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
-
--- ====================================
--- 6. Change Password for Admin User 'postgres'
--- ====================================
-ALTER USER "postgres" WITH PASSWORD 'admin';
+-
