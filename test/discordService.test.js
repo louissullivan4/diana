@@ -1,5 +1,11 @@
 require('dotenv').config();
-const { EmbedBuilder } = require('discord.js');
+
+jest.mock('../src/discord/discordService', () => ({
+    loginClient: jest.fn().mockResolvedValue(undefined),
+    sendDiscordMessage: jest.fn().mockResolvedValue(undefined),
+    notifyMatchEnd: jest.fn().mockResolvedValue(true),
+    notifyRankChange: jest.fn().mockResolvedValue(undefined),
+}));
 
 const {
     loginClient,
@@ -8,16 +14,9 @@ const {
     notifyRankChange,
 } = require('../src/discord/discordService');
 
-jest.mock('../src/discord/discordService', () => {
-    const original = jest.requireActual('../src/discord/discordService');
-    return {
-        ...original,
-        sendDiscordMessage: jest.fn(),
-    };
-});
-
 describe('discordService', () => {
-    const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
+    const DISCORD_CHANNEL_ID =
+        process.env.TEST_DISCORD_CHANNEL_ID || 'test-channel-id';
 
     beforeAll(async () => {
         await loginClient();
