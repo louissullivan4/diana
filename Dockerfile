@@ -1,4 +1,4 @@
-FROM node:20.9.0-bullseye-slim
+FROM node:24.10.0-bullseye-slim
 
 WORKDIR /usr/app
 
@@ -13,4 +13,4 @@ EXPOSE 3001
 
 RUN npm run build
 
-CMD ["npm", "run", "start-bot"]
+CMD ["npm", "run", "start"]
