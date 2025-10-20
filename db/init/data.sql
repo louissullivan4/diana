@@ -68,7 +68,7 @@ INSERT INTO "summoners" (
 (
     'ywqK5bySVAUGZXGcDAZns5wSZkKSL2gUA3_wBZQ57VdMm5UbeTNrN3J1YNaH97CACg7pe5g0oxkGdA',
     'LR Pruhaps',
-    'Ascd',
+    'BAUSS',
     'EU_WEST',
     'EUW1',
     'https://www.deeplol.gg/summoner/EUW/LR%20Pruhaps-BAUSS',

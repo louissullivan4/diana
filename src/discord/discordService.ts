@@ -92,41 +92,6 @@ export const sendDiscordMessage = async (
     }
 };
 
-export function createMatchStartEmbed(
-    summonerName: string,
-    queueName: string,
-    championDisplay: string,
-    rankString: string,
-    deepLolLink: string
-) {
-    const tier = rankString.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase() ?? '';
-    const embedColor = rankColors.get(tier) || 0x3498db;
-    const fields = [
-        { name: '🕹️ **Queue**', value: `**${queueName}**`, inline: true },
-        {
-            name: '🛡️ **Champion**',
-            value: `**${championDisplay}**`,
-            inline: true,
-        },
-    ];
-    if (queueName.toLowerCase().includes('ranked')) {
-        fields.push({
-            name: '🏆 **Current Rank**',
-            value: `**${rankString}**`,
-            inline: true,
-        });
-    }
-    return new EmbedBuilder()
-        .setTitle('🎮 **Match Started!**')
-        .setDescription(`${summonerName} has started a match!`)
-        .setURL(deepLolLink)
-        .setColor(embedColor)
-        .setThumbnail(getChampionThumbnail(championDisplay))
-        .addFields(fields)
-        .setTimestamp()
-        .setFooter({ text: 'Match Started' });
-}
-
 export function createMatchEndEmbed(
     summonerName: string,
     queueName: string,
@@ -228,44 +193,6 @@ export function createRankChangeEmbed(
         )
         .setTimestamp()
         .setFooter({ text: 'Rank Change Notification' });
-}
-
-interface NotifyMatchStartProps {
-    summonerName: string;
-    queueName: string;
-    championDisplay: string;
-    rankString: string;
-    discordChannelId: string;
-    deepLolLink: string;
-}
-export async function notifyMatchStart({
-    summonerName,
-    queueName,
-    championDisplay,
-    rankString,
-    discordChannelId,
-    deepLolLink,
-}: NotifyMatchStartProps) {
-    const embed = createMatchStartEmbed(
-        summonerName,
-        queueName,
-        championDisplay,
-        rankString,
-        deepLolLink
-    );
-    try {
-        await sendDiscordMessage(discordChannelId, { embeds: [embed] });
-        console.log(
-            `[Notification] Sent match start message for ${summonerName}.`
-        );
-        return true;
-    } catch (error) {
-        console.error(
-            `[Notification Error] Could not send message for ${summonerName}:`,
-            JSON.stringify(error, null, 2)
-        );
-        return false;
-    }
 }
 
 interface NotifyMatchEnd {

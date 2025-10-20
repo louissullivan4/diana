@@ -12,13 +12,11 @@ import {
 import { createLolService } from '../api/utils/lolService/lolServiceFactory';
 import {
     updateSummonerRank,
-    setSummonerActiveMatchIdByPuuid,
+    setSummonerCurrentMatchIdByPuuid,
     getSummonerByPuuid,
 } from '../api/summoners/summonerService';
-import { updateMissingData } from './updateMissingDataService';
 import {
     loginClient,
-    notifyMatchStart,
     notifyMatchEnd,
     notifyRankChange,
 } from './discordService';
@@ -32,105 +30,54 @@ const lolService = createLolService();
 const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
         await loginClient();
-        // await updateMissingData(summoner);
 
-        const activeGameData = await lolService.getActiveGameByPuuid(
-            summoner.puuid
+        // Get the most recent match ID from Riot API
+        const recentMatches = await lolService.getMatchesByPUUID(
+            summoner.puuid,
+            1,
+            summoner.regionGroup as any
         );
-        await handleMatchStart(summoner, activeGameData);
-    } catch (error) {
-        if (error instanceof LolApiError && error.status === 404) {
+
+        if (recentMatches.length === 0) {
             console.log(
-                `[Info] Summoner [${summoner.gameName}] is not in an active game...`
+                `[Info] No matches found for summoner [${summoner.gameName}]`
             );
-            await handleMatchEnd(summoner);
+            return;
+        }
+
+        const mostRecentMatchId = recentMatches[0];
+        const storedMatchId = summoner.currentMatchId;
+
+        // If match IDs are different, a new match has been completed
+        if (mostRecentMatchId !== storedMatchId) {
+            console.log(
+                `[Info] New match detected for [${summoner.gameName}]: ${mostRecentMatchId}`
+            );
+            await handleNewMatchCompleted(summoner, mostRecentMatchId);
         } else {
-            console.error(
-                `[Error] [${summoner.gameName}] (PUUID=${summoner.puuid}): ${error}`
-            );
+            console.log(`[Info] No new matches for [${summoner.gameName}]`);
         }
+    } catch (error) {
+        console.error(
+            `[Error] [${summoner.gameName}] (PUUID=${summoner.puuid}): ${error}`
+        );
     }
 };
 
-const handleMatchStart = async (summoner: Summoner, activeGameData: any) => {
-    const puuid = summoner.puuid;
-    const summonerName = summoner.gameName;
-    const currentMatchId = summoner.currentMatchId;
-
-    if (currentMatchId) return;
-
-    let summonerCurrentRankInfo = {
-        tier: 'Unranked',
-        rank: 'N/A',
-        lp: 0,
-        puuid,
-    };
-    try {
-        const rankEntries = await lolService.getRankEntriesByPUUID(puuid);
-        const solo = rankEntries.find((e) => e.queueType === 'RANKED_SOLO_5x5');
-
-        if (solo) {
-            summonerCurrentRankInfo = {
-                tier: solo.tier,
-                rank: solo.rank,
-                lp: solo.leaguePoints,
-                puuid,
-            };
-        }
-    } catch {
-        console.error(`[Error] [${summonerName}]: Failed to fetch rank info.`);
-    }
-
-    await updateSummonerRank(summonerCurrentRankInfo);
-
-    const participant = activeGameData.participants.find(
-        (p: any) => p.puuid === puuid
-    );
-    let championDisplay = 'Unknown Champion';
-
-    if (participant) {
-        try {
-            const champInfo = await getChampionInfoById(participant.championId);
-            championDisplay = champInfo?.name || championDisplay;
-        } catch {
-            console.error(
-                `[Error] [${summonerName}] (PUUID=${puuid}) Failed to fetch champion info.`
-            );
-        }
-    }
-
-    const queueId = activeGameData.gameQueueConfigId;
-    const queueName = getQueueNameById(queueId);
-
-    const matchStartInfo = {
-        summonerName,
-        queueName,
-        championDisplay,
-        rankString: `${summonerCurrentRankInfo.tier} ${summonerCurrentRankInfo.rank} (${summonerCurrentRankInfo.lp} LP)`,
-        discordChannelId: summoner.discordChannelId || '',
-        deepLolLink: summoner.deepLolLink || '',
-    };
-
-    const messageSent = await notifyMatchStart(matchStartInfo);
-    if (messageSent) {
-        await setSummonerActiveMatchIdByPuuid(puuid, activeGameData.gameId);
-    }
-};
-
-const handleMatchEnd = async (summoner: Summoner) => {
+const handleNewMatchCompleted = async (
+    summoner: Summoner,
+    newMatchId: string
+) => {
     const {
         puuid,
         gameName: summonerName,
         tier,
         rank,
         lp,
-        currentMatchId,
         matchRegionPrefix,
     } = summoner;
 
-    if (!currentMatchId) return;
-
-    const fullMatchId = `${matchRegionPrefix}_${currentMatchId}`;
+    const fullMatchId = newMatchId; // The match ID is already in full format from the API
 
     let matchSummaryData: MatchV5DTOs.MatchDto = {
         metadata: { dataVersion: '', matchId: '', participants: [] },
@@ -182,7 +129,32 @@ const handleMatchEnd = async (summoner: Summoner) => {
         teams: JSON.stringify(teams),
     };
 
-    await createMatchDetail(matchDetails);
+    // Try to create match detail, but continue even if it already exists
+    let insertSkipped = false;
+    try {
+        await createMatchDetail(matchDetails);
+        console.log(
+            `[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
+        );
+    } catch (error: any) {
+        // Check if this is a duplicate key constraint violation
+        if (
+            error.code === '23505' ||
+            (error.message && error.message.includes('duplicate key'))
+        ) {
+            insertSkipped = true;
+            console.log(
+                `[Info] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
+            );
+        } else {
+            // For other database errors, log and re-throw to maintain current error handling
+            console.error(
+                `[Error] Failed to create match detail for [${summonerName}]:`,
+                error
+            );
+            throw error;
+        }
+    }
 
     const participant = participants.find((p) => p.puuid === puuid);
     const gameDuration = info.gameDuration ?? 0;
@@ -250,7 +222,7 @@ const handleMatchEnd = async (summoner: Summoner) => {
 
     const messageSent = await notifyMatchEnd(matchSummary);
     if (messageSent) {
-        await setSummonerActiveMatchIdByPuuid(puuid, '');
+        await setSummonerCurrentMatchIdByPuuid(puuid, newMatchId);
     }
 
     if (checkForRankUp !== 'no_change') {
