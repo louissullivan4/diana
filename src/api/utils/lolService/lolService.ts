@@ -1,6 +1,5 @@
 import { LolApi, Constants } from 'twisted';
 import { ILolService } from '../../../types';
-import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
     MatchV5DTOs,
@@ -113,26 +112,4 @@ export class LolService implements ILolService {
         }
     }
 
-    async getActiveGameByPuuid(
-        puuid: string,
-        region: Region = Constants.Regions.EU_WEST
-    ): Promise<CurrentGameInfoDTO> {
-        try {
-            const { response } = await this.lolApi.SpectatorV5.activeGame(
-                puuid,
-                region
-            );
-            return response;
-        } catch (error: any) {
-            if (error?.status !== 404) {
-                console.error(
-                    `[Error] [${puuid}] [${error?.status}]: ${error?.message}`
-                );
-            }
-            throw new LolApiError(
-                error?.status ?? 500,
-                error?.message ?? 'Unknown error'
-            );
-        }
-    }
 }

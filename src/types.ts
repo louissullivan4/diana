@@ -1,5 +1,4 @@
 import { AccountDto } from 'twisted/dist/models-dto/account/account.dto';
-import { CurrentGameInfoDTO } from 'twisted/dist/models-dto/spectator';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
     MatchV5DTOs,
@@ -59,11 +58,10 @@ export interface Rank {
 }
 export interface ILolService {
     checkConnection(): Promise<boolean>;
-    getMatchesByPUUID(puuid: string, count?: number): Promise<string[]>;
+    getMatchesByPUUID(puuid: string, count?: number, regionGroup?: string): Promise<string[]>;
     getMatchDataById(
         matchId: string
     ): Promise<MatchV5TimelineDTOs.MatchTimelineDto>;
     getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto>;
     getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
-    getActiveGameByPuuid(puuid: string): Promise<CurrentGameInfoDTO>;
 }

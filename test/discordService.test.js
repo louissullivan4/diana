@@ -4,7 +4,6 @@ const { EmbedBuilder } = require('discord.js');
 const {
     loginClient,
     sendDiscordMessage,
-    notifyMatchStart,
     notifyMatchEnd,
     notifyRankChange,
 } = require('../src/discord/discordService');
@@ -28,33 +27,6 @@ describe('discordService', () => {
         jest.clearAllMocks();
     });
 
-    describe('notifyMatchStart', () => {
-        it('sends a match start message (happy path)', async () => {
-            const matchStartInfo = {
-                summonerName: 'TestSummoner',
-                queueName: 'Ranked Solo',
-                championDisplay: 'Ahri',
-                rankString: 'GOLD I',
-                discordChannelId: DISCORD_CHANNEL_ID,
-                deepLolLink: 'https://deep.lol/match/start',
-            };
-
-            await notifyMatchStart(matchStartInfo);
-        });
-
-        it('logs an error if sendDiscordMessage fails', async () => {
-            const matchStartInfo = {
-                summonerName: 'TestSummoner',
-                queueName: 'Ranked Solo',
-                championDisplay: 'Ahri',
-                rankString: 'GOLD I',
-                discordChannelId: DISCORD_CHANNEL_ID,
-                deepLolLink: 'https://deep.lol/match/start',
-            };
-
-            await notifyMatchStart(matchStartInfo);
-        });
-    });
 
     describe('notifyMatchEnd', () => {
         it('sends a match end message (happy path)', async () => {

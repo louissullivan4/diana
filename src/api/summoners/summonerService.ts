@@ -145,7 +145,7 @@ export const deleteSummoner = async (puuid: string) => {
     }
 };
 
-export const setSummonerActiveMatchIdByPuuid = async (
+export const setSummonerCurrentMatchIdByPuuid = async (
     puuid: string,
     matchId: string
 ) => {

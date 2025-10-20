@@ -35,14 +35,13 @@
     "devDependencies": {
         "@tsconfig/recommended": "^1.0.8",
         "@types/express": "^5.0.1",
+        "@types/jest": "^30.0.0",
         "@types/node-cron": "^3.0.11",
+        "babel-jest": "^30.2.0",
         "husky": "^9.1.7",
         "nodemon": "^3.1.9",
+        "ts-jest": "^29.4.4",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.3"
-    },
-    "jest": {
-        "testEnvironment": "node",
-        "verbose": true
     }
 }
