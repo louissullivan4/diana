@@ -1,1 +1,3 @@
-npm run precommit 
+npx lint-staged
+npm run build:check
+npm run test
