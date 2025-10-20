@@ -8,10 +8,18 @@ export default defineConfig([
         '**/*.spec.js',
         'node_modules/**',
         'diana-frontend/**',
-        'dist/**'
+        'dist/**',
     ]),
     {
+        files: ['jest.config.js'],
+        languageOptions: {
+            sourceType: 'commonjs',
+            globals: globals.node,
+        },
+    },
+    {
         files: ['**/*.js'],
+        ignores: ['jest.config.js'],
         languageOptions: {
             sourceType: 'module',
             globals: {

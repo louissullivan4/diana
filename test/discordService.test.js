@@ -27,7 +27,6 @@ describe('discordService', () => {
         jest.clearAllMocks();
     });
 
-
     describe('notifyMatchEnd', () => {
         it('sends a match end message (happy path)', async () => {
             const matchEndInfo = {

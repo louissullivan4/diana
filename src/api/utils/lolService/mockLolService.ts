@@ -23,7 +23,11 @@ export class MockLolService implements ILolService {
         return true;
     }
 
-    async getMatchesByPUUID(puuid: string, count?: number, regionGroup?: string): Promise<string[]> {
+    async getMatchesByPUUID(
+        puuid: string,
+        count?: number,
+        regionGroup?: string
+    ): Promise<string[]> {
         return JsonLoader.load<string[]>('riot_matches_by_puuid.json');
     }
 
@@ -46,5 +50,4 @@ export class MockLolService implements ILolService {
             'riot_league_account_info.json'
         );
     }
-
 }

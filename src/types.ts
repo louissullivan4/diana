@@ -58,7 +58,11 @@ export interface Rank {
 }
 export interface ILolService {
     checkConnection(): Promise<boolean>;
-    getMatchesByPUUID(puuid: string, count?: number, regionGroup?: string): Promise<string[]>;
+    getMatchesByPUUID(
+        puuid: string,
+        count?: number,
+        regionGroup?: string
+    ): Promise<string[]>;
     getMatchDataById(
         matchId: string
     ): Promise<MatchV5TimelineDTOs.MatchTimelineDto>;

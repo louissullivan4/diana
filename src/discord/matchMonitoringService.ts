@@ -30,22 +30,24 @@ const lolService = createLolService();
 const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
         await loginClient();
-        
+
         // Get the most recent match ID from Riot API
         const recentMatches = await lolService.getMatchesByPUUID(
             summoner.puuid,
             1,
             summoner.regionGroup as any
         );
-        
+
         if (recentMatches.length === 0) {
-            console.log(`[Info] No matches found for summoner [${summoner.gameName}]`);
+            console.log(
+                `[Info] No matches found for summoner [${summoner.gameName}]`
+            );
             return;
         }
-        
+
         const mostRecentMatchId = recentMatches[0];
         const storedMatchId = summoner.currentMatchId;
-        
+
         // If match IDs are different, a new match has been completed
         if (mostRecentMatchId !== storedMatchId) {
             console.log(
@@ -53,9 +55,7 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
             );
             await handleNewMatchCompleted(summoner, mostRecentMatchId);
         } else {
-            console.log(
-                `[Info] No new matches for [${summoner.gameName}]`
-            );
+            console.log(`[Info] No new matches for [${summoner.gameName}]`);
         }
     } catch (error) {
         console.error(
@@ -64,8 +64,10 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
     }
 };
 
-
-const handleNewMatchCompleted = async (summoner: Summoner, newMatchId: string) => {
+const handleNewMatchCompleted = async (
+    summoner: Summoner,
+    newMatchId: string
+) => {
     const {
         puuid,
         gameName: summonerName,
@@ -131,15 +133,25 @@ const handleNewMatchCompleted = async (summoner: Summoner, newMatchId: string) =
     let insertSkipped = false;
     try {
         await createMatchDetail(matchDetails);
-        console.log(`[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`);
+        console.log(
+            `[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
+        );
     } catch (error: any) {
         // Check if this is a duplicate key constraint violation
-        if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
+        if (
+            error.code === '23505' ||
+            (error.message && error.message.includes('duplicate key'))
+        ) {
             insertSkipped = true;
-            console.log(`[Info] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`);
+            console.log(
+                `[Info] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
+            );
         } else {
             // For other database errors, log and re-throw to maintain current error handling
-            console.error(`[Error] Failed to create match detail for [${summonerName}]:`, error);
+            console.error(
+                `[Error] Failed to create match detail for [${summonerName}]:`,
+                error
+            );
             throw error;
         }
     }

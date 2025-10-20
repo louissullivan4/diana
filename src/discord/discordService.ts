@@ -92,7 +92,6 @@ export const sendDiscordMessage = async (
     }
 };
 
-
 export function createMatchEndEmbed(
     summonerName: string,
     queueName: string,
@@ -195,7 +194,6 @@ export function createRankChangeEmbed(
         .setTimestamp()
         .setFooter({ text: 'Rank Change Notification' });
 }
-
 
 interface NotifyMatchEnd {
     summonerName: string;

@@ -111,5 +111,4 @@ export class LolService implements ILolService {
             );
         }
     }
-
 }
