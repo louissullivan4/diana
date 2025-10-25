@@ -25,11 +25,9 @@ let hasRegisteredHandlers = false;
 
 function ensureHandlersInitialized() {
     if (hasRegisteredHandlers) return;
-
     console.log(
         `Preparing ${slashCommands.length} Discord slash command handler(s) for registration.`
     );
-
     for (const command of slashCommands) {
         const commandName = command.data.name;
 
