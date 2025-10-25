@@ -102,3 +102,13 @@ export const determineRankMovement = (
     }
     return 'no_change';
 };
+
+export function calculateWinRatePercentage(
+    wins: number,
+    losses: number
+): number | null {
+    const totalGames = wins + losses;
+    if (totalGames === 0) return null;
+
+    return (wins / totalGames) * 100;
+}

@@ -2,6 +2,7 @@ import { Client, EmbedBuilder, IntentsBitField } from 'discord.js';
 import 'dotenv/config';
 import { Summoner, SummonerSummary } from '../types';
 import {
+    handleAutocompleteInteraction,
     handleSlashCommandInteraction,
     registerSlashCommands,
 } from './commandService';
@@ -34,6 +35,28 @@ const initializeCommandHandling = () => {
     });
 
     client.on('interactionCreate', async (interaction) => {
+        if (interaction.isAutocomplete()) {
+            try {
+                await handleAutocompleteInteraction(interaction);
+            } catch (error) {
+                console.error(
+                    'Failed to handle autocomplete interaction:',
+                    error
+                );
+                try {
+                    if (!interaction.responded) {
+                        await interaction.respond([]);
+                    }
+                } catch (respondError) {
+                    console.error(
+                        'Failed to send fallback autocomplete response:',
+                        respondError
+                    );
+                }
+            }
+            return;
+        }
+
         if (!interaction.isChatInputCommand()) return;
 
         try {
@@ -80,7 +103,7 @@ export const loginClient = async () => {
     }
 };
 
-const rankColors = new Map<string, number>([
+export const rankColors = new Map<string, number>([
     ['UNRANKED', 0x95a5a6],
     ['IRON', 0x7f8c8d],
     ['BRONZE', 0xcd7f32],
@@ -115,7 +138,7 @@ function getChampionThumbnail(championName: string) {
     )}.png`;
 }
 
-function getRankedEmblem(tier: string) {
+export function getRankedEmblem(tier: string) {
     if (!tier) return null;
     const sanitized = tier.replace(/\s+/g, '').toString().toLowerCase();
     return `https://raw.githubusercontent.com/louissullivan4/diana/refs/heads/main/assets/ranked-emblem/${sanitized}.webp`;

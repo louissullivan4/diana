@@ -8,6 +8,7 @@ interface MatchDetail {
     gameDuration: number;
     gameMode: string;
     gameType: string;
+    queueId: number;
     queueType: string;
     mapName: number;
     participants: string;
@@ -22,9 +23,9 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
             INSERT INTO match_details (
                 "matchId", "entryPlayerPuuid", "gameVersion", "gameCreation", 
                 "gameStartTime", "gameEndTime", "gameDuration", "gameMode", 
-                "gameType", "queueType", "mapName", "participants", "teams", "lastUpdated"
+                "gameType", "queueType", "queueId", "mapName", "participants", "teams", "lastUpdated"
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
             )
             RETURNING *;
         `;
@@ -39,6 +40,7 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
             matchDetail.gameMode,
             matchDetail.gameType,
             matchDetail.queueType,
+            matchDetail.queueId,
             matchDetail.mapName,
             matchDetail.participants,
             matchDetail.teams,
