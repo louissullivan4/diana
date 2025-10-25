@@ -125,7 +125,7 @@ const handleNewMatchCompleted = async (
         gameMode: info.gameMode ?? 'Unknown',
         gameType: info.gameType ?? 'Unknown',
         queueId: info.queueId ?? 0,
-        mapName: info.mapId ?? 'Unknown',
+        mapName: info.mapId ?? 0,
         participants: JSON.stringify(participants),
         teams: JSON.stringify(teams),
     };

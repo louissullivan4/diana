@@ -1,4 +1,5 @@
 import {
+    AutocompleteInteraction,
     ChatInputCommandInteraction,
     REST,
     Routes,
@@ -12,15 +13,24 @@ export type SlashCommandHandler = (
     interaction: ChatInputCommandInteraction
 ) => Promise<void>;
 
+export type SlashCommandAutocompleteHandler = (
+    interaction: AutocompleteInteraction
+) => Promise<void>;
+
 export interface SlashCommand {
     data:
         | SlashCommandBuilder
         | SlashCommandSubcommandsOnlyBuilder
         | SlashCommandOptionsOnlyBuilder;
     execute: SlashCommandHandler;
+    autocomplete?: SlashCommandAutocompleteHandler;
 }
 
 const slashCommandHandlers = new Map<string, SlashCommandHandler>();
+const slashCommandAutocompleteHandlers = new Map<
+    string,
+    SlashCommandAutocompleteHandler
+>();
 let hasRegisteredHandlers = false;
 
 function ensureHandlersInitialized() {
@@ -47,6 +57,13 @@ function ensureHandlersInitialized() {
 
         console.log(`Registered handler for slash command "${commandName}".`);
         slashCommandHandlers.set(commandName, command.execute);
+
+        if (command.autocomplete) {
+            slashCommandAutocompleteHandlers.set(
+                commandName,
+                command.autocomplete
+            );
+        }
     }
 
     hasRegisteredHandlers = true;
@@ -122,6 +139,23 @@ export async function handleSlashCommandInteraction(
     console.log(
         `Executing slash command "${interaction.commandName}" for user ${interaction.user.tag}.`
     );
+
+    await handler(interaction);
+}
+
+export async function handleAutocompleteInteraction(
+    interaction: AutocompleteInteraction
+) {
+    ensureHandlersInitialized();
+
+    const handler = slashCommandAutocompleteHandlers.get(
+        interaction.commandName
+    );
+
+    if (!handler) {
+        await interaction.respond([]);
+        return;
+    }
 
     await handler(interaction);
 }

@@ -9,7 +9,7 @@ export const getSummonerByAccountName = async (
     try {
         const query = `
             SELECT * FROM summoners
-            WHERE "gameName" = $1 AND "tagLine" = $2 AND "region" = $3
+            WHERE "gameName" = $1 AND "tagLine" = $2 AND "matchRegionPrefix" = $3
         `;
         const params = [accountName, tagLine, region];
         const result = await db.query(query, params);
@@ -26,6 +26,91 @@ export const getSummonerByAccountName = async (
         throw new Error('Failed to retrieve summoner details.');
     }
 };
+
+export async function searchSummonerGameNames(
+    search: string,
+    limit = 25
+): Promise<string[]> {
+    try {
+        const trimmedSearch = search.trim();
+        const query = trimmedSearch
+            ? `
+                SELECT DISTINCT "gameName"
+                FROM summoners
+                WHERE "gameName" ILIKE $1
+                ORDER BY "gameName" ASC
+                LIMIT $2
+            `
+            : `
+                SELECT DISTINCT "gameName"
+                FROM summoners
+                ORDER BY "gameName" ASC
+                LIMIT $1
+            `;
+
+        const params = trimmedSearch ? [`${trimmedSearch}%`, limit] : [limit];
+
+        const result = await db.query(query, params);
+        return result.rows.map((row: { gameName: string }) => row.gameName);
+    } catch (error) {
+        console.error('Error searching summoner game names:', error);
+        throw new Error('Failed to search summoner game names.');
+    }
+}
+
+interface SummonerTagSuggestion {
+    tagLine: string;
+    matchRegionPrefix: string | null;
+}
+
+export async function searchSummonerTags(
+    gameName: string | null | undefined,
+    search: string,
+    limit = 25
+): Promise<SummonerTagSuggestion[]> {
+    try {
+        const trimmedSearch = search.trim();
+        const trimmedName = gameName ? gameName.trim() : null;
+        const conditions: string[] = ['"tagLine" IS NOT NULL'];
+        const params: Array<string | number> = [];
+
+        if (trimmedName) {
+            params.push(trimmedName);
+            conditions.push(`"gameName" = $${params.length}`);
+        }
+
+        if (trimmedSearch) {
+            params.push(`${trimmedSearch}%`);
+            conditions.push(`"tagLine" ILIKE $${params.length}`);
+        }
+
+        const whereClause = conditions.length
+            ? `WHERE ${conditions.join(' AND ')}`
+            : '';
+
+        params.push(limit);
+        const limitIndex = params.length;
+
+        const query = `
+            SELECT DISTINCT "tagLine", "matchRegionPrefix"
+            FROM summoners
+            ${whereClause}
+            ORDER BY "tagLine" ASC
+            LIMIT $${limitIndex}
+        `;
+
+        const result = await db.query(query, params);
+        return result.rows.map(
+            (row: { tagLine: string; matchRegionPrefix: string | null }) => ({
+                tagLine: row.tagLine,
+                matchRegionPrefix: row.matchRegionPrefix,
+            })
+        );
+    } catch (error) {
+        console.error('Error searching summoner tags:', error);
+        throw new Error('Failed to search summoner tags.');
+    }
+}
 
 export const getSummonerByPuuid = async (puuid: string) => {
     try {

@@ -97,11 +97,6 @@ function buildDisplayName(gameName: string, tagLine: string) {
     return tagLine ? `${gameName}#${tagLine}` : gameName;
 }
 
-function getProfileIconUrl(iconId?: number) {
-    if (!iconId && iconId !== 0) return null;
-    return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
-}
-
 async function getWeeklyCandidates(): Promise<InterCandidate[]> {
     const sinceTimestamp = Date.now() - ONE_WEEK_IN_MS;
 
