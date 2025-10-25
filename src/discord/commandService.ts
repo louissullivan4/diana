@@ -3,6 +3,8 @@ import {
     REST,
     Routes,
     SlashCommandBuilder,
+    SlashCommandOptionsOnlyBuilder,
+    SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 import { slashCommands } from './commands';
 
@@ -11,7 +13,10 @@ export type SlashCommandHandler = (
 ) => Promise<void>;
 
 export interface SlashCommand {
-    data: SlashCommandBuilder;
+    data:
+        | SlashCommandBuilder
+        | SlashCommandSubcommandsOnlyBuilder
+        | SlashCommandOptionsOnlyBuilder;
     execute: SlashCommandHandler;
 }
 
