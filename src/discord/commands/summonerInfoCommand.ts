@@ -159,7 +159,7 @@ function summarizePeriod(matches: ParsedMatch[]): YearlyStats {
 function buildRecentMatches(matches: ParsedMatch[]) {
     const recent = matches.slice(0, 3);
     if (recent.length === 0) {
-        return 'No recorded matches for this year yet.';
+        return 'No recorded matches in the last 7 days.';
     }
 
     return recent
