@@ -25,7 +25,7 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
                 "gameStartTime", "gameEndTime", "gameDuration", "gameMode", 
                 "gameType", "queueType", "queueId", "mapName", "participants", "teams", "lastUpdated"
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
             )
             RETURNING *;
         `;
