@@ -1,12 +1,10 @@
-import {
-    Client,
-    EmbedBuilder,
-    IntentsBitField,
-    Message,
-    MessagePayload,
-} from 'discord.js';
+import { Client, EmbedBuilder, IntentsBitField } from 'discord.js';
 import 'dotenv/config';
 import { Summoner, SummonerSummary } from '../types';
+import {
+    handleSlashCommandInteraction,
+    registerSlashCommands,
+} from './commandService';
 
 const client = new Client({
     intents: [
@@ -16,9 +14,56 @@ const client = new Client({
 });
 
 let hasClientLoggedIn = false;
+let hasInitializedCommandHandling = false;
+
+const initializeCommandHandling = () => {
+    if (hasInitializedCommandHandling) return;
+
+    client.once('ready', async (readyClient) => {
+        console.log(
+            `Discord client ready as ${readyClient.user?.tag ?? 'unknown user'}.`
+        );
+        try {
+            await registerSlashCommands();
+        } catch (error) {
+            console.error(
+                'Failed to register Discord slash commands on ready event:',
+                error
+            );
+        }
+    });
+
+    client.on('interactionCreate', async (interaction) => {
+        if (!interaction.isChatInputCommand()) return;
+
+        try {
+            await handleSlashCommandInteraction(interaction);
+        } catch (error) {
+            console.error('Failed to handle slash command interaction:', error);
+
+            const errorMessage =
+                'An unexpected error occurred while executing this command.';
+
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: errorMessage,
+                    ephemeral: true,
+                });
+            } else {
+                await interaction.reply({
+                    content: errorMessage,
+                    ephemeral: true,
+                });
+            }
+        }
+    });
+
+    hasInitializedCommandHandling = true;
+};
 
 export const loginClient = async () => {
     if (hasClientLoggedIn) return;
+    initializeCommandHandling();
     try {
         await client.login(process.env.DISCORD_BOT_TOKEN);
         hasClientLoggedIn = true;
