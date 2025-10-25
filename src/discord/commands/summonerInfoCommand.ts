@@ -132,7 +132,6 @@ async function fetchRecentMatches(puuid: string): Promise<ParsedMatch[]> {
             const parsed = parseParticipants((row as RawMatchRow).participants);
             const participant = parsed.find((p) => p.puuid === puuid);
             if (!participant) return null;
-            // go through
             return {
                 id: (row as RawMatchRow).matchId,
                 createdAt: toNumber((row as RawMatchRow).gameCreation),
