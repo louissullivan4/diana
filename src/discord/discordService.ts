@@ -37,7 +37,13 @@ const initializeCommandHandling = () => {
         if (!interaction.isChatInputCommand()) return;
 
         try {
+            console.log(
+                `Received slash command interaction "${interaction.commandName}" from ${interaction.user.tag}.`
+            );
             await handleSlashCommandInteraction(interaction);
+            console.log(
+                `Successfully handled slash command "${interaction.commandName}" for ${interaction.user.tag}.`
+            );
         } catch (error) {
             console.error('Failed to handle slash command interaction:', error);
 
@@ -66,6 +72,7 @@ export const loginClient = async () => {
     initializeCommandHandling();
     try {
         await client.login(process.env.DISCORD_BOT_TOKEN);
+        console.log('Discord client login successful.');
         hasClientLoggedIn = true;
     } catch (error) {
         console.error('Could not login to Discord client:', error);

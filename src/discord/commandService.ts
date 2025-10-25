@@ -25,7 +25,9 @@ let hasRegisteredHandlers = false;
 
 function ensureHandlersInitialized() {
     if (hasRegisteredHandlers) return;
-
+    console.log(
+        `Preparing ${slashCommands.length} Discord slash command handler(s) for registration.`
+    );
     for (const command of slashCommands) {
         const commandName = command.data.name;
 
@@ -43,6 +45,7 @@ function ensureHandlersInitialized() {
             continue;
         }
 
+        console.log(`Registered handler for slash command "${commandName}".`);
         slashCommandHandlers.set(commandName, command.execute);
     }
 
@@ -67,6 +70,10 @@ export async function registerSlashCommands() {
     const rest = new REST({ version: '10' }).setToken(token);
     const commandsPayload = slashCommands.map((command) =>
         command.data.toJSON()
+    );
+
+    console.log(
+        `Registering ${commandsPayload.length} Discord slash command(s) with the API.`
     );
 
     try {
@@ -101,12 +108,20 @@ export async function handleSlashCommandInteraction(
     const handler = slashCommandHandlers.get(interaction.commandName);
 
     if (!handler) {
+        console.warn(
+            `No handler found for slash command "${interaction.commandName}".`
+        );
+
         await interaction.reply({
             content: 'This command has not been implemented yet.',
             ephemeral: true,
         });
         return;
     }
+
+    console.log(
+        `Executing slash command "${interaction.commandName}" for user ${interaction.user.tag}.`
+    );
 
     await handler(interaction);
 }
