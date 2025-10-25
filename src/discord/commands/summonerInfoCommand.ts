@@ -247,7 +247,6 @@ export const summonerInfoCommand: SlashCommand = {
                 lolService.getRankEntriesByPUUID(puuid),
             ]);
 
-
             const soloRank = rankEntries?.find(
                 (entry) => entry.queueType === 'RANKED_SOLO_5x5'
             );
