@@ -97,7 +97,7 @@ CREATE TABLE "match_details" (
     "participants" JSONB,
     "teams" JSONB,
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryParticipantId")
+    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryPlayerPuuid")
     FOREIGN KEY ("entryPlayerPuuid") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
