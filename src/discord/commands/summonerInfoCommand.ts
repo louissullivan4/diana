@@ -253,11 +253,18 @@ export const summonerInfoCommand: SlashCommand = {
                 'RANKED_SOLO_5x5'
             );
 
+            const {
+                tier: soloTier,
+                rank: soloDivision,
+                lp: soloLp,
+                ...soloRankRest
+            } = soloRank ?? {};
+
             const displaySoloRank = {
-                ...soloRank,
-                tier: soloRank?.tier || 'UNRANKED',
-                rank: soloRank?.rank || 'N/A',
-                lp: soloRank?.lp || 0,
+                ...soloRankRest,
+                tier: soloTier ?? 'UNRANKED',
+                rank: soloDivision ?? 'N/A',
+                lp: soloLp ?? 0,
             };
 
             const flexRank = await getMostRecentRankByParticipantIdAndQueueType(
@@ -265,11 +272,18 @@ export const summonerInfoCommand: SlashCommand = {
                 'RANKED_FLEX_SR'
             );
 
+            const {
+                tier: flexTier,
+                rank: flexDivision,
+                lp: flexLp,
+                ...flexRankRest
+            } = flexRank ?? {};
+
             const displayFlexRank = {
-                ...flexRank,
-                tier: flexRank?.tier || 'UNRANKED',
-                rank: flexRank?.rank || 'N/A',
-                lp: flexRank?.lp || 0,
+                ...flexRankRest,
+                tier: flexTier ?? 'UNRANKED',
+                rank: flexDivision ?? 'N/A',
+                lp: flexLp ?? 0,
             };
 
             let embedTier = displaySoloRank.tier;
@@ -302,12 +316,12 @@ export const summonerInfoCommand: SlashCommand = {
                     },
                     {
                         name: 'Ranked Solo/Duo',
-                        value: `• ${soloRank.tier} ${soloRank.rank} (${soloRank.lp} LP)`,
+                        value: `• ${displaySoloRank.tier} ${displaySoloRank.rank} (${displaySoloRank.lp} LP)`,
                         inline: false,
                     },
                     {
                         name: 'Ranked Flex',
-                        value: `• ${flexRank.tier} ${flexRank.rank} (${flexRank.lp} LP)`,
+                        value: `• ${displayFlexRank.tier} ${displayFlexRank.rank} (${displayFlexRank.lp} LP)`,
                         inline: false,
                     },
                     {
