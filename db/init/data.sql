@@ -83,8 +83,8 @@ ON CONFLICT ("puuid") DO NOTHING;
 -- ====================================
 CREATE TABLE "match_details" (
     "mid" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "matchId" VARCHAR(50) UNIQUE NOT NULL,
-    "entryPlayerPuuid" VARCHAR(200) UNIQUE NOT NULL,
+    "matchId" VARCHAR(50) NOT NULL,
+    "entryPlayerPuuid" VARCHAR(200) NOT NULL,
     "gameVersion" VARCHAR(50),
     "gameCreation" BIGINT,
     "gameStartTime" BIGINT,
