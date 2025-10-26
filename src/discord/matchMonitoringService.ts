@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { trackedSummoners } from '../config/trackedSummoners';
 import {
-    getChampionInfoById,
     getQueueNameById,
     getRoleNameTranslation,
 } from '../api/utils/dataDragonService';
@@ -12,9 +11,10 @@ import {
 } from '../api/utils/rankService';
 import { createLolService } from '../api/utils/lolService/lolServiceFactory';
 import {
-    updateSummonerRank,
     setSummonerCurrentMatchIdByPuuid,
     getSummonerByPuuid,
+    createRankHistory,
+    getMostRecentRankByParticipantIdAndQueueType,
 } from '../api/summoners/summonerService';
 import {
     loginClient,
@@ -24,7 +24,6 @@ import {
 import cron from 'node-cron';
 import { Summoner } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
-import { LolApiError } from '../api/utils/lolService/lolService';
 
 const lolService = createLolService();
 
@@ -32,7 +31,6 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
         await loginClient();
 
-        // Get the most recent match ID from Riot API
         const recentMatches = await lolService.getMatchesByPUUID(
             summoner.puuid,
             1,
@@ -49,7 +47,6 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
         const mostRecentMatchId = recentMatches[0];
         const storedMatchId = summoner.currentMatchId;
 
-        // If match IDs are different, a new match has been completed
         if (mostRecentMatchId !== storedMatchId) {
             console.log(
                 `[Info] New match detected for [${summoner.gameName}]: ${mostRecentMatchId}`
@@ -69,14 +66,7 @@ const handleNewMatchCompleted = async (
     summoner: Summoner,
     newMatchId: string
 ) => {
-    const {
-        puuid,
-        gameName: summonerName,
-        tier,
-        rank,
-        lp,
-        matchRegionPrefix,
-    } = summoner;
+    const { puuid, gameName: summonerName } = summoner;
 
     const fullMatchId = newMatchId; // The match ID is already in full format from the API
 
@@ -130,31 +120,24 @@ const handleNewMatchCompleted = async (
         teams: JSON.stringify(teams),
     };
 
-    // Try to create match detail, but continue even if it already exists
-    let insertSkipped = false;
     try {
-        await createMatchDetail(matchDetails);
-        console.log(
-            `[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
-        );
-    } catch (error: any) {
-        // Check if this is a duplicate key constraint violation
-        if (
-            error.code === '23505' ||
-            (error.message && error.message.includes('duplicate key'))
-        ) {
-            insertSkipped = true;
+        const createdMatchDetail = await createMatchDetail(matchDetails);
+        if (createdMatchDetail) {
+            console.log(
+                `[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
+            );
+        } else {
             console.log(
                 `[Info] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
             );
-        } else {
-            // For other database errors, log and re-throw to maintain current error handling
-            console.error(
-                `[Error] Failed to create match detail for [${summonerName}]:`,
-                error
-            );
-            throw error;
         }
+    } catch (error: any) {
+        // For other database errors, log and re-throw to maintain current error handling
+        console.error(
+            `[Error] Failed to create match detail for [${summonerName}]:`,
+            error
+        );
+        throw error;
     }
 
     const participant = participants.find((p) => p.puuid === puuid);
@@ -171,7 +154,6 @@ const handleNewMatchCompleted = async (
         participant?.individualPosition || participant?.teamPosition || 'N/A';
     const damage = participant?.totalDamageDealtToChampions ?? 0;
 
-    const oldRankInfo = { tier, rank, lp };
     let newRankMsg = 'Unranked N/A (0 LP)';
     let lpChangeMsg = 0;
     let checkForRankUp = 'no_change';
@@ -179,8 +161,18 @@ const handleNewMatchCompleted = async (
     try {
         const rankEntriesPost = await lolService.getRankEntriesByPUUID(puuid);
         const soloRankPost = rankEntriesPost?.find(
-            (e) => e.queueType === 'RANKED_SOLO_5x5'
+            (e) =>
+                e.queueType === 'RANKED_SOLO_5x5' ||
+                e.queueType === 'RANKED_FLEX_SR'
         );
+
+        const queueType = soloRankPost ? soloRankPost.queueType : 'None';
+
+        let oldRankInfo = await getMostRecentRankByParticipantIdAndQueueType(
+            puuid,
+            queueType
+        );
+
         if (soloRankPost) {
             const summonerNewRankInfo = {
                 tier: soloRankPost.tier,
@@ -188,6 +180,16 @@ const handleNewMatchCompleted = async (
                 lp: soloRankPost.leaguePoints,
                 puuid,
             };
+
+            await createRankHistory(
+                newMatchId,
+                puuid,
+                summonerNewRankInfo.tier,
+                summonerNewRankInfo.rank,
+                summonerNewRankInfo.lp,
+                queueType
+            );
+
             const rankChange = calculateRankChange(
                 oldRankInfo,
                 summonerNewRankInfo
@@ -196,8 +198,6 @@ const handleNewMatchCompleted = async (
                 oldRankInfo,
                 summonerNewRankInfo
             );
-            await updateSummonerRank(summonerNewRankInfo);
-
             newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
             lpChangeMsg = rankChange.lpChange;
         }
@@ -249,7 +249,7 @@ cron.schedule('*/20 * * * * *', async () => {
     const apiValid = await lolService.checkConnection();
     if (apiValid) {
         console.log(
-            `[Info] [${new Date().toISOString()}] Starting cron check for active matches...`
+            `[Info] [${new Date().toISOString()}] Starting cron check for completed matches...`
         );
         for (const player of trackedSummoners) {
             const summoner = await getSummonerByPuuid(player.puuid);

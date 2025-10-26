@@ -5,6 +5,7 @@ import {
     getSummonerByAccountName,
     searchSummonerGameNames,
     searchSummonerTags,
+    getMostRecentRankByParticipantIdAndQueueType,
 } from '../../api/summoners/summonerService';
 import { db } from '../../api/utils/db';
 import { calculateWinRatePercentage } from '../../api/utils/rankService';
@@ -247,19 +248,28 @@ export const summonerInfoCommand: SlashCommand = {
                 lolService.getRankEntriesByPUUID(puuid),
             ]);
 
-            const soloRank = rankEntries?.find(
-                (entry) => entry.queueType === 'RANKED_SOLO_5x5'
+            const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
+                puuid,
+                'RANKED_SOLO_5x5'
             );
 
-            const displayTier = (
-                soloRank?.tier ||
-                tier ||
-                'UNRANKED'
-            ).toUpperCase();
-            const displayRank = soloRank?.rank || rank || 'N/A';
-            const displayLp = soloRank?.leaguePoints ?? lp ?? 0;
-            const seasonWins = soloRank?.wins ?? 0;
-            const seasonLosses = soloRank?.losses ?? 0;
+            soloRank.tier = soloRank.tier || 'UNRANKED';
+            soloRank.rank = soloRank.rank || 'N/A';
+            soloRank.lp = soloRank.lp || 0;
+
+            const flexRank = await getMostRecentRankByParticipantIdAndQueueType(
+                puuid,
+                'RANKED_FLEX_SR'
+            );
+
+            flexRank.tier = flexRank.tier || 'UNRANKED';
+            flexRank.rank = flexRank.rank || 'N/A';
+            flexRank.lp = flexRank.lp || 0;
+
+            let embedTier = soloRank.tier;
+            if (soloRank.tier === 'UNRANKED') {
+                embedTier = flexRank.tier;
+            }
 
             const stats = summarizePeriod(matches);
             const weeklyWinRate = formatWinRate(stats);
@@ -267,8 +277,8 @@ export const summonerInfoCommand: SlashCommand = {
 
             const levelSource = matches[0]?.participant.summonerLevel;
 
-            const embedColor = rankColors.get(displayTier) || 0x3498db;
-            const emblem = getRankedEmblem(displayTier);
+            const embedColor = rankColors.get(embedTier) || 0x3498db;
+            const emblem = getRankedEmblem(embedTier);
 
             const embed = new EmbedBuilder()
                 .setTitle(`Summoner Info — ${gameName}#${tagLine}`)
@@ -286,7 +296,12 @@ export const summonerInfoCommand: SlashCommand = {
                     },
                     {
                         name: 'Ranked Solo/Duo',
-                        value: `• ${displayTier} ${displayRank} (${displayLp} LP)\n• Season Record: ${seasonWins}W - ${seasonLosses}L`,
+                        value: `• ${soloRank.tier} ${soloRank.rank} (${soloRank.lp} LP)`,
+                        inline: false,
+                    },
+                    {
+                        name: 'Ranked Flex',
+                        value: `• ${flexRank.tier} ${flexRank.rank} (${flexRank.lp} LP)`,
                         inline: false,
                     },
                     {

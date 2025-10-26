@@ -2,8 +2,11 @@ import express from 'express';
 import {
     fetchSummonerByAccountName,
     createSummonerHandler,
-    updateSummonerRankByPuuid,
     deleteSummonerByPuuid,
+    fetchRankHistoryByParticipantId,
+    createRankHistoryHandler,
+    updateRankHistoryByRid,
+    deleteRankHistoryByRid,
 } from './summonerController';
 
 export const summonerRouter = express.Router();
@@ -13,5 +16,12 @@ summonerRouter.get(
     fetchSummonerByAccountName
 );
 summonerRouter.post('/', createSummonerHandler);
-summonerRouter.put('/:puuid', updateSummonerRankByPuuid);
 summonerRouter.delete('/:puuid', deleteSummonerByPuuid);
+
+summonerRouter.get(
+    '/rank-history/:entryParticipantId',
+    fetchRankHistoryByParticipantId
+);
+summonerRouter.post('/rank-history', createRankHistoryHandler);
+summonerRouter.put('/rank-history/:rid', updateRankHistoryByRid);
+summonerRouter.delete('/rank-history/:rid', deleteRankHistoryByRid);

@@ -2,8 +2,10 @@ import {
     createSummoner,
     deleteSummoner,
     getSummonerByAccountName,
-    getSummonerByPuuid,
-    updateSummonerRank,
+    fetchRankHistory,
+    createRankHistory,
+    updateRankHistory,
+    deleteRankHistory,
 } from './summonerService';
 import { Request, Response } from 'express';
 
@@ -65,42 +67,6 @@ export const createSummonerHandler = async (req: Request, res: Response) => {
     }
 };
 
-export const updateSummonerRankByPuuid = async (
-    req: Request,
-    res: Response
-) => {
-    try {
-        const { puuid } = req.params;
-        const { tier, rank, lp } = req.body;
-        if (!puuid || !tier || !rank || !lp) {
-            res.status(400).json({
-                error: 'Missing required parameters: puuid, tier, rank, or lp.',
-            });
-            return;
-        }
-        const summoner = await getSummonerByPuuid(puuid);
-        if (!summoner || Object.keys(summoner).length === 0) {
-            res.status(404).json({ error: 'Summoner not found.' });
-        }
-        summoner.tier = tier;
-        summoner.rank = rank;
-        summoner.lp = lp;
-        const updatedSummonerRank = await updateSummonerRank(summoner);
-        if (
-            !updatedSummonerRank ||
-            Object.keys(updatedSummonerRank).length === 0
-        ) {
-            res.status(404).json({ error: 'Summoner not updated.' });
-        }
-        res.status(200).json({ updatedSummonerRank });
-        return;
-    } catch (error) {
-        console.error('Error updating summoner rank:', error);
-        res.status(500).json({ error: 'Failed to update summoner data.' });
-        return;
-    }
-};
-
 export const deleteSummonerByPuuid = async (req: Request, res: Response) => {
     try {
         const { puuid } = req.params;
@@ -120,6 +86,107 @@ export const deleteSummonerByPuuid = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error deleting summoner:', error);
         res.status(500).json({ error: 'Failed to delete summoner.' });
+        return;
+    }
+};
+
+export const fetchRankHistoryByParticipantId = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const { entryParticipantId } = req.params;
+        const { startDate, endDate, queueType } = req.query;
+        if (!entryParticipantId) {
+            res.status(400).json({
+                error: 'Missing required parameter: entryParticipantId (puuid).',
+            });
+            return;
+        }
+        const rankHistory = await fetchRankHistory(
+            entryParticipantId,
+            startDate as string,
+            endDate as string,
+            queueType as string
+        );
+        if (!rankHistory || rankHistory.length === 0) {
+            res.status(404).json({ error: 'No rank history found.' });
+            return;
+        }
+        res.status(200).json({ rankHistory });
+        return;
+    } catch (error) {
+        console.error('Error fetching rank history:', error);
+        res.status(500).json({ error: 'Failed to fetch rank history.' });
+    }
+};
+
+export const createRankHistoryHandler = async (req: Request, res: Response) => {
+    try {
+        const { matchId, entryParticipantId, tier, rank, lp, queueType } =
+            req.body;
+        if (
+            !matchId ||
+            !entryParticipantId ||
+            !tier ||
+            !rank ||
+            lp === undefined ||
+            !queueType
+        ) {
+            res.status(400).json({ error: 'Missing required fields.' });
+            return;
+        }
+        const newRankHistory = await createRankHistory(
+            matchId,
+            entryParticipantId,
+            tier,
+            rank,
+            lp,
+            queueType
+        );
+        res.status(201).json({ newRankHistory });
+    } catch (error) {
+        console.error('Error creating rank history:', error);
+        res.status(500).json({ error: 'Failed to create rank history.' });
+        return;
+    }
+};
+
+export const updateRankHistoryByRid = async (req: Request, res: Response) => {
+    try {
+        const { rid } = req.params;
+        const { tier, rank, lp, queueType } = req.body;
+        if (!rid || !tier || !rank || lp === undefined || !queueType) {
+            res.status(400).json({ error: 'Missing required fields.' });
+            return;
+        }
+        const updatedRankHistory = await updateRankHistory(
+            parseInt(rid),
+            tier,
+            rank,
+            lp,
+            queueType
+        );
+        res.status(200).json({ updatedRankHistory });
+    } catch (error) {
+        console.error('Error updating rank history:', error);
+        res.status(500).json({ error: 'Failed to update rank history.' });
+        return;
+    }
+};
+
+export const deleteRankHistoryByRid = async (req: Request, res: Response) => {
+    try {
+        const { rid } = req.params;
+        if (!rid) {
+            res.status(400).json({ error: 'Missing required parameter: rid.' });
+            return;
+        }
+        const deletedRankHistory = await deleteRankHistory(parseInt(rid));
+        res.status(200).json({ deletedRankHistory });
+    } catch (error) {
+        console.error('Error deleting rank history:', error);
+        res.status(500).json({ error: 'Failed to delete rank history.' });
         return;
     }
 };

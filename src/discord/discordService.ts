@@ -309,7 +309,10 @@ export async function notifyMatchEnd({
         deepLolLink
     );
     try {
-        await sendDiscordMessage(discordChannelId, { embeds: [embed] });
+        const overRideDiscordChannelId = process.env.DISCORD_CHANNEL_ID
+            ? process.env.DISCORD_CHANNEL_ID
+            : discordChannelId;
+        await sendDiscordMessage(overRideDiscordChannelId, { embeds: [embed] });
         console.log(
             `[Notification] Sent match end message for ${summonerName}.`
         );
@@ -349,7 +352,10 @@ export async function notifyRankChange({
     );
     if (!embed) return;
     try {
-        await sendDiscordMessage(discordChannelId, { embeds: [embed] });
+        const overRideDiscordChannelId = process.env.DISCORD_CHANNEL_ID
+            ? process.env.DISCORD_CHANNEL_ID
+            : discordChannelId;
+        await sendDiscordMessage(overRideDiscordChannelId, { embeds: [embed] });
         console.log(
             `[Notification] Sent rank change message for ${summonerName}.`
         );
@@ -426,7 +432,10 @@ export async function notifyMissingData(summonerSummary: SummonerSummary) {
     const embed = createNotifyMissingDataEmbed(summonerSummary);
     if (!embed) return;
     try {
-        await sendDiscordMessage(summonerSummary.discordChannelId, {
+        const overRideDiscordChannelId = process.env.DISCORD_CHANNEL_ID
+            ? process.env.DISCORD_CHANNEL_ID
+            : summonerSummary.discordChannelId;
+        await sendDiscordMessage(overRideDiscordChannelId, {
             embeds: [embed],
         });
         console.log(
