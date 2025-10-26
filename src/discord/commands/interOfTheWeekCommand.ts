@@ -185,7 +185,7 @@ async function getWeeklyCandidates(): Promise<InterCandidate[]> {
 
     const candidates: InterCandidate[] = [];
 
-    for (const entry of accumulator.values()) {
+    for (const entry of Array.from(accumulator.values())) {
         if (entry.matchesPlayed === 0) continue;
 
         const avgDamage = entry.totalDamage / entry.matchesPlayed;
@@ -354,7 +354,8 @@ function buildEmbed(categories: CategoryWinner[]): EmbedBuilder {
         }
     }
 
-    const crownEntries = [...tally.values()];
+    const crownEntries: { candidate: InterCandidate; count: number }[] = [];
+    tally.forEach((v) => crownEntries.push(v));
     const highestCount = crownEntries.reduce(
         (max, entry) => Math.max(max, entry.count),
         0
