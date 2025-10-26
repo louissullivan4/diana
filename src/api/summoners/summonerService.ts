@@ -301,7 +301,7 @@ export const getMostRecentRankByParticipantIdAndQueueType = async (
     try {
         const query = `
             SELECT * FROM rank_tracking
-            WHERE "entryParticipantId" = $1 and "queueType" = $2
+            WHERE "entryParticipantId" = $1 AND "queueType" = $2
             ORDER BY "lastUpdated" DESC
             LIMIT 1
         `;
