@@ -1,14 +1,5 @@
 import { db } from '../utils/db';
 import { Summoner } from '../../types';
-import { Rank } from '../../types';
-
-type RankData = Rank & {
-    rid: number;
-    matchId: string;
-    entryParticipantId: string;
-    queueType: string;
-    lastUpdated: string;
-};
 
 export const getSummonerByAccountName = async (
     accountName: string,
@@ -297,7 +288,7 @@ export const fetchRankHistory = async (
 export const getMostRecentRankByParticipantIdAndQueueType = async (
     entryParticipantId: string,
     queueType: string
-): Promise<RankData> => {
+): Promise<any> => {
     try {
         const query = `
             SELECT * FROM rank_tracking
