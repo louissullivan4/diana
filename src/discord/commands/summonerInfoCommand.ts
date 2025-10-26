@@ -253,22 +253,28 @@ export const summonerInfoCommand: SlashCommand = {
                 'RANKED_SOLO_5x5'
             );
 
-            soloRank.tier = soloRank.tier || 'UNRANKED';
-            soloRank.rank = soloRank.rank || 'N/A';
-            soloRank.lp = soloRank.lp || 0;
+            const displaySoloRank = {
+                ...soloRank,
+                tier: soloRank?.tier || 'UNRANKED',
+                rank: soloRank?.rank || 'N/A',
+                lp: soloRank?.lp || 0,
+            };
 
             const flexRank = await getMostRecentRankByParticipantIdAndQueueType(
                 puuid,
                 'RANKED_FLEX_SR'
             );
 
-            flexRank.tier = flexRank.tier || 'UNRANKED';
-            flexRank.rank = flexRank.rank || 'N/A';
-            flexRank.lp = flexRank.lp || 0;
+            const displayFlexRank = {
+                ...flexRank,
+                tier: flexRank?.tier || 'UNRANKED',
+                rank: flexRank?.rank || 'N/A',
+                lp: flexRank?.lp || 0,
+            };
 
-            let embedTier = soloRank.tier;
-            if (soloRank.tier === 'UNRANKED') {
-                embedTier = flexRank.tier;
+            let embedTier = displaySoloRank.tier;
+            if (displaySoloRank.tier === 'UNRANKED') {
+                embedTier = displayFlexRank.tier;
             }
 
             const stats = summarizePeriod(matches);
