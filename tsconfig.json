@@ -4,5 +4,6 @@
         "rootDir": "src",
         "outDir": "dist"
     },
-    "exclude": [""]
+    "include": ["src"],
+    "exclude": ["dist", "node_modules", "test"]
 }

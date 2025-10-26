@@ -17,7 +17,9 @@ interface MatchDetail {
     entryPlayerPuuid: string;
 }
 
-export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
+export const createMatchDetail = async (
+    matchDetail: Partial<MatchDetail>
+): Promise<MatchDetail | null> => {
     try {
         const query = `
             INSERT INTO match_details (
@@ -27,6 +29,7 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
             )
+            ON CONFLICT ("matchId", "entryPlayerPuuid") DO NOTHING
             RETURNING *;
         `;
         const params = [
@@ -46,8 +49,8 @@ export const createMatchDetail = async (matchDetail: Partial<MatchDetail>) => {
             matchDetail.teams,
         ];
         const result = await db.query(query, params);
-        return result.rows[0];
-    } catch (error) {
+        return result.rows[0] ?? null;
+    } catch (error: any) {
         console.error('Error creating match detail:', error);
         throw new Error('Failed to create match detail.');
     }

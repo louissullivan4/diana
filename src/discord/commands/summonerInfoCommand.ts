@@ -5,6 +5,7 @@ import {
     getSummonerByAccountName,
     searchSummonerGameNames,
     searchSummonerTags,
+    getMostRecentRankByParticipantIdAndQueueType,
 } from '../../api/summoners/summonerService';
 import { db } from '../../api/utils/db';
 import { calculateWinRatePercentage } from '../../api/utils/rankService';
@@ -247,19 +248,48 @@ export const summonerInfoCommand: SlashCommand = {
                 lolService.getRankEntriesByPUUID(puuid),
             ]);
 
-            const soloRank = rankEntries?.find(
-                (entry) => entry.queueType === 'RANKED_SOLO_5x5'
+            const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
+                puuid,
+                'RANKED_SOLO_5x5'
             );
 
-            const displayTier = (
-                soloRank?.tier ||
-                tier ||
-                'UNRANKED'
-            ).toUpperCase();
-            const displayRank = soloRank?.rank || rank || 'N/A';
-            const displayLp = soloRank?.leaguePoints ?? lp ?? 0;
-            const seasonWins = soloRank?.wins ?? 0;
-            const seasonLosses = soloRank?.losses ?? 0;
+            const {
+                tier: soloTier,
+                rank: soloDivision,
+                lp: soloLp,
+                ...soloRankRest
+            } = soloRank ?? {};
+
+            const displaySoloRank = {
+                ...soloRankRest,
+                tier: soloTier ?? 'UNRANKED',
+                rank: soloDivision ?? 'N/A',
+                lp: soloLp ?? 0,
+            };
+
+            const flexRank = await getMostRecentRankByParticipantIdAndQueueType(
+                puuid,
+                'RANKED_FLEX_SR'
+            );
+
+            const {
+                tier: flexTier,
+                rank: flexDivision,
+                lp: flexLp,
+                ...flexRankRest
+            } = flexRank ?? {};
+
+            const displayFlexRank = {
+                ...flexRankRest,
+                tier: flexTier ?? 'UNRANKED',
+                rank: flexDivision ?? 'N/A',
+                lp: flexLp ?? 0,
+            };
+
+            let embedTier = displaySoloRank.tier;
+            if (displaySoloRank.tier === 'UNRANKED') {
+                embedTier = displayFlexRank.tier;
+            }
 
             const stats = summarizePeriod(matches);
             const weeklyWinRate = formatWinRate(stats);
@@ -267,8 +297,8 @@ export const summonerInfoCommand: SlashCommand = {
 
             const levelSource = matches[0]?.participant.summonerLevel;
 
-            const embedColor = rankColors.get(displayTier) || 0x3498db;
-            const emblem = getRankedEmblem(displayTier);
+            const embedColor = rankColors.get(embedTier) || 0x3498db;
+            const emblem = getRankedEmblem(embedTier);
 
             const embed = new EmbedBuilder()
                 .setTitle(`Summoner Info — ${gameName}#${tagLine}`)
@@ -286,7 +316,12 @@ export const summonerInfoCommand: SlashCommand = {
                     },
                     {
                         name: 'Ranked Solo/Duo',
-                        value: `• ${displayTier} ${displayRank} (${displayLp} LP)\n• Season Record: ${seasonWins}W - ${seasonLosses}L`,
+                        value: `• ${displaySoloRank.tier} ${displaySoloRank.rank} (${displaySoloRank.lp} LP)`,
+                        inline: false,
+                    },
+                    {
+                        name: 'Ranked Flex',
+                        value: `• ${displayFlexRank.tier} ${displayFlexRank.rank} (${displayFlexRank.lp} LP)`,
                         inline: false,
                     },
                     {

@@ -14,45 +14,95 @@ const tierOrder = [
     'CHALLENGER',
 ];
 
-const getTierValue = (tier: string) => {
-    const index = tierOrder.indexOf(tier.toUpperCase());
+const normalize = (value?: string | null) =>
+    typeof value === 'string' ? value.toUpperCase() : null;
+
+const getTierValue = (tier?: string | null) => {
+    const normalizedTier = normalize(tier);
+    if (!normalizedTier) return -1;
+    const index = tierOrder.indexOf(normalizedTier);
     return index !== -1 ? index : -1;
 };
 
-const getDivisionValue = (division: string) => {
+const getDivisionValue = (division?: string | null) => {
+    const normalizedDivision = normalize(division);
+    if (!normalizedDivision) return -1;
     const divisionOrderMap = new Map<string, number>([
         [Constants.Divisions.IV, 1],
         [Constants.Divisions.III, 2],
         [Constants.Divisions.II, 3],
         [Constants.Divisions.I, 4],
     ]);
-    return divisionOrderMap.get(division.toUpperCase()) || -1;
-};
-const getTotalPoints = (tier: string, division: string, lp: number) => {
-    const tierValue = getTierValue(tier);
-    const divisionValue = getDivisionValue(division);
-    if (tierValue === -1 || divisionValue === -1)
-        throw new Error('Invalid tier or division');
-    return tierValue * 400 + divisionValue * 100 + lp;
+    return divisionOrderMap.get(normalizedDivision) ?? -1;
 };
 
-export const calculateRankChange = (previousRank: Rank, currentRank: Rank) => {
+const getTotalPoints = (
+    tier: string,
+    division: string,
+    lp: number | undefined
+) => {
+    const tierValue = getTierValue(tier);
+    const divisionValue = getDivisionValue(division);
+    if (tierValue === -1 || divisionValue === -1) return null;
+    const normalizedLp = typeof lp === 'number' ? lp : 0;
+    return tierValue * 400 + divisionValue * 100 + normalizedLp;
+};
+
+const hasCalculableRank = (rank?: Rank | null) => {
+    if (!rank) return false;
+    const tierValue = getTierValue(rank.tier);
+    const divisionValue = getDivisionValue(rank.rank ?? rank.division);
+    return tierValue !== -1 && divisionValue !== -1;
+};
+
+const asDivision = (rank: Rank) => rank.rank ?? rank.division ?? '';
+
+export const calculateRankChange = (
+    previousRank: Rank | null | undefined,
+    currentRank: Rank | null | undefined
+) => {
+    if (!currentRank) return { direction: 'same', lpChange: 0 };
+
+    const currentDivision = asDivision(currentRank);
+    if (!hasCalculableRank(currentRank)) {
+        return { direction: 'same', lpChange: 0 };
+    }
+
     if (
         !previousRank ||
         previousRank.tier === 'Unranked' ||
-        previousRank.division === 'N/A'
-    )
-        return { direction: 'up', lpChange: currentRank.lp };
+        previousRank.division === 'N/A' ||
+        !hasCalculableRank(previousRank)
+    ) {
+        return {
+            direction: 'up',
+            lpChange: typeof currentRank.lp === 'number' ? currentRank.lp : 0,
+        };
+    }
+
     const previousTotalPoints = getTotalPoints(
         previousRank.tier,
-        previousRank.rank,
+        asDivision(previousRank),
         previousRank.lp
     );
     const currentTotalPoints = getTotalPoints(
         currentRank.tier,
-        currentRank.rank,
+        currentDivision,
         currentRank.lp
     );
+
+    if (
+        previousTotalPoints === null ||
+        currentTotalPoints === null ||
+        typeof previousTotalPoints !== 'number' ||
+        typeof currentTotalPoints !== 'number'
+    ) {
+        return {
+            direction: 'same',
+            lpChange: 0,
+        };
+    }
+
     const lpChange = currentTotalPoints - previousTotalPoints;
 
     const direction = getDirection(lpChange);
@@ -77,8 +127,12 @@ export const determineRankMovement = (
     const previousTierValue = getTierValue(previousRank.tier);
     const currentTierValue = getTierValue(currentRank.tier);
 
-    const previousDivisionValue = getDivisionValue(previousRank.rank);
-    const currentDivisionValue = getDivisionValue(currentRank.rank);
+    const previousDivisionValue = getDivisionValue(
+        previousRank.rank ?? previousRank.division
+    );
+    const currentDivisionValue = getDivisionValue(
+        currentRank.rank ?? currentRank.division
+    );
 
     if (
         previousTierValue === -1 ||

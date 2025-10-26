@@ -177,39 +177,6 @@ export const createSummoner = async (summonerData: Partial<Summoner>) => {
     }
 };
 
-export const updateSummonerRank = async (
-    summoner: Pick<Summoner, 'tier' | 'rank' | 'lp' | 'puuid'>
-) => {
-    try {
-        const query = `
-            UPDATE summoners
-            SET 
-                "tier" = $1,
-                "rank" = $2,
-                "lp" = $3,
-                "lastUpdated" = NOW()
-            WHERE "puuid" = $4
-            RETURNING *;
-        `;
-        const params = [
-            summoner.tier,
-            summoner.rank,
-            summoner.lp,
-            summoner.puuid,
-        ];
-        const result = await db.query(query, params);
-        const updatedSummoner = result.rows[0];
-        if (!updatedSummoner) {
-            console.info(`Summoner with PUUID ${summoner.puuid} not found.`);
-            return { msg: 'No summoner found' };
-        }
-        return updatedSummoner;
-    } catch (error) {
-        console.error('Error updating summoner rank:', error);
-        throw new Error('Failed to update summoner rank.');
-    }
-};
-
 export const deleteSummoner = async (puuid: string) => {
     try {
         const query = `
@@ -274,3 +241,164 @@ export async function updateSummonerMissingDataNotificationTimeByPuuid(
         console.error('Error updating missing data notification time:', error);
     }
 }
+
+export const fetchRankHistory = async (
+    entryParticipantId: string,
+    startDate?: string,
+    endDate?: string,
+    queueType?: string
+) => {
+    try {
+        const conditions: string[] = ['"entryParticipantId" = $1'];
+        const params: Array<string> = [entryParticipantId];
+
+        if (startDate) {
+            params.push(startDate);
+            conditions.push(`"lastUpdated" >= $${params.length}`);
+        }
+
+        if (endDate) {
+            params.push(endDate);
+            conditions.push(`"lastUpdated" <= $${params.length}`);
+        }
+
+        if (queueType) {
+            params.push(queueType);
+            conditions.push(`"queueType" = $${params.length}`);
+        }
+
+        const whereClause = conditions.length
+            ? `WHERE ${conditions.join(' AND ')}`
+            : '';
+
+        const query = `
+            SELECT * FROM rank_tracking
+            ${whereClause}
+            ORDER BY "lastUpdated" DESC
+        `;
+
+        const result = await db.query(query, params);
+        return result.rows;
+    } catch (error) {
+        console.error('Error fetching rank history:', error);
+        throw new Error('Failed to fetch rank history.');
+    }
+};
+
+export const getMostRecentRankByParticipantIdAndQueueType = async (
+    entryParticipantId: string,
+    queueType: string
+): Promise<any> => {
+    try {
+        const query = `
+            SELECT * FROM rank_tracking
+            WHERE "entryParticipantId" = $1 AND "queueType" = $2
+            ORDER BY "lastUpdated" DESC
+            LIMIT 1
+        `;
+        const params = [entryParticipantId, queueType];
+        const result = await db.query(query, params);
+        const mostRecentRank = result.rows[0];
+        if (!mostRecentRank) {
+            console.info(
+                `No rank history found for participant ID ${entryParticipantId} and queue type ${queueType}.`
+            );
+            return {
+                matchId: '0',
+                rid: 0,
+                entryParticipantId,
+                tier: 'Unranked',
+                rank: 'N/A',
+                lp: 0,
+                queueType,
+                lastUpdated: new Date().toISOString(),
+            };
+        }
+        return mostRecentRank;
+    } catch (error) {
+        console.error('Error retrieving most recent rank history:', error);
+        throw new Error('Failed to retrieve rank history.');
+    }
+};
+
+export const createRankHistory = async (
+    matchId: string,
+    entryParticipantId: string,
+    tier: string,
+    rank: string,
+    lp: number,
+    queueType: string
+) => {
+    try {
+        const query = `
+            INSERT INTO rank_tracking (
+                "matchId",
+                "entryParticipantId",
+                "tier",
+                "rank",
+                "lp",
+                "queueType"
+            ) VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *;
+        `;
+        const params = [matchId, entryParticipantId, tier, rank, lp, queueType];
+        const result = await db.query(query, params);
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error creating rank history:', error);
+        throw new Error('Failed to create rank history.');
+    }
+};
+
+export const updateRankHistory = async (
+    rid: number,
+    tier: string,
+    rank: string,
+    lp: number,
+    queueType: string
+) => {
+    try {
+        const query = `
+            UPDATE rank_tracking
+            SET 
+                "tier" = $1,
+                "rank" = $2,
+                "lp" = $3,
+                "queueType" = $4,
+                "lastUpdated" = NOW()
+            WHERE "rid" = $5
+            RETURNING *;
+        `;
+        const params = [tier, rank, lp, queueType, rid];
+        const result = await db.query(query, params);
+        const updatedRankHistory = result.rows[0];
+        if (!updatedRankHistory) {
+            console.info(`Rank history with RID ${rid} not found.`);
+            return { msg: 'No rank history found' };
+        }
+        return updatedRankHistory;
+    } catch (error) {
+        console.error('Error updating rank history:', error);
+        throw new Error('Failed to update rank history.');
+    }
+};
+
+export const deleteRankHistory = async (rid: number) => {
+    try {
+        const query = `
+            DELETE FROM rank_tracking
+            WHERE "rid" = $1
+            RETURNING *;
+        `;
+        const params = [rid];
+        const result = await db.query(query, params);
+        const deletedRankHistory = result.rows[0];
+        if (!deletedRankHistory) {
+            return { msg: 'No rank history found' };
+        }
+        return deletedRankHistory;
+    } catch (error) {
+        console.error('Error deleting rank history:', error);
+        throw new Error('Failed to delete rank history.');
+    }
+};
