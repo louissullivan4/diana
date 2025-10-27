@@ -3,6 +3,7 @@ import { trackedSummoners } from '../config/trackedSummoners';
 import {
     getQueueNameById,
     getRoleNameTranslation,
+    getRankTagsById,
 } from '../api/utils/dataDragonService';
 import { createMatchDetail } from '../api/matches/matchService';
 import {
@@ -153,53 +154,54 @@ const handleNewMatchCompleted = async (
     const role =
         participant?.individualPosition || participant?.teamPosition || 'N/A';
     const damage = participant?.totalDamageDealtToChampions ?? 0;
+    const matchRank = getRankTagsById(info.queueId ?? 0);
 
     let newRankMsg = 'Unranked N/A (0 LP)';
     let lpChangeMsg = 0;
     let checkForRankUp = 'no_change';
 
     try {
-        const rankEntriesPost = await lolService.getRankEntriesByPUUID(puuid);
-        const soloRankPost = rankEntriesPost?.find(
-            (e) =>
-                e.queueType === 'RANKED_SOLO_5x5' ||
-                e.queueType === 'RANKED_FLEX_SR'
-        );
-
-        const queueType = soloRankPost ? soloRankPost.queueType : 'None';
-
-        let oldRankInfo = await getMostRecentRankByParticipantIdAndQueueType(
-            puuid,
-            queueType
-        );
-
-        if (soloRankPost) {
-            const summonerNewRankInfo = {
-                tier: soloRankPost.tier,
-                rank: soloRankPost.rank,
-                lp: soloRankPost.leaguePoints,
-                puuid,
-            };
-
-            await createRankHistory(
-                newMatchId,
-                puuid,
-                summonerNewRankInfo.tier,
-                summonerNewRankInfo.rank,
-                summonerNewRankInfo.lp,
-                queueType
+        if (matchRank) {
+            const rankEntriesPost =
+                await lolService.getRankEntriesByPUUID(puuid);
+            const rankPost = rankEntriesPost?.find(
+                (e) => e.queueType === matchRank
             );
 
-            const rankChange = calculateRankChange(
-                oldRankInfo,
-                summonerNewRankInfo
-            );
-            checkForRankUp = await determineRankMovement(
-                oldRankInfo,
-                summonerNewRankInfo
-            );
-            newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
-            lpChangeMsg = rankChange.lpChange;
+            let oldRankInfo =
+                await getMostRecentRankByParticipantIdAndQueueType(
+                    puuid,
+                    matchRank
+                );
+
+            if (rankPost) {
+                const summonerNewRankInfo = {
+                    tier: rankPost.tier,
+                    rank: rankPost.rank,
+                    lp: rankPost.leaguePoints,
+                    puuid,
+                };
+
+                await createRankHistory(
+                    newMatchId,
+                    puuid,
+                    summonerNewRankInfo.tier,
+                    summonerNewRankInfo.rank,
+                    summonerNewRankInfo.lp,
+                    matchRank
+                );
+
+                const rankChange = calculateRankChange(
+                    oldRankInfo,
+                    summonerNewRankInfo
+                );
+                checkForRankUp = await determineRankMovement(
+                    oldRankInfo,
+                    summonerNewRankInfo
+                );
+                newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
+                lpChangeMsg = rankChange.lpChange;
+            }
         }
     } catch (error) {
         console.error(

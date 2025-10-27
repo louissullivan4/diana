@@ -64,6 +64,14 @@ export const getQueueNameById = (queueId: number) => {
     return queueMap.get(queueId) || `Unknown Queue (ID: ${queueId})`;
 };
 
+export const getRankTagsById = (queueId: number) => {
+    const queueMap = new Map<number, string>([
+        [420, 'RANKED_SOLO_5x5'],
+        [440, 'RANKED_FLEX_SR'],
+    ]);
+    return queueMap.get(queueId) || false;
+};
+
 export const getRoleNameTranslation = (role: string) => {
     const roleMap = new Map<string, string>([
         ['TOP', 'Top'],
