@@ -64,8 +64,12 @@ export interface ILolService {
         regionGroup?: string
     ): Promise<string[]>;
     getMatchDataById(
-        matchId: string
+        matchId: string,
+        regionGroup?: string
     ): Promise<MatchV5TimelineDTOs.MatchTimelineDto>;
-    getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto>;
+    getMatchSummary(
+        matchId: string,
+        regionGroup?: string
+    ): Promise<MatchV5DTOs.MatchDto>;
     getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
 }

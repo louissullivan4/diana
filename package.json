@@ -12,6 +12,7 @@
         "lint:check": "eslint --ext .js,.jsx .",
         "build": "tsc",
         "build:check": "tsc --noEmit",
+        "backfill:matches": "ts-node src/scripts/backfillMissingMatches.ts",
         "precommit": "npm run lint && npm run format && npm run build && npm run test",
         "prepare": "husky"
     },
@@ -38,6 +39,7 @@
         "@tsconfig/recommended": "^1.0.8",
         "@types/express": "^5.0.1",
         "@types/jest": "^30.0.0",
+        "@types/node": "^25.0.0",
         "@types/node-cron": "^3.0.11",
         "babel-jest": "^30.2.0",
         "husky": "^9.1.7",

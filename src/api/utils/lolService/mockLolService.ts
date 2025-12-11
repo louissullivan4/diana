@@ -32,14 +32,18 @@ export class MockLolService implements ILolService {
     }
 
     async getMatchDataById(
-        matchId: string
+        matchId: string,
+        _regionGroup?: string
     ): Promise<MatchV5TimelineDTOs.MatchTimelineDto> {
         return JsonLoader.load<MatchV5TimelineDTOs.MatchTimelineDto>(
             'riot_match_timeline_by_match_id.json'
         );
     }
 
-    async getMatchSummary(matchId: string): Promise<MatchV5DTOs.MatchDto> {
+    async getMatchSummary(
+        matchId: string,
+        _regionGroup?: string
+    ): Promise<MatchV5DTOs.MatchDto> {
         return JsonLoader.load<MatchV5DTOs.MatchDto>(
             'riot_match_data_by_match_id.json'
         );
