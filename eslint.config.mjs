@@ -9,6 +9,7 @@ export default defineConfig([
         'node_modules/**',
         'diana-frontend/**',
         'dist/**',
+        '**/scripts/**',
     ]),
     {
         files: ['jest.config.js'],
