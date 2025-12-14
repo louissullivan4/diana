@@ -16,6 +16,8 @@ import {
     getSummonerByPuuid,
     createRankHistory,
     getMostRecentRankByParticipantIdAndQueueType,
+    updateSummonerIdentityByPuuid,
+    updateSummonerRegionDataByPuuid,
 } from '../api/summoners/summonerService';
 import {
     loginClient,
@@ -25,8 +27,136 @@ import {
 import cron from 'node-cron';
 import { Summoner } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
+import { Constants } from 'twisted';
 
 const lolService = createLolService();
+const shouldForceDevelopmentTimers = Boolean(
+    process.env.FORCE_DEVELOPMENT_TIMERS
+);
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+let lastSummonerMetadataSync = 0;
+
+const buildDeepLolLink = (gameName: string, tagLine: string) => {
+    const encodedGameName = encodeURIComponent(gameName);
+    const encodedTagLine = encodeURIComponent(tagLine);
+    return `https://www.deeplol.gg/summoner/euw/${encodedGameName}-${encodedTagLine}`;
+};
+
+const deriveRegionData = (
+    activeRegion: string,
+    fallbackRegionGroup?: string | null
+) => {
+    const matchRegionPrefix = activeRegion;
+    let regionGroup =
+        fallbackRegionGroup ??
+        (() => {
+            try {
+                return Constants.regionToRegionGroup(
+                    activeRegion as (typeof Constants.Regions)[keyof typeof Constants.Regions]
+                );
+            } catch {
+                return null;
+            }
+        })();
+
+    if (!regionGroup) {
+        regionGroup = Constants.RegionGroups.EUROPE;
+    }
+
+    return {
+        region: activeRegion,
+        matchRegionPrefix,
+        regionGroup,
+    };
+};
+
+const syncTrackedSummonerMetadata = async (puuid: string) => {
+    const summoner = await getSummonerByPuuid(puuid);
+
+    if (!summoner || (summoner as any).msg) {
+        console.warn(
+            `[Warn] Tracked PUUID ${puuid} not found in database, skipping metadata sync.`
+        );
+        return;
+    }
+
+    const account = await lolService.getAccountByPUUID(
+        puuid,
+        summoner.regionGroup as any
+    );
+    const deepLolLink = buildDeepLolLink(account.gameName, account.tagLine);
+    const envDiscordChannelId = process.env.DISCORD_CHANNEL_ID;
+    const targetDiscordChannelId =
+        envDiscordChannelId ?? summoner.discordChannelId ?? null;
+
+    const activeRegion = await lolService.getActiveRegionByPUUID(
+        puuid,
+        summoner.regionGroup as any
+    );
+    const regionData = deriveRegionData(
+        activeRegion.region,
+        summoner.regionGroup
+    );
+
+    const requiresUpdate =
+        summoner.gameName !== account.gameName ||
+        summoner.tagLine !== account.tagLine ||
+        summoner.deepLolLink !== deepLolLink ||
+        (targetDiscordChannelId !== null &&
+            targetDiscordChannelId !== summoner.discordChannelId);
+    const requiresRegionUpdate =
+        summoner.region !== regionData.region ||
+        summoner.matchRegionPrefix !== regionData.matchRegionPrefix ||
+        summoner.regionGroup !== regionData.regionGroup;
+
+    if (!requiresUpdate) {
+        console.log(
+            `[Info] [${new Date().toISOString()}] Summoner identity already up to date for ${account.gameName}#${account.tagLine}.`
+        );
+    } else {
+        await updateSummonerIdentityByPuuid(
+            puuid,
+            account.gameName,
+            account.tagLine,
+            deepLolLink,
+            targetDiscordChannelId
+        );
+        console.log(
+            `[Info] [${new Date().toISOString()}] Synced tracked summoner identity for ${account.gameName}#${account.tagLine}.`
+        );
+    }
+
+    if (requiresRegionUpdate) {
+        await updateSummonerRegionDataByPuuid(
+            puuid,
+            regionData.region,
+            regionData.matchRegionPrefix,
+            regionData.regionGroup
+        );
+        console.log(
+            `[Info] [${new Date().toISOString()}] Updated region data for ${account.gameName}#${account.tagLine} to ${regionData.matchRegionPrefix} (${regionData.regionGroup}).`
+        );
+    }
+};
+
+const syncTrackedSummonersWithDatabase = async () => {
+    console.log(
+        `[Info] [${new Date().toISOString()}] Starting tracked summoner metadata sync...`
+    );
+    for (const player of trackedSummoners) {
+        try {
+            await syncTrackedSummonerMetadata(player.puuid);
+        } catch (error) {
+            console.error(
+                `[Error] Failed to sync metadata for tracked PUUID ${player.puuid}:`,
+                error
+            );
+        }
+    }
+    console.log(
+        `[Info] [${new Date().toISOString()}] Finished tracked summoner metadata sync.`
+    );
+};
 
 const checkAndHandleSummoner = async (summoner: Summoner) => {
     try {
@@ -40,7 +170,7 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
 
         if (recentMatches.length === 0) {
             console.log(
-                `[Info] No matches found for summoner [${summoner.gameName}]`
+                `[Info] [${new Date().toISOString()}] No matches found for summoner [${summoner.gameName}]`
             );
             return;
         }
@@ -50,15 +180,17 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
 
         if (mostRecentMatchId !== storedMatchId) {
             console.log(
-                `[Info] New match detected for [${summoner.gameName}]: ${mostRecentMatchId}`
+                `[Info] [${new Date().toISOString()}] New match detected for [${summoner.gameName}]: ${mostRecentMatchId}`
             );
             await handleNewMatchCompleted(summoner, mostRecentMatchId);
         } else {
-            console.log(`[Info] No new matches for [${summoner.gameName}]`);
+            console.log(
+                `[Info] [${new Date().toISOString()}] [${new Date().toISOString()}] No new matches for [${summoner.gameName}]`
+            );
         }
     } catch (error) {
         console.error(
-            `[Error] [${summoner.gameName}] (PUUID=${summoner.puuid}): ${error}`
+            `[Error] [${new Date().toISOString()}] [${summoner.gameName}] (PUUID=${summoner.puuid}): ${error}`
         );
     }
 };
@@ -125,17 +257,17 @@ const handleNewMatchCompleted = async (
         const createdMatchDetail = await createMatchDetail(matchDetails);
         if (createdMatchDetail) {
             console.log(
-                `[Info] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
+                `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
             );
         } else {
             console.log(
-                `[Info] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
+                `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
             );
         }
     } catch (error: any) {
         // For other database errors, log and re-throw to maintain current error handling
         console.error(
-            `[Error] Failed to create match detail for [${summonerName}]:`,
+            `[Error] [${new Date().toISOString()}] Failed to create match detail for [${summonerName}]:`,
             error
         );
         throw error;
@@ -250,6 +382,15 @@ cron.schedule('*/20 * * * * *', async () => {
     }
     const apiValid = await lolService.checkConnection();
     if (apiValid) {
+        const now = Date.now();
+        if (
+            shouldForceDevelopmentTimers ||
+            now - lastSummonerMetadataSync >= TWENTY_FOUR_HOURS_MS
+        ) {
+            await syncTrackedSummonersWithDatabase();
+            lastSummonerMetadataSync = now;
+        }
+
         console.log(
             `[Info] [${new Date().toISOString()}] Starting cron check for completed matches...`
         );
@@ -259,7 +400,7 @@ cron.schedule('*/20 * * * * *', async () => {
                 await checkAndHandleSummoner(summoner);
             } else {
                 console.log(
-                    `[Info] Player PUUID[${player.puuid}] was not found in database.`
+                    `[Info] [${new Date().toISOString()}] Player PUUID[${player.puuid}] was not found in database.`
                 );
             }
         }

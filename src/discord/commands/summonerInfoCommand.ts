@@ -12,35 +12,18 @@ import { calculateWinRatePercentage } from '../../api/utils/rankService';
 import { createLolService } from '../../api/utils/lolService/lolServiceFactory';
 import { getQueueNameById } from '../../api/utils/dataDragonService';
 import { rankColors, getRankedEmblem } from '../discordService';
+import {
+    getInterCandidatesLastWeek,
+    parseParticipants,
+    ONE_WEEK_IN_MS,
+    type InterCandidate,
+    type RawMatchRow,
+    type RiotParticipant,
+} from '../utils/interStats';
 
 const lolService = createLolService();
 
 type QueueResult = 'WIN' | 'LOSS' | 'REMAKE';
-
-interface RawMatchRow {
-    matchId: string;
-    gameCreation: number | string | null;
-    queueId: number | null;
-    gameDuration: number | null;
-    participants: unknown;
-}
-
-interface RiotParticipant {
-    puuid: string;
-    riotIdGameName?: string;
-    riotIdTagline?: string;
-    summonerName?: string;
-    summonerLevel?: number;
-    championName?: string;
-    kills?: number;
-    deaths?: number;
-    assists?: number;
-    win?: boolean;
-    totalDamageDealtToChampions?: number;
-    teamPosition?: string;
-    individualPosition?: string;
-    queueId?: number | string;
-}
 
 interface ParsedMatch {
     id: string;
@@ -63,22 +46,6 @@ const regionChoices = Object.entries(Constants.Regions)
             self.findIndex((entry) => entry.value === choice.value) === index
     )
     .slice(0, 25);
-
-function parseParticipants(
-    raw: RawMatchRow['participants']
-): RiotParticipant[] {
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw as RiotParticipant[];
-    if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? (parsed as RiotParticipant[]) : [];
-        } catch {
-            return [];
-        }
-    }
-    return raw as RiotParticipant[];
-}
 
 function toNumber(value: number | string | null | undefined): number {
     if (value === null || value === undefined) return 0;
@@ -112,8 +79,6 @@ function formatDate(timestamp: number) {
         day: 'numeric',
     });
 }
-
-const ONE_WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function fetchRecentMatches(puuid: string): Promise<ParsedMatch[]> {
     const since = Date.now() - ONE_WEEK_IN_MS;
@@ -180,6 +145,67 @@ function formatWinRate(stats: YearlyStats) {
     return winRate !== null ? winRate.toFixed(1) : 'N/A';
 }
 
+const numberFormatter = new Intl.NumberFormat('en-US');
+
+function formatIotwStats(stats?: InterCandidate) {
+    if (!stats) {
+        return 'No IOTW stats recorded in the last 7 days.';
+    }
+
+    const averageDamage = numberFormatter.format(Math.round(stats.avgDamage));
+    const kda = Number.isFinite(stats.kdaRatio)
+        ? stats.kdaRatio.toFixed(2)
+        : '0.00';
+    const winRate = (stats.winRate * 100).toFixed(1);
+    const vision = stats.avgVisionScore.toFixed(1);
+
+    return [
+        `Average Damage: ${averageDamage}`,
+        `KDA Ratio: ${kda}`,
+        `Win Rate: ${winRate}%`,
+        `Matches Played: ${stats.matchesPlayed}`,
+        `Avg Vision Score: ${vision}`,
+    ].join('\n');
+}
+
+async function findSummonersByNameAndRegion(gameName: string, region: string) {
+    const query = `
+        SELECT *
+        FROM summoners
+        WHERE "gameName" = $1
+          AND "matchRegionPrefix" = $2
+        ORDER BY "tagLine" ASC
+    `;
+    const params = [gameName, region];
+    const result = await db.query(query, params);
+    return result.rows;
+}
+
+async function resolveSummonerRecord(
+    gameName: string,
+    tag: string | null,
+    region: string
+) {
+    if (tag) {
+        return {
+            type: 'single' as const,
+            record: await getSummonerByAccountName(gameName, tag, region),
+        };
+    }
+
+    const matches = await findSummonersByNameAndRegion(gameName, region);
+
+    if (matches.length === 0) {
+        return { type: 'none' as const };
+    }
+
+    if (matches.length === 1) {
+        return { type: 'single' as const, record: matches[0] };
+    }
+
+    return { type: 'multiple' as const, records: matches };
+}
+
 export const summonerInfoCommand: SlashCommand = {
     data: (() => {
         const builder = new SlashCommandBuilder()
@@ -198,7 +224,7 @@ export const summonerInfoCommand: SlashCommand = {
                 option
                     .setName('tag')
                     .setDescription('Summoner tagline (e.g. EUW).')
-                    .setRequired(true)
+                    .setRequired(false)
                     .setAutocomplete(true)
             )
             .addStringOption((option) => {
@@ -219,7 +245,7 @@ export const summonerInfoCommand: SlashCommand = {
     })(),
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true);
-        const tag = interaction.options.getString('tag', true);
+        const tag = interaction.options.getString('tag');
         const region =
             interaction.options.getString('region') ||
             Constants.Regions.EU_WEST;
@@ -227,15 +253,34 @@ export const summonerInfoCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            const summonerRecord = await getSummonerByAccountName(
-                name,
-                tag,
-                region
-            );
+            const resolution = await resolveSummonerRecord(name, tag, region);
+
+            if (resolution.type === 'multiple') {
+                const choices = resolution.records
+                    .map(
+                        (row: any, index: number) =>
+                            `${index + 1}. ${row.gameName}#${row.tagLine}`
+                    )
+                    .join('\n');
+                await interaction.editReply(
+                    `Multiple tracked summoners found for **${name}** in ${region}. Please rerun the command with a tag.\n${choices}`
+                );
+                return;
+            }
+
+            if (resolution.type === 'none') {
+                await interaction.editReply(
+                    `Could not find **${name}** in region ${region}.`
+                );
+                return;
+            }
+
+            const summonerRecord = resolution.record;
 
             if (!summonerRecord || (summonerRecord as any).msg) {
+                const missingTarget = tag ? `${name}#${tag}` : name;
                 await interaction.editReply(
-                    `Could not find **${name}#${tag}** in region ${region}.`
+                    `Could not find **${missingTarget}** in region ${region}.`
                 );
                 return;
             }
@@ -243,10 +288,12 @@ export const summonerInfoCommand: SlashCommand = {
             const { puuid, gameName, tagLine, tier, rank, lp, deepLolLink } =
                 summonerRecord as any;
 
-            const [matches, rankEntries] = await Promise.all([
+            const [matches, rankEntries, iotwCandidates] = await Promise.all([
                 fetchRecentMatches(puuid),
                 lolService.getRankEntriesByPUUID(puuid),
+                getInterCandidatesLastWeek(puuid),
             ]);
+            void rankEntries;
 
             const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
                 puuid,
@@ -294,6 +341,10 @@ export const summonerInfoCommand: SlashCommand = {
             const stats = summarizePeriod(matches);
             const weeklyWinRate = formatWinRate(stats);
             const recentMatches = buildRecentMatches(matches);
+            const iotwStats = iotwCandidates.find(
+                (candidate) => candidate.puuid === puuid
+            );
+            const iotwStatsValue = formatIotwStats(iotwStats);
 
             const levelSource = matches[0]?.participant.summonerLevel;
 
@@ -336,6 +387,11 @@ export const summonerInfoCommand: SlashCommand = {
                     {
                         name: 'Recent Matches',
                         value: recentMatches,
+                        inline: false,
+                    },
+                    {
+                        name: 'IOTW 7 Day Stats',
+                        value: iotwStatsValue,
                         inline: false,
                     }
                 )

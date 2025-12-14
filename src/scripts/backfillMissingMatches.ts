@@ -56,7 +56,7 @@ const buildMatchDetails = (
 };
 
 const backfillSummoner = async (summoner: Summoner) => {
-    console.log(`[Info] Processing ${summoner.gameName} (${summoner.puuid})`);
+    console.log(`[Info] [${new Date().toISOString()}] Processing ${summoner.gameName} (${summoner.puuid})`);
     const cutoffTime = Date.now() - ONE_WEEK_MS;
 
     const matchIds = await lolService.getMatchesByPUUID(
@@ -83,9 +83,8 @@ const backfillSummoner = async (summoner: Summoner) => {
         const gameCreation = summary.info?.gameCreation ?? 0;
 
         if (gameCreation && gameCreation < cutoffTime) {
-            // Riot returns matches from newest to oldest, so we can stop once we pass the cutoff.
             console.log(
-                `[Info] Reached matches older than 7 days for ${summoner.gameName}, stopping.`
+                `[Info] [${new Date().toISOString()}] Reached matches older than 7 days for ${summoner.gameName}, stopping.`
             );
             break;
         }
@@ -96,7 +95,7 @@ const backfillSummoner = async (summoner: Summoner) => {
         );
         if (exists) {
             console.log(
-                `[Skip] ${matchId} already stored for ${summoner.gameName}.`
+                `[Info] [${new Date().toISOString()}] ${matchId} already stored for ${summoner.gameName}.`
             );
             continue;
         }
@@ -107,16 +106,16 @@ const backfillSummoner = async (summoner: Summoner) => {
 
             if (created) {
                 console.log(
-                    `[Insert] Stored match ${matchId} for ${summoner.gameName}.`
+                    `[Info] [${new Date().toISOString()}] Stored match ${matchId} for ${summoner.gameName}.`
                 );
             } else {
                 console.log(
-                    `[Skip] Match ${matchId} already existed for ${summoner.gameName} (during insert).`
+                    `[Info] [${new Date().toISOString()}] Match ${matchId} already existed for ${summoner.gameName} (during insert).`
                 );
             }
         } catch (error) {
             console.error(
-                `[Error] Failed to store match ${matchId} for ${summoner.gameName}:`,
+                `[Error] [${new Date().toISOString()}] Failed to store match ${matchId} for ${summoner.gameName}:`,
                 error
             );
         }
@@ -128,7 +127,7 @@ const run = async () => {
 
     if (!apiValid) {
         console.error(
-            '[Error] Riot API connection failed. Ensure USE_RIOT_API=true and RIOT_API_KEY are set.'
+            `[Error] [${new Date().toISOString()}] Riot API connection failed. Ensure USE_RIOT_API=true and RIOT_API_KEY are set.`
         );
         process.exit(1);
     }
@@ -138,7 +137,7 @@ const run = async () => {
 
         if (!isSummoner(summoner)) {
             console.log(
-                `[Warn] Tracked PUUID ${tracked.puuid} not found in DB, skipping.`
+                `[Warn] [${new Date().toISOString()}] Tracked PUUID ${tracked.puuid} not found in DB, skipping.`
             );
             continue;
         }
@@ -146,11 +145,11 @@ const run = async () => {
         await backfillSummoner(summoner);
     }
 
-    console.log('[Info] Backfill complete.');
+    console.log(`[Info] [${new Date().toISOString()}] Backfill complete.`);
     process.exit(0);
 };
 
 run().catch((error) => {
-    console.error('[Error] Backfill failed:', error);
+    console.error(`[Error] [${new Date().toISOString()}] Backfill failed:`, error);
     process.exit(1);
 });
