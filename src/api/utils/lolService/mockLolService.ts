@@ -3,6 +3,8 @@ import { LolApiError } from './lolService';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
+import { AccountDto } from 'twisted/dist/models-dto/account/account.dto';
+import { AccountRegionDto } from 'twisted/dist/models-dto/account/account-region.dto';
 import {
     MatchV5DTOs,
     MatchV5TimelineDTOs,
@@ -53,5 +55,21 @@ export class MockLolService implements ILolService {
         return JsonLoader.load<SummonerLeagueDto[]>(
             'riot_league_account_info.json'
         );
+    }
+
+    async getAccountByPUUID(puuid: string): Promise<AccountDto> {
+        return {
+            puuid,
+            gameName: 'MockGame',
+            tagLine: 'MOCK',
+        };
+    }
+
+    async getActiveRegionByPUUID(puuid: string): Promise<AccountRegionDto> {
+        return {
+            puuid,
+            game: 'lol',
+            region: 'EUW1',
+        };
     }
 }

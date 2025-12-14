@@ -1,14 +1,20 @@
-import { LolApi, Constants } from 'twisted';
+import { LolApi, Constants, RiotApi } from 'twisted';
 import { ILolService } from '../../../types';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
     MatchV5DTOs,
     MatchV5TimelineDTOs,
 } from 'twisted/dist/models-dto/matches/match-v5';
+import { AccountDto } from 'twisted/dist/models-dto/account/account.dto';
+import { AccountRegionDto } from 'twisted/dist/models-dto/account/account-region.dto';
 
 type Region = (typeof Constants.Regions)[keyof typeof Constants.Regions];
 type RegionGroup =
     (typeof Constants.RegionGroups)[keyof typeof Constants.RegionGroups];
+type AccountRegionGroup = Exclude<
+    RegionGroup,
+    typeof Constants.RegionGroups.SEA
+>;
 
 export class LolApiError extends Error {
     constructor(
@@ -22,9 +28,11 @@ export class LolApiError extends Error {
 
 export class LolService implements ILolService {
     private lolApi: LolApi;
+    private riotApi: RiotApi;
 
     constructor(apiKey: string) {
         this.lolApi = new LolApi({ key: apiKey });
+        this.riotApi = new RiotApi({ key: apiKey });
     }
 
     async checkConnection(
@@ -102,6 +110,51 @@ export class LolService implements ILolService {
             const { response } = await this.lolApi.League.byPUUID(
                 puuid,
                 region
+            );
+            return response;
+        } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
+    async getAccountByPUUID(
+        puuid: string,
+        regionGroup: RegionGroup = Constants.RegionGroups.EUROPE
+    ): Promise<AccountDto> {
+        try {
+            const safeRegionGroup: AccountRegionGroup =
+                regionGroup === Constants.RegionGroups.SEA
+                    ? Constants.RegionGroups.EUROPE
+                    : (regionGroup as AccountRegionGroup);
+            const { response } = await this.riotApi.Account.getByPUUID(
+                puuid,
+                safeRegionGroup
+            );
+            return response;
+        } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
+    async getActiveRegionByPUUID(
+        puuid: string,
+        regionGroup: RegionGroup = Constants.RegionGroups.EUROPE
+    ): Promise<AccountRegionDto> {
+        try {
+            const safeRegionGroup: AccountRegionGroup =
+                regionGroup === Constants.RegionGroups.SEA
+                    ? Constants.RegionGroups.EUROPE
+                    : (regionGroup as AccountRegionGroup);
+            const { response } = await this.riotApi.Account.getActiveRegion(
+                puuid,
+                Constants.Games.LOL,
+                safeRegionGroup
             );
             return response;
         } catch (error: any) {

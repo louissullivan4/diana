@@ -4,6 +4,7 @@ import {
     MatchV5DTOs,
     MatchV5TimelineDTOs,
 } from 'twisted/dist/models-dto/matches/match-v5';
+import { AccountRegionDto } from 'twisted/dist/models-dto/account/account-region.dto';
 
 export interface Account extends AccountDto {
     region: string;
@@ -72,4 +73,9 @@ export interface ILolService {
         regionGroup?: string
     ): Promise<MatchV5DTOs.MatchDto>;
     getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
+    getAccountByPUUID(puuid: string, regionGroup?: string): Promise<AccountDto>;
+    getActiveRegionByPUUID(
+        puuid: string,
+        regionGroup?: string
+    ): Promise<AccountRegionDto>;
 }

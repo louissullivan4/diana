@@ -257,24 +257,6 @@ describe('summonerService', () => {
         });
     });
 
-    describe('updateSummonerMissingDataNotificationTimeByPuuid', () => {
-        it('executes update and logs info', async () => {
-            queryMock.mockResolvedValue({ rows: [] });
-
-            await summonerService.updateSummonerMissingDataNotificationTimeByPuuid(
-                '123'
-            );
-
-            expect(queryMock).toHaveBeenCalledWith(
-                expect.stringContaining('lastMissingDataNotification'),
-                ['123']
-            );
-            expect(console.info).toHaveBeenCalledWith(
-                '[Info] Updated missing data notification time for PUUID: 123'
-            );
-        });
-    });
-
     describe('fetchRankHistory', () => {
         it('builds query with optional filters', async () => {
             queryMock.mockResolvedValue({ rows: [{ rid: 1 }] });

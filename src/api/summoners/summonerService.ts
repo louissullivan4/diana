@@ -177,6 +177,78 @@ export const createSummoner = async (summonerData: Partial<Summoner>) => {
     }
 };
 
+export const updateSummonerIdentityByPuuid = async (
+    puuid: string,
+    gameName: string,
+    tagLine: string,
+    deepLolLink: string,
+    discordChannelId?: string | null
+) => {
+    try {
+        const query = `
+            UPDATE summoners
+            SET
+                "gameName" = $1,
+                "tagLine" = $2,
+                "deepLolLink" = $3,
+                "discordChannelId" = $4,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $5
+            RETURNING *;
+        `;
+        const params = [
+            gameName,
+            tagLine,
+            deepLolLink,
+            discordChannelId ?? null,
+            puuid,
+        ];
+        const result = await db.query(query, params);
+        const updatedSummoner = result.rows[0];
+        if (!updatedSummoner) {
+            console.info(`Summoner with PUUID ${puuid} not found for update.`);
+            return { msg: 'No summoner found' };
+        }
+        return updatedSummoner;
+    } catch (error) {
+        console.error('Error updating summoner identity:', error);
+        throw new Error('Failed to update summoner identity.');
+    }
+};
+
+export const updateSummonerRegionDataByPuuid = async (
+    puuid: string,
+    region: string,
+    matchRegionPrefix: string,
+    regionGroup: string
+) => {
+    try {
+        const query = `
+            UPDATE summoners
+            SET
+                "region" = $1,
+                "matchRegionPrefix" = $2,
+                "regionGroup" = $3,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $4
+            RETURNING *;
+        `;
+        const params = [region, matchRegionPrefix, regionGroup, puuid];
+        const result = await db.query(query, params);
+        const updatedSummoner = result.rows[0];
+        if (!updatedSummoner) {
+            console.info(
+                `Summoner with PUUID ${puuid} not found for region update.`
+            );
+            return { msg: 'No summoner found' };
+        }
+        return updatedSummoner;
+    } catch (error) {
+        console.error('Error updating summoner region data:', error);
+        throw new Error('Failed to update summoner region data.');
+    }
+};
+
 export const deleteSummoner = async (puuid: string) => {
     try {
         const query = `
@@ -235,7 +307,7 @@ export async function updateSummonerMissingDataNotificationTimeByPuuid(
         const params = [summonerPuuid];
         await db.query(query, params);
         console.info(
-            `[Info] Updated missing data notification time for PUUID: ${summonerPuuid}`
+            `[Info] [${new Date().toISOString()}] Updated missing data notification time for PUUID: ${summonerPuuid}`
         );
     } catch (error) {
         console.error('Error updating missing data notification time:', error);
