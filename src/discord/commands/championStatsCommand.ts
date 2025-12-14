@@ -276,6 +276,44 @@ function formatNumber(value: number, fractionDigits = 0) {
     return formatter.format(value);
 }
 
+async function findSummonersByNameAndRegion(gameName: string, region: string) {
+    const query = `
+        SELECT *
+        FROM summoners
+        WHERE "gameName" = $1
+          AND "matchRegionPrefix" = $2
+        ORDER BY "tagLine" ASC
+    `;
+    const params = [gameName, region];
+    const result = await db.query(query, params);
+    return result.rows;
+}
+
+async function resolveSummonerRecord(
+    gameName: string,
+    tag: string | null,
+    region: string
+) {
+    if (tag) {
+        return {
+            type: 'single' as const,
+            record: await getSummonerByAccountName(gameName, tag, region),
+        };
+    }
+
+    const matches = await findSummonersByNameAndRegion(gameName, region);
+
+    if (matches.length === 0) {
+        return { type: 'none' as const };
+    }
+
+    if (matches.length === 1) {
+        return { type: 'single' as const, record: matches[0] };
+    }
+
+    return { type: 'multiple' as const, records: matches };
+}
+
 export const championStatsCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('champion')
@@ -291,35 +329,54 @@ export const championStatsCommand: SlashCommand = {
         )
         .addStringOption((option) =>
             option
-                .setName('tag')
-                .setDescription('Summoner tagline (e.g. EUW).')
+                .setName('champion')
+                .setDescription('Champion name (e.g. Ahri).')
                 .setRequired(true)
                 .setAutocomplete(true)
         )
         .addStringOption((option) =>
             option
-                .setName('champion')
-                .setDescription('Champion name (e.g. Ahri).')
-                .setRequired(true)
+                .setName('tag')
+                .setDescription('Summoner tagline (e.g. EUW).')
+                .setRequired(false)
                 .setAutocomplete(true)
         ),
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true);
-        const tag = interaction.options.getString('tag', true);
+        const tag = interaction.options.getString('tag');
         const championInput = interaction.options.getString('champion', true);
+        const region = Constants.Regions.EU_WEST;
 
         await interaction.deferReply();
 
         try {
-            const summonerRecord = await getSummonerByAccountName(
-                name,
-                tag,
-                Constants.Regions.EU_WEST
-            );
+            const resolution = await resolveSummonerRecord(name, tag, region);
+
+            if (resolution.type === 'multiple') {
+                const choices = resolution.records
+                    .map(
+                        (row: any, index: number) =>
+                            `${index + 1}. ${row.gameName}#${row.tagLine}`
+                    )
+                    .join('\n');
+                await interaction.editReply(
+                    `Multiple tracked summoners found for **${name}** in ${region}. Please rerun the command with a tag.\n${choices}`
+                );
+                return;
+            }
+
+            if (resolution.type === 'none') {
+                await interaction.editReply(
+                    `Could not find **${name}** in region ${region}.`
+                );
+                return;
+            }
+
+            const summonerRecord = resolution.record;
 
             if (!summonerRecord || (summonerRecord as any).msg) {
                 await interaction.editReply(
-                    `Could not find **${name}#${tag}** in the tracked summoners list.`
+                    `Could not find **${tag ? `${name}#${tag}` : name}** in the tracked summoners list.`
                 );
                 return;
             }

@@ -168,6 +168,44 @@ function formatIotwStats(stats?: InterCandidate) {
     ].join('\n');
 }
 
+async function findSummonersByNameAndRegion(gameName: string, region: string) {
+    const query = `
+        SELECT *
+        FROM summoners
+        WHERE "gameName" = $1
+          AND "matchRegionPrefix" = $2
+        ORDER BY "tagLine" ASC
+    `;
+    const params = [gameName, region];
+    const result = await db.query(query, params);
+    return result.rows;
+}
+
+async function resolveSummonerRecord(
+    gameName: string,
+    tag: string | null,
+    region: string
+) {
+    if (tag) {
+        return {
+            type: 'single' as const,
+            record: await getSummonerByAccountName(gameName, tag, region),
+        };
+    }
+
+    const matches = await findSummonersByNameAndRegion(gameName, region);
+
+    if (matches.length === 0) {
+        return { type: 'none' as const };
+    }
+
+    if (matches.length === 1) {
+        return { type: 'single' as const, record: matches[0] };
+    }
+
+    return { type: 'multiple' as const, records: matches };
+}
+
 export const summonerInfoCommand: SlashCommand = {
     data: (() => {
         const builder = new SlashCommandBuilder()
@@ -186,7 +224,7 @@ export const summonerInfoCommand: SlashCommand = {
                 option
                     .setName('tag')
                     .setDescription('Summoner tagline (e.g. EUW).')
-                    .setRequired(true)
+                    .setRequired(false)
                     .setAutocomplete(true)
             )
             .addStringOption((option) => {
@@ -207,7 +245,7 @@ export const summonerInfoCommand: SlashCommand = {
     })(),
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true);
-        const tag = interaction.options.getString('tag', true);
+        const tag = interaction.options.getString('tag');
         const region =
             interaction.options.getString('region') ||
             Constants.Regions.EU_WEST;
@@ -215,15 +253,34 @@ export const summonerInfoCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            const summonerRecord = await getSummonerByAccountName(
-                name,
-                tag,
-                region
-            );
+            const resolution = await resolveSummonerRecord(name, tag, region);
+
+            if (resolution.type === 'multiple') {
+                const choices = resolution.records
+                    .map(
+                        (row: any, index: number) =>
+                            `${index + 1}. ${row.gameName}#${row.tagLine}`
+                    )
+                    .join('\n');
+                await interaction.editReply(
+                    `Multiple tracked summoners found for **${name}** in ${region}. Please rerun the command with a tag.\n${choices}`
+                );
+                return;
+            }
+
+            if (resolution.type === 'none') {
+                await interaction.editReply(
+                    `Could not find **${name}** in region ${region}.`
+                );
+                return;
+            }
+
+            const summonerRecord = resolution.record;
 
             if (!summonerRecord || (summonerRecord as any).msg) {
+                const missingTarget = tag ? `${name}#${tag}` : name;
                 await interaction.editReply(
-                    `Could not find **${name}#${tag}** in region ${region}.`
+                    `Could not find **${missingTarget}** in region ${region}.`
                 );
                 return;
             }

@@ -24,7 +24,10 @@ CREATE TABLE "summoners" (
     "region" VARCHAR(20) NOT NULL DEFAULT 'EU_WEST',
     "matchRegionPrefix" VARCHAR(10) DEFAULT 'EUW1',
     "deepLolLink" VARCHAR(150),
-    "currentMatchId" VARCHAR(50),
+    "tier" VARCHAR(25) DEFAULT 'UNRANKED',
+    "rank" VARCHAR(25) DEFAULT 'N/A',
+    "lp" INT DEFAULT 0,
+    "currentMatchId" VARCHAR(80) DEFAULT NULL,
     "discordChannelId" VARCHAR(50),
     "regionGroup" VARCHAR(50),
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW()
@@ -57,9 +60,6 @@ INSERT INTO "summoners" (
     'EU_WEST',
     'EUW1',
     'https://www.deeplol.gg/summoner/EUW/FM%20Pruhaps-BAUSS',
-    'Unranked',
-    'N/A',
-     0,
     '1424782745300893879',
     'EUROPE'
 ),
@@ -70,9 +70,6 @@ INSERT INTO "summoners" (
     'EU_WEST',
     'EUW1',
     'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy',
-    'Unranked',
-    'N/A',
-     0,
     '1424782745300893879',
     'EUROPE'
 )
