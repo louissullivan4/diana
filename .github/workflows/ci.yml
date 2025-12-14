@@ -1,144 +1,360 @@
 name: Diana CI & CD Pipeline
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-    contents: read
-    security-events: write
+  contents: read
 
 jobs:
-    ########################################################
-    # 1. Static Code Security Scan with CodeQL
-    ########################################################
-    codeql:
-        name: 🔒 CodeQL Analysis
-        runs-on: ubuntu-latest
-        permissions:
-            security-events: write
-            actions: read
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+  ########################################################
+  # 0. Lint GitHub Actions workflow files
+  ########################################################
+  actionlint:
+    name: 🧾 Actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Initialize CodeQL
-              uses: github/codeql-action/init@v3
-              with:
-                  languages: javascript
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1.7.9
 
-            - name: Install dependencies
-              run: npm ci
+  ########################################################
+  # 0b. Secret scanning
+  ########################################################
+  gitleaks:
+    name: 🕵️ Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            - name: Perform CodeQL analysis
-              uses: github/codeql-action/analyze@v3
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    ########################################################
-    # 2. Build (format, lint, install, artifacts)
-    ########################################################
-    ci:
-        name: 🛠️ Build & Test
-        runs-on: ubuntu-latest
-        needs: [codeql]
-        environment: production
-        strategy:
-            matrix:
-                node-version: [ 24.10.0 ]
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+      - name: Upload gitleaks SARIF to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
 
-            - name: Setup Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v3
-              with:
-                  node-version: ${{ matrix.node-version }}
+  ########################################################
+  # 0c. Dependency review (PR only)
+  ########################################################
+  dependency-review:
+    name: 🧩 Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Dependency review (PR only)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/dependency-review-action@v4
 
-            - name: Cache npm modules
-              uses: actions/cache@v4
-              with:
-                  path: ~/.npm
-                  key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Skip (not a PR)
+        if: ${{ github.event_name != 'pull_request' }}
+        run: echo "Not a pull_request event, skipping dependency review."
 
-            - name: Install dependencies
-              run: npm ci
+  ########################################################
+  # 1. Static Code Security Scan with CodeQL
+  ########################################################
+  codeql:
+    name: 🔒 CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Check formatting
-              run: npm run format:check
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
 
-            - name: Lint code
-              run: npm run lint:check
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Build
-              run: npm run build:check
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
 
-            - name: Run tests
-              run: export TEST_DISCORD_CHANNEL_ID=${{ secrets.TEST_DISCORD_CHANNEL_ID }} && npm run test
+  ########################################################
+  # 2. Build (format, lint, install, tests, artifacts)
+  ########################################################
+  ci:
+    name: 🛠️ Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [actionlint, gitleaks, dependency-review, codeql]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [24.10.0]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    ########################################################
-    # 3. Build, Tag & Push Docker Image
-    ########################################################
-    build:
-        name: 🐳 Docker build
-        runs-on: ubuntu-latest
-        needs: [codeql, ci]
-        environment: production
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKER_USERNAME }}
-                  password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Build Docker image
-              run: docker build -t diana-bot:${{ github.sha }} .
+      - name: Check formatting
+        run: npm run format:check
 
-            - name: Tag & Push Docker image
-              run: |
-                  docker tag diana-bot:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
-                  docker push ${{ secrets.DOCKER_USERNAME }}/diana-bot:latest
+      - name: Lint code
+        run: npm run lint:check
 
-    ########################################################
-    # 4. Notify via Discord
-    ########################################################
-    notify:
-        name: 📣 Discord Notification
-        runs-on: ubuntu-latest
-        needs: [codeql, ci, build]
-        environment: production
-        steps:
-            - name: Discord Webhook Action
-              uses: tsickert/discord-webhook@v7.0.0
-              with:
-                  webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-                  content: |
-                      ✅ Deployment complete!
-                      🟢 **Status**: Passed
-                      📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
-                      🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
-                      ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
+      - name: Build
+        run: npm run build:check
 
-    ########################################################
-    # 5. Notify Discord if Build Fails
-    ########################################################
-    notify-failure:
-        name: ❌ Discord Failure Notification
-        runs-on: ubuntu-latest
-        needs: [codeql, ci, build]
-        environment: production
-        if: failure()
-        steps:
-            - name: Discord Webhook Action
-              uses: tsickert/discord-webhook@v7.0.0
-              with:
-                  webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-                  content: |
-                      ❌ Deployment Failed...
-                      🔴 **Status**: Failed
-                      📦 **Repository**: ${{ github.repository }} 🔢 **Commit SHA**: ${{ github.sha }} ✍️ **Author**: ${{ github.actor }}
-                      🔗 **Run**: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
-                      ↩️ **PR**: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}>
+      - name: Run tests
+        env:
+          TEST_DISCORD_CHANNEL_ID: ${{ secrets.TEST_DISCORD_CHANNEL_ID }}
+        run: npm test
+
+      - name: npm audit (high severity and up)
+        run: npm audit --audit-level=high
+
+      - name: Upload test artifacts (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            coverage/**
+            test-results/**
+            junit*.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  ########################################################
+  # 3. Docker build (buildx, tags, cache, SBOM + provenance on main push)
+  ########################################################
+  docker:
+    name: 🐳 Docker Build (and Push on main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [ci]
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set image name
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" ]; then
+            echo "IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/diana-bot" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_NAME=diana-bot" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=ref,event=pr
+            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - name: Log in to Docker Hub (main push only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build (and push on main) with SBOM + provenance attestations
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          provenance: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'mode=max' || '' }}
+
+      - name: Trivy image scan (main push only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy SARIF to Code Scanning (main push only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Generate downloadable SBOM artifact (main push only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+
+  ########################################################
+  # 4. Notify via Discord (PRs: runs but will usually skip sending)
+  ########################################################
+  notify:
+    name: 📣 Discord Notification (PR)
+    runs-on: ubuntu-latest
+    needs: [actionlint, gitleaks, dependency-review, codeql, ci, docker]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - name: Compose message
+        id: msg
+        env:
+          ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
+          GITLEAKS_RESULT: ${{ needs.gitleaks.result }}
+          DEPS_RESULT: ${{ needs.dependency-review.result }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+          CI_RESULT: ${{ needs.ci.result }}
+          DOCKER_RESULT: ${{ needs.docker.result }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          overall="success"
+          for r in "$ACTIONLINT_RESULT" "$GITLEAKS_RESULT" "$DEPS_RESULT" "$CODEQL_RESULT" "$CI_RESULT" "$DOCKER_RESULT"; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              overall="failure"
+            fi
+          done
+
+          if [ "$overall" = "success" ]; then
+            header="✅ Pipeline complete!"
+            status="🟢 **Status**: Passed"
+          else
+            header="❌ Pipeline failed..."
+            status="🔴 **Status**: Failed"
+          fi
+
+          pr_line=""
+          if [ -n "$PR_URL" ]; then
+            pr_line="↩️ **PR**: <$PR_URL>"
+          fi
+
+          {
+            echo "content<<EOF"
+            printf "%s\n" "$header"
+            printf "%s\n" "$status"
+            printf "%s\n" "📦 **Repository**: $REPO"
+            printf "%s\n" "🔢 **Commit SHA**: $SHA"
+            printf "%s\n" "✍️ **Actor**: $ACTOR"
+            printf "%s\n" "🔗 **Run**: <$RUN_URL>"
+            if [ -n "$pr_line" ]; then printf "%s\n" "$pr_line"; fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send Discord webhook
+        if: ${{ env.DISCORD_WEBHOOK != '' }}
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ env.DISCORD_WEBHOOK }}
+          content: ${{ steps.msg.outputs.content }}
+
+  ########################################################
+  # 5. Notify via Discord using production environment secret (main push only)
+  ########################################################
+  notify-production:
+    name: 📣 Discord Notification (production)
+    runs-on: ubuntu-latest
+    needs: [actionlint, gitleaks, dependency-review, codeql, ci, docker]
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    environment: production
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - name: Compose message
+        id: msg
+        env:
+          ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
+          GITLEAKS_RESULT: ${{ needs.gitleaks.result }}
+          DEPS_RESULT: ${{ needs.dependency-review.result }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+          CI_RESULT: ${{ needs.ci.result }}
+          DOCKER_RESULT: ${{ needs.docker.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          overall="success"
+          for r in "$ACTIONLINT_RESULT" "$GITLEAKS_RESULT" "$DEPS_RESULT" "$CODEQL_RESULT" "$CI_RESULT" "$DOCKER_RESULT"; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              overall="failure"
+            fi
+          done
+
+          if [ "$overall" = "success" ]; then
+            header="✅ Pipeline complete!"
+            status="🟢 **Status**: Passed"
+          else
+            header="❌ Pipeline failed..."
+            status="🔴 **Status**: Failed"
+          fi
+
+          {
+            echo "content<<EOF"
+            printf "%s\n" "$header"
+            printf "%s\n" "$status"
+            printf "%s\n" "📦 **Repository**: $REPO"
+            printf "%s\n" "🔢 **Commit SHA**: $SHA"
+            printf "%s\n" "✍️ **Actor**: $ACTOR"
+            printf "%s\n" "🔗 **Run**: <$RUN_URL>"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send Discord webhook
+        if: ${{ env.DISCORD_WEBHOOK != '' }}
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ env.DISCORD_WEBHOOK }}
+          content: ${{ steps.msg.outputs.content }}
