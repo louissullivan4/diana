@@ -93,10 +93,10 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
         puuid,
         summoner.regionGroup as any
     );
-    const regionData = deriveRegionData(
-        activeRegion.region,
-        summoner.regionGroup
-    );
+    // const regionData = deriveRegionData(
+    //     activeRegion.region,
+    //     summoner.regionGroup
+    // );
 
     const requiresUpdate =
         summoner.gameName !== account.gameName ||
@@ -104,10 +104,10 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
         summoner.deepLolLink !== deepLolLink ||
         (targetDiscordChannelId !== null &&
             targetDiscordChannelId !== summoner.discordChannelId);
-    const requiresRegionUpdate =
-        summoner.region !== regionData.region ||
-        summoner.matchRegionPrefix !== regionData.matchRegionPrefix ||
-        summoner.regionGroup !== regionData.regionGroup;
+    // const requiresRegionUpdate =
+    //     summoner.region !== regionData.region ||
+    //     summoner.matchRegionPrefix !== regionData.matchRegionPrefix ||
+    //     summoner.regionGroup !== regionData.regionGroup;
 
     if (!requiresUpdate) {
         console.log(
@@ -126,17 +126,17 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
         );
     }
 
-    if (requiresRegionUpdate) {
-        await updateSummonerRegionDataByPuuid(
-            puuid,
-            regionData.region,
-            regionData.matchRegionPrefix,
-            regionData.regionGroup
-        );
-        console.log(
-            `[Info] [${new Date().toISOString()}] Updated region data for ${account.gameName}#${account.tagLine} to ${regionData.matchRegionPrefix} (${regionData.regionGroup}).`
-        );
-    }
+    // if (requiresRegionUpdate) {
+    //     await updateSummonerRegionDataByPuuid(
+    //         puuid,
+    //         regionData.region,
+    //         regionData.matchRegionPrefix,
+    //         regionData.regionGroup
+    //     );
+    //     console.log(
+    //         `[Info] [${new Date().toISOString()}] Updated region data for ${account.gameName}#${account.tagLine} to ${regionData.matchRegionPrefix} (${regionData.regionGroup}).`
+    //     );
+    // }
 };
 
 const syncTrackedSummonersWithDatabase = async () => {
