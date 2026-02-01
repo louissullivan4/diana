@@ -1,106 +1,11 @@
-import { Client, EmbedBuilder, IntentsBitField } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import 'dotenv/config';
-import { Summoner, SummonerSummary } from '../types';
-import {
-    handleAutocompleteInteraction,
-    handleSlashCommandInteraction,
-    registerSlashCommands,
-} from './commandService';
+import { SummonerSummary } from '../types';
+import { getDiscordClient } from '../../../core/discord/client';
 
-const client = new Client({
-    intents: [
-        IntentsBitField.Flags.Guilds,
-        IntentsBitField.Flags.GuildMessages,
-    ],
-});
-
-let hasClientLoggedIn = false;
-let hasInitializedCommandHandling = false;
-
-const initializeCommandHandling = () => {
-    if (hasInitializedCommandHandling) return;
-
-    client.once('ready', async (readyClient) => {
-        console.log(
-            `Discord client ready as ${readyClient.user?.tag ?? 'unknown user'}.`
-        );
-        try {
-            await registerSlashCommands();
-        } catch (error) {
-            console.error(
-                'Failed to register Discord slash commands on ready event:',
-                error
-            );
-        }
-    });
-
-    client.on('interactionCreate', async (interaction) => {
-        if (interaction.isAutocomplete()) {
-            try {
-                await handleAutocompleteInteraction(interaction);
-            } catch (error) {
-                console.error(
-                    'Failed to handle autocomplete interaction:',
-                    error
-                );
-                try {
-                    if (!interaction.responded) {
-                        await interaction.respond([]);
-                    }
-                } catch (respondError) {
-                    console.error(
-                        'Failed to send fallback autocomplete response:',
-                        respondError
-                    );
-                }
-            }
-            return;
-        }
-
-        if (!interaction.isChatInputCommand()) return;
-
-        try {
-            console.log(
-                `Received slash command interaction "${interaction.commandName}" from ${interaction.user.tag}.`
-            );
-            await handleSlashCommandInteraction(interaction);
-            console.log(
-                `Successfully handled slash command "${interaction.commandName}" for ${interaction.user.tag}.`
-            );
-        } catch (error) {
-            console.error('Failed to handle slash command interaction:', error);
-
-            const errorMessage =
-                'An unexpected error occurred while executing this command.';
-
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({
-                    content: errorMessage,
-                    ephemeral: true,
-                });
-            } else {
-                await interaction.reply({
-                    content: errorMessage,
-                    ephemeral: true,
-                });
-            }
-        }
-    });
-
-    hasInitializedCommandHandling = true;
-};
-
+/** No-op when running under Diana core (Discord is started by core). Kept for compatibility. */
 export const loginClient = async () => {
-    if (hasClientLoggedIn) return;
-    initializeCommandHandling();
-    try {
-        await client.login(process.env.DISCORD_BOT_TOKEN);
-        console.log('Discord client login successful.');
-        hasClientLoggedIn = true;
-    } catch (error) {
-        console.error('Could not login to Discord client:', error);
-        throw new Error('Could not login to Discord client.');
-    }
+    /* Discord client is started by Diana core */
 };
 
 export const rankColors = new Map<string, number>([
@@ -148,6 +53,10 @@ interface MessageBody {
     embeds: [EmbedBuilder];
 }
 
+function getClient() {
+    return getDiscordClient();
+}
+
 export const sendDiscordMessage = async (
     channelId: string,
     message: MessageBody
@@ -160,10 +69,10 @@ export const sendDiscordMessage = async (
         }
     }
     if (!message) throw new Error('Message content not provided.');
-    const channel = await client.channels.fetch(channelId);
+    const channel = await getClient().channels.fetch(channelId);
     if (!channel) throw new Error(`Channel with ID ${channelId} not found.`);
     if (channel.isSendable()) {
-        channel.send(message);
+        await channel.send(message);
     }
 };
 

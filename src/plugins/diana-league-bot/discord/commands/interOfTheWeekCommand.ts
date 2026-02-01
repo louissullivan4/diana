@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import type { SlashCommand } from '../commandService';
+import type { SlashCommand } from '../../../../core/pluginTypes';
 import {
     getInterCandidatesLastWeek,
     type InterCandidate,
@@ -179,7 +179,6 @@ function buildEmbed(categories: CategoryWinner[]): EmbedBuilder {
         .filter((entry) => entry.count === highestCount && highestCount > 0)
         .map((entry) => entry.candidate);
 
-    const primaryCrown = crowned[0];
     const crownNames = crowned.map((candidate) =>
         candidate.deepLolLink
             ? `[${candidate.displayName}](${candidate.deepLolLink})`

@@ -11,7 +11,7 @@ import {
 } from 'twisted/dist/models-dto/matches/match-v5';
 
 class JsonLoader {
-    private static readonly basePath = join('data/riot');
+    private static readonly basePath = join('db', 'data', 'riot');
 
     static load<T>(filename: string): T {
         const filePath = join(this.basePath, filename);

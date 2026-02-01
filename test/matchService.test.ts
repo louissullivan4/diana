@@ -1,11 +1,11 @@
-jest.mock('../src/api/utils/db', () => ({
+jest.mock('../src/plugins/diana-league-bot/api/utils/db', () => ({
     db: {
         query: jest.fn(),
     },
 }));
 
-import { db } from '../src/api/utils/db';
-import * as matchService from '../src/api/matches/matchService';
+import { db } from '../src/plugins/diana-league-bot/api/utils/db';
+import * as matchService from '../src/plugins/diana-league-bot/api/matches/matchService';
 
 const queryMock = db.query as unknown as jest.Mock;
 

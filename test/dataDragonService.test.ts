@@ -6,7 +6,7 @@ const setupModule = () => {
         get: axiosGet,
     }));
 
-    const service = require('../src/api/utils/dataDragonService');
+    const service = require('../src/plugins/diana-league-bot/api/utils/dataDragonService');
     const axios = require('axios');
     return { service, axiosGet: axios.get };
 };
