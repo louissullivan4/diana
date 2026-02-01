@@ -126,39 +126,48 @@ jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
 }));
 
-jest.mock('../src/api/summoners/summonerService', () => ({
-    getSummonerByAccountName: jest.fn(),
-    searchSummonerGameNames: jest.fn(),
-    searchSummonerTags: jest.fn(),
-    getMostRecentRankByParticipantIdAndQueueType: jest.fn(),
-}));
+jest.mock(
+    '../src/plugins/diana-league-bot/api/summoners/summonerService',
+    () => ({
+        getSummonerByAccountName: jest.fn(),
+        searchSummonerGameNames: jest.fn(),
+        searchSummonerTags: jest.fn(),
+        getMostRecentRankByParticipantIdAndQueueType: jest.fn(),
+    })
+);
 
-jest.mock('../src/api/utils/db', () => ({
+jest.mock('../src/plugins/diana-league-bot/api/utils/db', () => ({
     db: {
         query: jest.fn(),
     },
 }));
 
-jest.mock('../src/api/utils/dataDragonService', () => ({
-    getQueueNameById: getQueueNameByIdMock,
-}));
+jest.mock(
+    '../src/plugins/diana-league-bot/api/utils/dataDragonService',
+    () => ({
+        getQueueNameById: getQueueNameByIdMock,
+    })
+);
 
-jest.mock('../src/api/utils/lolService/lolServiceFactory', () => ({
-    createLolService: jest.fn(() => ({
-        getRankEntriesByPUUID: getRankEntriesByPUUIDMock,
-    })),
-}));
+jest.mock(
+    '../src/plugins/diana-league-bot/api/utils/lolService/lolServiceFactory',
+    () => ({
+        createLolService: jest.fn(() => ({
+            getRankEntriesByPUUID: getRankEntriesByPUUIDMock,
+        })),
+    })
+);
 
-jest.mock('../src/discord/discordService', () => ({
+jest.mock('../src/plugins/diana-league-bot/discord/discordService', () => ({
     rankColors: mockRankColors,
     getRankedEmblem: getRankedEmblemMock,
 }));
 
-const summonerService = require('../src/api/summoners/summonerService');
-const { db } = require('../src/api/utils/db');
+const summonerService = require('../src/plugins/diana-league-bot/api/summoners/summonerService');
+const { db } = require('../src/plugins/diana-league-bot/api/utils/db');
 const {
     summonerInfoCommand,
-} = require('../src/discord/commands/summonerInfoCommand');
+} = require('../src/plugins/diana-league-bot/discord/commands/summonerInfoCommand');
 const dbQueryMock: jest.Mock = db.query as jest.Mock;
 
 describe('summonerInfoCommand', () => {

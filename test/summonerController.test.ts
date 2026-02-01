@@ -1,13 +1,16 @@
-jest.mock('../src/api/summoners/summonerService', () => ({
-    createSummoner: jest.fn(),
-    deleteSummoner: jest.fn(),
-    getSummonerByAccountName: jest.fn(),
-    getSummonerByPuuid: jest.fn(),
-    fetchRankHistory: jest.fn(),
-    createRankHistory: jest.fn(),
-    updateRankHistory: jest.fn(),
-    deleteRankHistory: jest.fn(),
-}));
+jest.mock(
+    '../src/plugins/diana-league-bot/api/summoners/summonerService',
+    () => ({
+        createSummoner: jest.fn(),
+        deleteSummoner: jest.fn(),
+        getSummonerByAccountName: jest.fn(),
+        getSummonerByPuuid: jest.fn(),
+        fetchRankHistory: jest.fn(),
+        createRankHistory: jest.fn(),
+        updateRankHistory: jest.fn(),
+        deleteRankHistory: jest.fn(),
+    })
+);
 
 import {
     fetchSummonerByAccountName,
@@ -17,9 +20,9 @@ import {
     createRankHistoryHandler,
     updateRankHistoryByRid,
     deleteRankHistoryByRid,
-} from '../src/api/summoners/summonerController';
+} from '../src/plugins/diana-league-bot/api/summoners/summonerController';
 
-import * as service from '../src/api/summoners/summonerService';
+import * as service from '../src/plugins/diana-league-bot/api/summoners/summonerService';
 
 const createMockResponse = () => {
     const res: any = {};

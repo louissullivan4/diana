@@ -1,18 +1,15 @@
 require('dotenv').config();
 
-jest.mock('../src/discord/commandService', () => ({
-    handleAutocompleteInteraction: jest.fn(),
-    handleSlashCommandInteraction: jest.fn(),
-    registerSlashCommands: jest.fn(),
-}));
+const mockChannel = {
+    isSendable: () => true,
+    send: jest.fn(),
+};
 
 jest.mock('discord.js', () => {
-    const mockChannel = {
+    const fetchMock = jest.fn().mockResolvedValue({
         isSendable: () => true,
         send: jest.fn(),
-    };
-
-    const fetchMock = jest.fn().mockResolvedValue(mockChannel);
+    });
 
     class MockClient {
         once = jest.fn();
@@ -86,7 +83,18 @@ jest.mock('discord.js', () => {
     };
 });
 
-const discordService = require('../src/discord/discordService');
+jest.mock('../src/core/discord/client', () => ({
+    getDiscordClient: () => ({
+        channels: {
+            fetch: jest.fn().mockResolvedValue({
+                isSendable: () => true,
+                send: jest.fn(),
+            }),
+        },
+    }),
+}));
+
+const discordService = require('../src/plugins/diana-league-bot/discord/discordService');
 
 const {
     createMatchEndEmbed,

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { trackedSummoners } from '../config/trackedSummoners';
+import { trackedSummoners as legacyTrackedSummoners } from '../config/trackedSummoners';
 import {
     getQueueNameById,
     getRoleNameTranslation,
@@ -17,15 +17,13 @@ import {
     createRankHistory,
     getMostRecentRankByParticipantIdAndQueueType,
     updateSummonerIdentityByPuuid,
-    updateSummonerRegionDataByPuuid,
 } from '../api/summoners/summonerService';
 import {
     loginClient,
     notifyMatchEnd,
     notifyRankChange,
 } from './discordService';
-import cron from 'node-cron';
-import { Summoner } from '../types';
+import { Summoner, LeagueBotConfig, TrackedSummonerConfig } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
 import { Constants } from 'twisted';
 
@@ -36,38 +34,21 @@ const shouldForceDevelopmentTimers = Boolean(
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 let lastSummonerMetadataSync = 0;
 
+/**
+ * Get tracked summoners from config, falling back to legacy hardcoded list if config is empty.
+ */
+function getTrackedSummoners(config: LeagueBotConfig): TrackedSummonerConfig[] {
+    if (config.trackedSummoners && config.trackedSummoners.length > 0) {
+        return config.trackedSummoners;
+    }
+    // Fallback to legacy hardcoded summoners for backwards compatibility
+    return legacyTrackedSummoners;
+}
+
 const buildDeepLolLink = (gameName: string, tagLine: string) => {
     const encodedGameName = encodeURIComponent(gameName);
     const encodedTagLine = encodeURIComponent(tagLine);
     return `https://www.deeplol.gg/summoner/euw/${encodedGameName}-${encodedTagLine}`;
-};
-
-const deriveRegionData = (
-    activeRegion: string,
-    fallbackRegionGroup?: string | null
-) => {
-    const matchRegionPrefix = activeRegion;
-    let regionGroup =
-        fallbackRegionGroup ??
-        (() => {
-            try {
-                return Constants.regionToRegionGroup(
-                    activeRegion as (typeof Constants.Regions)[keyof typeof Constants.Regions]
-                );
-            } catch {
-                return null;
-            }
-        })();
-
-    if (!regionGroup) {
-        regionGroup = Constants.RegionGroups.EUROPE;
-    }
-
-    return {
-        region: activeRegion,
-        matchRegionPrefix,
-        regionGroup,
-    };
 };
 
 const syncTrackedSummonerMetadata = async (puuid: string) => {
@@ -89,14 +70,7 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
     const targetDiscordChannelId =
         envDiscordChannelId ?? summoner.discordChannelId ?? null;
 
-    const activeRegion = await lolService.getActiveRegionByPUUID(
-        puuid,
-        summoner.regionGroup as any
-    );
-    // const regionData = deriveRegionData(
-    //     activeRegion.region,
-    //     summoner.regionGroup
-    // );
+    await lolService.getActiveRegionByPUUID(puuid, summoner.regionGroup as any);
 
     const requiresUpdate =
         summoner.gameName !== account.gameName ||
@@ -104,10 +78,6 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
         summoner.deepLolLink !== deepLolLink ||
         (targetDiscordChannelId !== null &&
             targetDiscordChannelId !== summoner.discordChannelId);
-    // const requiresRegionUpdate =
-    //     summoner.region !== regionData.region ||
-    //     summoner.matchRegionPrefix !== regionData.matchRegionPrefix ||
-    //     summoner.regionGroup !== regionData.regionGroup;
 
     if (!requiresUpdate) {
         console.log(
@@ -125,25 +95,15 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
             `[Info] [${new Date().toISOString()}] Synced tracked summoner identity for ${account.gameName}#${account.tagLine}.`
         );
     }
-
-    // if (requiresRegionUpdate) {
-    //     await updateSummonerRegionDataByPuuid(
-    //         puuid,
-    //         regionData.region,
-    //         regionData.matchRegionPrefix,
-    //         regionData.regionGroup
-    //     );
-    //     console.log(
-    //         `[Info] [${new Date().toISOString()}] Updated region data for ${account.gameName}#${account.tagLine} to ${regionData.matchRegionPrefix} (${regionData.regionGroup}).`
-    //     );
-    // }
 };
 
-const syncTrackedSummonersWithDatabase = async () => {
+const syncTrackedSummonersWithDatabase = async (
+    summoners: TrackedSummonerConfig[]
+) => {
     console.log(
         `[Info] [${new Date().toISOString()}] Starting tracked summoner metadata sync...`
     );
-    for (const player of trackedSummoners) {
+    for (const player of summoners) {
         try {
             await syncTrackedSummonerMetadata(player.puuid);
         } catch (error) {
@@ -185,7 +145,7 @@ const checkAndHandleSummoner = async (summoner: Summoner) => {
             await handleNewMatchCompleted(summoner, mostRecentMatchId);
         } else {
             console.log(
-                `[Info] [${new Date().toISOString()}] [${new Date().toISOString()}] No new matches for [${summoner.gameName}]`
+                `[Info] [${new Date().toISOString()}] No new matches for [${summoner.gameName}]`
             );
         }
     } catch (error) {
@@ -201,7 +161,7 @@ const handleNewMatchCompleted = async (
 ) => {
     const { puuid, gameName: summonerName } = summoner;
 
-    const fullMatchId = newMatchId; // The match ID is already in full format from the API
+    const fullMatchId = newMatchId;
 
     let matchSummaryData: MatchV5DTOs.MatchDto = {
         metadata: { dataVersion: '', matchId: '', participants: [] },
@@ -265,7 +225,6 @@ const handleNewMatchCompleted = async (
             );
         }
     } catch (error: any) {
-        // For other database errors, log and re-throw to maintain current error handling
         console.error(
             `[Error] [${new Date().toISOString()}] Failed to create match detail for [${summonerName}]:`,
             error
@@ -373,43 +332,66 @@ const handleNewMatchCompleted = async (
     }
 };
 
-cron.schedule('*/20 * * * * *', async () => {
-    if (process.env.STOP_BOT) {
-        console.log(
-            `[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`
-        );
-        return;
-    }
-    const apiValid = await lolService.checkConnection();
-    if (apiValid) {
-        const now = Date.now();
-        if (
-            shouldForceDevelopmentTimers ||
-            now - lastSummonerMetadataSync >= TWENTY_FOUR_HOURS_MS
-        ) {
-            await syncTrackedSummonersWithDatabase();
-            lastSummonerMetadataSync = now;
-        }
+/**
+ * Creates a match monitoring tick function configured with the given config.
+ * Used by diana-league-bot plugin to run on a cron.
+ */
+export function createMatchMonitoringTick(
+    config: LeagueBotConfig
+): () => Promise<void> {
+    const trackedSummoners = getTrackedSummoners(config);
 
-        console.log(
-            `[Info] [${new Date().toISOString()}] Starting cron check for completed matches...`
-        );
-        for (const player of trackedSummoners) {
-            const summoner = await getSummonerByPuuid(player.puuid);
-            if (summoner) {
-                await checkAndHandleSummoner(summoner);
-            } else {
-                console.log(
-                    `[Info] [${new Date().toISOString()}] Player PUUID[${player.puuid}] was not found in database.`
-                );
-            }
+    return async function runMatchMonitoringTick(): Promise<void> {
+        if (process.env.STOP_BOT) {
+            console.log(
+                `[Info] [${new Date().toISOString()}] Stop bot enabled, skipping run...`
+            );
+            return;
         }
-        console.log(
-            `[Info] [${new Date().toISOString()}] Finished cron check.\n`
-        );
-    } else {
-        console.log(
-            `[Error] [${new Date().toISOString()}] API connection failed, skipping run...`
-        );
-    }
-});
+        const apiValid = await lolService.checkConnection();
+        if (apiValid) {
+            const now = Date.now();
+            if (
+                shouldForceDevelopmentTimers ||
+                now - lastSummonerMetadataSync >= TWENTY_FOUR_HOURS_MS
+            ) {
+                await syncTrackedSummonersWithDatabase(trackedSummoners);
+                lastSummonerMetadataSync = now;
+            }
+
+            console.log(
+                `[Info] [${new Date().toISOString()}] Starting cron check for completed matches (${trackedSummoners.length} summoners)...`
+            );
+            for (const player of trackedSummoners) {
+                const summoner = await getSummonerByPuuid(player.puuid);
+                if (summoner) {
+                    await checkAndHandleSummoner(summoner);
+                } else {
+                    console.log(
+                        `[Info] [${new Date().toISOString()}] Player PUUID[${player.puuid}] was not found in database.`
+                    );
+                }
+            }
+            console.log(
+                `[Info] [${new Date().toISOString()}] Finished cron check.\n`
+            );
+        } else {
+            console.log(
+                `[Error] [${new Date().toISOString()}] API connection failed, skipping run...`
+            );
+        }
+    };
+}
+
+/**
+ * Single tick of match monitoring using legacy hardcoded config.
+ * @deprecated Use createMatchMonitoringTick with config instead.
+ */
+export async function runMatchMonitoringTick(): Promise<void> {
+    const defaultConfig: LeagueBotConfig = {
+        trackedSummoners: [],
+        matchCheckCron: '*/20 * * * * *',
+    };
+    const tick = createMatchMonitoringTick(defaultConfig);
+    return tick();
+}

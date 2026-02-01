@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import type { SlashCommand } from '../commandService';
+import type { SlashCommand } from '../pluginTypes';
 
 export const pingCommand: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -13,12 +13,10 @@ export const pingCommand: SlashCommand = {
         ),
     execute: async (interaction) => {
         const target = interaction.options.getString('target');
-
         if (target) {
             await interaction.reply(`Diana pinged ${target}!`);
             return;
         }
-
         await interaction.reply('Diana said pong.');
     },
 };

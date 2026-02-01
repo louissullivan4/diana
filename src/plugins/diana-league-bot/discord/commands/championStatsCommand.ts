@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Constants } from 'twisted';
-import type { SlashCommand } from '../commandService';
+import type { SlashCommand } from '../../../../core/pluginTypes';
 import {
     getSummonerByAccountName,
     searchSummonerGameNames,
