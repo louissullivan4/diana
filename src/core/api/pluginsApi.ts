@@ -115,8 +115,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
         );
         res.json(info);
     } catch (err) {
+        // Use safe logging to avoid format string injection with user-provided id
         console.error(
-            `[${timestamp()}] [Diana:API] PATCH /api/plugins/${id} error:`,
+            '[%s] [Diana:API] PATCH /api/plugins/%s error:',
+            timestamp(),
+            String(id),
             err
         );
         res.status(500).json({

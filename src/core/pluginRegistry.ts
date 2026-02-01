@@ -37,21 +37,26 @@ function timestamp(): string {
     return new Date().toISOString();
 }
 
-/** Log plugin lifecycle events */
+/** Log plugin lifecycle events - uses safe logging to avoid format string injection */
 function logPlugin(
     level: 'info' | 'warn' | 'error',
     pluginId: string,
     message: string,
     extra?: unknown
 ): void {
-    const prefix = `[${timestamp()}] [Diana:Plugins]`;
-    const msg = `${prefix} [${pluginId}] ${message}`;
+    const prefix = '[' + timestamp() + '] [Diana:Plugins]';
+    // Use array join to avoid format string injection with user-provided pluginId
+    const parts = [prefix, '[' + String(pluginId) + ']', message];
     if (level === 'error') {
-        console.error(msg, extra ?? '');
+        if (extra !== undefined) {
+            console.error('%s %s %s', ...parts, extra);
+        } else {
+            console.error('%s %s %s', ...parts);
+        }
     } else if (level === 'warn') {
-        console.warn(msg, extra ?? '');
+        console.warn('%s %s %s', ...parts);
     } else {
-        console.log(msg);
+        console.log('%s %s %s', ...parts);
     }
 }
 

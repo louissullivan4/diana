@@ -1,11 +1,21 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 import { setExpressApp, registerPlugin, loadPlugin } from './pluginRegistry';
 import { registerSlashCommands } from './discord/commandRegistry';
 import { pingCommand } from './discord/coreCommands';
 import { pluginsApiRouter } from './api/pluginsApi';
 import { setupAndStartDiscord } from './discord/setupDiscord';
+
+// Rate limiter for dashboard routes (100 requests per minute per IP)
+const dashboardLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 100, // limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+});
 
 async function main() {
     const app = express();
@@ -27,16 +37,22 @@ async function main() {
     await loadPlugin(leagueBotPlugin.id);
 
     const dashboardDir = path.join(process.cwd(), 'dashboard', 'dist');
+    const indexHtmlPath = path.join(dashboardDir, 'index.html');
     try {
         const fs = await import('fs');
         const stat = fs.statSync(dashboardDir);
         if (stat.isDirectory()) {
-            app.use('/dashboard', express.static(dashboardDir));
-            app.get('/dashboard', (_req, res) => {
-                res.sendFile(path.join(dashboardDir, 'index.html'));
+            // Apply rate limiting to dashboard routes
+            app.use(
+                '/dashboard',
+                dashboardLimiter,
+                express.static(dashboardDir)
+            );
+            app.get('/dashboard', dashboardLimiter, (_req, res) => {
+                res.sendFile(indexHtmlPath);
             });
-            app.get('/dashboard/*splat', (_req, res) => {
-                res.sendFile(path.join(dashboardDir, 'index.html'));
+            app.get('/dashboard/*splat', dashboardLimiter, (_req, res) => {
+                res.sendFile(indexHtmlPath);
             });
             console.log(
                 '[Diana] Dashboard at http://localhost:' + PORT + '/dashboard'
