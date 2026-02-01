@@ -6,14 +6,37 @@ const CONFIG_DIR =
     process.env.DIANA_CONFIG_DIR ?? path.join(process.cwd(), 'data');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'plugins.json');
 
-function ensureConfigDir(): void {
-    if (!fs.existsSync(CONFIG_DIR)) {
-        fs.mkdirSync(CONFIG_DIR, { recursive: true });
+// In-memory fallback when filesystem is not writable
+let inMemoryConfig: PluginConfigEntry[] | null = null;
+let useInMemory = false;
+
+function ensureConfigDir(): boolean {
+    try {
+        if (!fs.existsSync(CONFIG_DIR)) {
+            fs.mkdirSync(CONFIG_DIR, { recursive: true });
+        }
+        return true;
+    } catch (err) {
+        console.warn(
+            '[Diana:Config] Cannot create config directory, using in-memory storage:',
+            err instanceof Error ? err.message : err
+        );
+        useInMemory = true;
+        inMemoryConfig = inMemoryConfig ?? [];
+        return false;
     }
 }
 
 function readConfig(): PluginConfigEntry[] {
-    ensureConfigDir();
+    // Use in-memory if filesystem is not available
+    if (useInMemory) {
+        return inMemoryConfig ?? [];
+    }
+
+    if (!ensureConfigDir()) {
+        return inMemoryConfig ?? [];
+    }
+
     if (!fs.existsSync(CONFIG_FILE)) {
         return [];
     }
@@ -27,8 +50,31 @@ function readConfig(): PluginConfigEntry[] {
 }
 
 function writeConfig(entries: PluginConfigEntry[]): void {
-    ensureConfigDir();
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(entries, null, 2), 'utf-8');
+    // Always update in-memory copy
+    inMemoryConfig = entries;
+
+    // Try to write to filesystem
+    if (useInMemory) {
+        return; // Skip filesystem write
+    }
+
+    if (!ensureConfigDir()) {
+        return;
+    }
+
+    try {
+        fs.writeFileSync(
+            CONFIG_FILE,
+            JSON.stringify(entries, null, 2),
+            'utf-8'
+        );
+    } catch (err) {
+        console.warn(
+            '[Diana:Config] Cannot write config file, changes stored in-memory only:',
+            err instanceof Error ? err.message : err
+        );
+        useInMemory = true;
+    }
 }
 
 export function getPluginConfig(

@@ -54,9 +54,10 @@ async function main() {
             app.get('/dashboard/*splat', dashboardLimiter, (_req, res) => {
                 res.sendFile(indexHtmlPath);
             });
-            console.log(
-                '[Diana] Dashboard at http://localhost:' + PORT + '/dashboard'
-            );
+            const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+                ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+                : `http://localhost:${PORT}`;
+            console.log(`[Diana] Dashboard available at ${baseUrl}/dashboard`);
         }
     } catch {
         console.log(
@@ -64,8 +65,8 @@ async function main() {
         );
     }
 
-    const server = app.listen(PORT, () => {
-        console.log(`[Diana] Server running on port ${PORT}`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`[Diana] Server running on port ${PORT} (0.0.0.0)`);
     });
 
     await setupAndStartDiscord();
