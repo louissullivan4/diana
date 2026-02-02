@@ -69,7 +69,14 @@ async function main() {
         console.log(`[Diana] Server running on port ${PORT} (0.0.0.0)`);
     });
 
-    await setupAndStartDiscord();
+    try {
+        await setupAndStartDiscord();
+    } catch (err) {
+        console.error(
+            '[Diana] Discord startup failed; continuing without Discord:',
+            err
+        );
+    }
 
     const shutdown = () => {
         console.log('[Diana] Shutting down...');
