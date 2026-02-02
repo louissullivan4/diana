@@ -19,10 +19,29 @@ const dashboardLimiter = rateLimit({
 
 async function main() {
     const app = express();
+    app.use((req, res, next) => {
+        const start = Date.now();
+        const host = req.headers.host ?? 'unknown-host';
+        const ua = req.headers['user-agent'] ?? 'unknown-ua';
+        console.log(
+            `[Diana:HTTP] --> ${req.method} ${req.originalUrl} host=${host} ip=${req.ip} ua="${ua}"`
+        );
+        res.on('finish', () => {
+            const durationMs = Date.now() - start;
+            console.log(
+                `[Diana:HTTP] <-- ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`
+            );
+        });
+        next();
+    });
     app.use(express.json());
 
     const PORT = Number(process.env.PORT) || 3000;
+    const inRailway = Boolean(process.env.RAILWAY_PUBLIC_DOMAIN);
 
+    app.get('/', (_req, res) => {
+        res.json({ status: 'ok', service: 'diana' });
+    });
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok', service: 'diana' });
     });
@@ -65,17 +84,51 @@ async function main() {
         );
     }
 
-    const server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`[Diana] Server running on port ${PORT} (0.0.0.0)`);
-    });
+    const servers: ReturnType<typeof app.listen>[] = [];
+    const startHttpServer = (port: number, label: string) => {
+        const server = app.listen(port, '0.0.0.0', () => {
+            console.log(
+                `[Diana] Server running on port ${port} (0.0.0.0) ${label}`
+            );
+        });
+        server.on('error', (err) => {
+            console.error('[Diana] HTTP server error:', err);
+        });
+        servers.push(server);
+    };
 
-    await setupAndStartDiscord();
+    startHttpServer(PORT, '(primary)');
+
+    // Railway sometimes routes traffic to a configured port that differs from PORT.
+    // To avoid 502s, also listen on 3001 when running on Railway.
+    if (inRailway && PORT !== 3001) {
+        startHttpServer(3001, '(railway fallback)');
+    }
+
+    try {
+        await setupAndStartDiscord();
+    } catch (err) {
+        console.error(
+            '[Diana] Discord startup failed; continuing without Discord:',
+            err
+        );
+    }
 
     const shutdown = () => {
         console.log('[Diana] Shutting down...');
-        server.close(() => {
+        let remaining = servers.length;
+        if (remaining === 0) {
             process.exit(0);
-        });
+            return;
+        }
+        for (const srv of servers) {
+            srv.close(() => {
+                remaining -= 1;
+                if (remaining === 0) {
+                    process.exit(0);
+                }
+            });
+        }
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
