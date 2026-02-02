@@ -37,6 +37,7 @@ async function main() {
     app.use(express.json());
 
     const PORT = Number(process.env.PORT) || 3000;
+    const inRailway = Boolean(process.env.RAILWAY_PUBLIC_DOMAIN);
 
     app.get('/', (_req, res) => {
         res.json({ status: 'ok', service: 'diana' });
@@ -83,12 +84,26 @@ async function main() {
         );
     }
 
-    const server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`[Diana] Server running on port ${PORT} (0.0.0.0)`);
-    });
-    server.on('error', (err) => {
-        console.error('[Diana] HTTP server error:', err);
-    });
+    const servers: ReturnType<typeof app.listen>[] = [];
+    const startHttpServer = (port: number, label: string) => {
+        const server = app.listen(port, '0.0.0.0', () => {
+            console.log(
+                `[Diana] Server running on port ${port} (0.0.0.0) ${label}`
+            );
+        });
+        server.on('error', (err) => {
+            console.error('[Diana] HTTP server error:', err);
+        });
+        servers.push(server);
+    };
+
+    startHttpServer(PORT, '(primary)');
+
+    // Railway sometimes routes traffic to a configured port that differs from PORT.
+    // To avoid 502s, also listen on 3001 when running on Railway.
+    if (inRailway && PORT !== 3001) {
+        startHttpServer(3001, '(railway fallback)');
+    }
 
     try {
         await setupAndStartDiscord();
@@ -101,9 +116,19 @@ async function main() {
 
     const shutdown = () => {
         console.log('[Diana] Shutting down...');
-        server.close(() => {
+        let remaining = servers.length;
+        if (remaining === 0) {
             process.exit(0);
-        });
+            return;
+        }
+        for (const srv of servers) {
+            srv.close(() => {
+                remaining -= 1;
+                if (remaining === 0) {
+                    process.exit(0);
+                }
+            });
+        }
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
