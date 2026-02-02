@@ -19,6 +19,21 @@ const dashboardLimiter = rateLimit({
 
 async function main() {
     const app = express();
+    app.use((req, res, next) => {
+        const start = Date.now();
+        const host = req.headers.host ?? 'unknown-host';
+        const ua = req.headers['user-agent'] ?? 'unknown-ua';
+        console.log(
+            `[Diana:HTTP] --> ${req.method} ${req.originalUrl} host=${host} ip=${req.ip} ua="${ua}"`
+        );
+        res.on('finish', () => {
+            const durationMs = Date.now() - start;
+            console.log(
+                `[Diana:HTTP] <-- ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`
+            );
+        });
+        next();
+    });
     app.use(express.json());
 
     const PORT = Number(process.env.PORT) || 3000;
@@ -70,6 +85,9 @@ async function main() {
 
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`[Diana] Server running on port ${PORT} (0.0.0.0)`);
+    });
+    server.on('error', (err) => {
+        console.error('[Diana] HTTP server error:', err);
     });
 
     try {
