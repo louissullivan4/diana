@@ -1,0 +1,166 @@
+.summoner-list {
+    margin-bottom: 1.5rem;
+}
+
+.summoner-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.summoner-list-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.summoner-list-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.summoner-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.15s;
+}
+
+.summoner-card:hover {
+    border-color: var(--accent-dim);
+    background: rgba(124, 156, 224, 0.05);
+}
+
+.summoner-card-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-hover);
+    border-radius: 50%;
+    color: var(--text-muted);
+}
+
+.summoner-card-avatar svg {
+    width: 18px;
+    height: 18px;
+}
+
+.summoner-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.summoner-card-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.summoner-card-puuid {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+.summoner-card-channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: #5865f2;
+    margin-top: 0.125rem;
+}
+
+.summoner-card-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.summoner-card-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.summoner-card-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.summoner-card-edit:hover {
+    background: var(--surface-hover);
+    border-color: var(--border);
+    color: var(--accent);
+}
+
+.summoner-card-remove:hover {
+    background: rgba(248, 81, 73, 0.1);
+    border-color: var(--error);
+    color: var(--error);
+}
+
+/* Empty state */
+.summoner-list-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    text-align: center;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.summoner-list-empty-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    margin-bottom: 0.75rem;
+}
+
+.summoner-list-empty-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.summoner-list-empty-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0 0 0.25rem 0;
+}
+
+.summoner-list-empty-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin: 0;
+}

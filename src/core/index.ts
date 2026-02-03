@@ -1,11 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { setExpressApp, registerPlugin, loadPlugin } from './pluginRegistry';
 import { registerSlashCommands } from './discord/commandRegistry';
 import { pingCommand } from './discord/coreCommands';
 import { pluginsApiRouter } from './api/pluginsApi';
+import { authApiRouter } from './api/authApi';
+import { requireAuth } from './auth/authMiddleware';
 import { setupAndStartDiscord } from './discord/setupDiscord';
 
 // Rate limiter for dashboard routes (100 requests per minute per IP)
@@ -35,17 +38,24 @@ async function main() {
         next();
     });
     app.use(express.json());
+    app.use(cookieParser());
 
     const PORT = Number(process.env.PORT) || 3000;
     const inRailway = Boolean(process.env.RAILWAY_PUBLIC_DOMAIN);
 
+    // Public routes (no auth required)
     app.get('/', (_req, res) => {
         res.json({ status: 'ok', service: 'diana' });
     });
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok', service: 'diana' });
     });
-    app.use('/api/plugins', pluginsApiRouter);
+
+    // Auth routes (login/logout don't require auth)
+    app.use('/api/auth', authApiRouter);
+
+    // Protected routes (require authentication)
+    app.use('/api/plugins', requireAuth, pluginsApiRouter);
 
     setExpressApp(app);
 
