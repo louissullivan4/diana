@@ -220,7 +220,7 @@ jobs:
 
       - name: Trivy image scan (main push only)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: sarif
