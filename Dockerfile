@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 COPY packages/*/package.json ./packages/
 COPY apps/*/package.json ./apps/
 COPY dashboard/package.json ./dashboard/
-RUN npm install
+RUN npm install --workspaces --include-workspace-root
 
 # Build workspaces
 COPY tsconfig.json tsconfig.base.json ./
