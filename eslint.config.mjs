@@ -11,6 +11,7 @@ export default defineConfig([
         'dist/**',
         'dashboard/dist/**',
         '**/scripts/**',
+        '**/dist/**',
     ]),
     {
         files: ['jest.config.js'],

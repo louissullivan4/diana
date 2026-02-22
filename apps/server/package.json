@@ -1,0 +1,28 @@
+{
+    "name": "diana-server",
+    "version": "0.0.1",
+    "private": true,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "dev": "nodemon --watch src --ext ts,tsx --exec ts-node src/index.ts",
+        "dev:debug": "nodemon --watch src --ext ts,tsx --exec \"node --inspect -r ts-node/register src/index.ts\"",
+        "start": "node dist/index.js",
+        "build": "tsc -b",
+        "build:check": "tsc -b --noEmit",
+        "user": "ts-node scripts/addUser.ts"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "cookie-parser": "^1.4.7",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.2.1",
+        "diana-core": "0.0.1",
+        "diana-discord": "0.0.1",
+        "dotenv": "^17.3.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14",
+        "ts-node": "^10.9.2"
+    }
+}
