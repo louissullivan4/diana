@@ -200,7 +200,7 @@ const handleNewMatchCompleted = async (
     }
 
     const info = matchSummaryData.info;
-    const participants = info.participants ?? [];
+    const participants: MatchV5DTOs.ParticipantDto[] = info.participants ?? [];
     const teams = info.teams ?? [];
 
     const matchDetails = {
@@ -238,7 +238,9 @@ const handleNewMatchCompleted = async (
         throw error;
     }
 
-    const participant = participants.find((p) => p.puuid === puuid);
+    const participant = participants.find(
+        (p: MatchV5DTOs.ParticipantDto) => p.puuid === puuid
+    );
     const gameDuration = info.gameDuration ?? 0;
 
     let result = 'Lose';

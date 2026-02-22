@@ -6,6 +6,7 @@ import {
     setPluginConfig,
     getPlugin,
 } from '../pluginRegistry';
+import { getParamValue } from './requestUtils';
 
 const router = Router();
 
@@ -34,7 +35,12 @@ router.get('/', (_req: Request, res: Response) => {
 });
 
 router.get('/:id', (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = getParamValue(req.params.id);
+    if (!id) {
+        logApi('GET', '/api/plugins', 'Missing plugin id');
+        res.status(400).json({ error: 'Missing plugin id' });
+        return;
+    }
     const plugin = getPlugin(id);
     if (!plugin) {
         logApi('GET', `/api/plugins/${id}`, 'Plugin not found');
@@ -52,7 +58,12 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 router.patch('/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = getParamValue(req.params.id);
+    if (!id) {
+        logApi('PATCH', '/api/plugins', 'Missing plugin id');
+        res.status(400).json({ error: 'Missing plugin id' });
+        return;
+    }
     const plugin = getPlugin(id);
     if (!plugin) {
         logApi('PATCH', `/api/plugins/${id}`, 'Plugin not found');

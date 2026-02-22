@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import type { Interaction } from 'discord.js';
 import { getDiscordClient, loginDiscord } from './client';
 import {
     syncCommandsToDiscord,
@@ -20,7 +21,7 @@ export async function setupAndStartDiscord(): Promise<void> {
         }
     });
 
-    client.on('interactionCreate', async (interaction) => {
+    client.on('interactionCreate', async (interaction: Interaction) => {
         if (interaction.isAutocomplete()) {
             try {
                 await handleAutocomplete(interaction);

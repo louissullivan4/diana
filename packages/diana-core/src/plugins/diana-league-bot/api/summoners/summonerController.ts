@@ -8,17 +8,21 @@ import {
     deleteRankHistory,
 } from './summonerService.js';
 import { Request, Response } from 'express';
+import { getParamValue } from '../../../../core/api/requestUtils';
 
 export const fetchSummonerByAccountName = async (
     req: Request,
     res: Response
 ) => {
     try {
-        const { accountName, tagLine, region } = req.params;
+        const accountName = getParamValue(req.params.accountName);
+        const tagLine = getParamValue(req.params.tagLine);
+        const region = getParamValue(req.params.region);
         if (!accountName || !tagLine || !region) {
             res.status(400).json({
                 error: 'Missing required parameters: accountName, tagLine, or region.',
             });
+            return;
         }
         const summoner = await getSummonerByAccountName(
             accountName,
@@ -27,6 +31,7 @@ export const fetchSummonerByAccountName = async (
         );
         if (!summoner || Object.keys(summoner).length === 0) {
             res.status(404).json({ error: 'Summoner not found.' });
+            return;
         }
         res.status(200).json({ summoner });
     } catch (error) {
@@ -69,7 +74,7 @@ export const createSummonerHandler = async (req: Request, res: Response) => {
 
 export const deleteSummonerByPuuid = async (req: Request, res: Response) => {
     try {
-        const { puuid } = req.params;
+        const puuid = getParamValue(req.params.puuid);
         if (!puuid) {
             res.status(400).json({
                 error: 'Missing required parameter: puuid.',
@@ -95,7 +100,7 @@ export const fetchRankHistoryByParticipantId = async (
     res: Response
 ) => {
     try {
-        const { entryParticipantId } = req.params;
+        const entryParticipantId = getParamValue(req.params.entryParticipantId);
         const { startDate, endDate, queueType } = req.query;
         if (!entryParticipantId) {
             res.status(400).json({
@@ -105,9 +110,9 @@ export const fetchRankHistoryByParticipantId = async (
         }
         const rankHistory = await fetchRankHistory(
             entryParticipantId,
-            startDate as string,
-            endDate as string,
-            queueType as string
+            typeof startDate === 'string' ? startDate : undefined,
+            typeof endDate === 'string' ? endDate : undefined,
+            typeof queueType === 'string' ? queueType : undefined
         );
         if (!rankHistory || rankHistory.length === 0) {
             res.status(404).json({ error: 'No rank history found.' });
@@ -154,7 +159,7 @@ export const createRankHistoryHandler = async (req: Request, res: Response) => {
 
 export const updateRankHistoryByRid = async (req: Request, res: Response) => {
     try {
-        const { rid } = req.params;
+        const rid = getParamValue(req.params.rid);
         const { tier, rank, lp, queueType } = req.body;
         if (!rid || !tier || !rank || lp === undefined || !queueType) {
             res.status(400).json({ error: 'Missing required fields.' });
@@ -177,7 +182,7 @@ export const updateRankHistoryByRid = async (req: Request, res: Response) => {
 
 export const deleteRankHistoryByRid = async (req: Request, res: Response) => {
     try {
-        const { rid } = req.params;
+        const rid = getParamValue(req.params.rid);
         if (!rid) {
             res.status(400).json({ error: 'Missing required parameter: rid.' });
             return;

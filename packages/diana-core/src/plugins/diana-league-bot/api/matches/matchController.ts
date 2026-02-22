@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { getParamValue } from '../../../../core/api/requestUtils';
 import {
     createMatchDetail,
     getMatchDetailsByPuuid,
@@ -46,7 +47,7 @@ export const getMatchDetailsHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { puuid } = req.params;
+        const puuid = getParamValue(req.params.puuid);
         const numberOfMatches = req.query.numberOfMatches || 20;
 
         if (!puuid) {
@@ -79,7 +80,7 @@ export const getMatchDetailsByMatchIdHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { matchId } = req.params;
+        const matchId = getParamValue(req.params.matchId);
 
         if (!matchId) {
             console.log(
@@ -324,7 +325,15 @@ export const updateMatchDetailHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { matchId } = req.params;
+        const matchId = getParamValue(req.params.matchId);
+        if (!matchId) {
+            console.log(
+                `[WARN] Error Code 400 - Missing required parameter: matchId.`
+            );
+            return res
+                .status(400)
+                .json({ error: 'Missing required parameter: matchId.' });
+        }
         const updatedDetails = req.body;
 
         const updatedMatch = await updateMatchDetail(matchId, updatedDetails);
@@ -349,7 +358,15 @@ export const deleteMatchDetailHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { matchId } = req.params;
+        const matchId = getParamValue(req.params.matchId);
+        if (!matchId) {
+            console.log(
+                `[WARN] Error Code 400 - Missing required parameter: matchId.`
+            );
+            return res
+                .status(400)
+                .json({ error: 'Missing required parameter: matchId.' });
+        }
 
         const deletedMatch = await deleteMatchDetail(matchId);
 
@@ -390,7 +407,15 @@ export const fetchMatchTimelineHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { matchId } = req.params;
+        const matchId = getParamValue(req.params.matchId);
+        if (!matchId) {
+            console.log(
+                `[WARN] Error Code 400 - Missing required parameter: matchId.`
+            );
+            return res
+                .status(400)
+                .json({ error: 'Missing required parameter: matchId.' });
+        }
         const timeline = await getMatchTimeline(matchId);
         if (!timeline.length) {
             console.log(`[WARN] Error Code 404 - No timeline found.`);
@@ -411,7 +436,15 @@ export const updateMatchTimelineHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { timelineId } = req.params;
+        const timelineId = getParamValue(req.params.timelineId);
+        if (!timelineId) {
+            console.log(
+                `[WARN] Error Code 400 - Missing required parameter: timelineId.`
+            );
+            return res
+                .status(400)
+                .json({ error: 'Missing required parameter: timelineId.' });
+        }
         const data = req.body;
         const updated = await updateMatchTimeline(timelineId, data);
         if (!updated) {
@@ -433,7 +466,15 @@ export const deleteMatchTimelineHandler = async (
     res: Response
 ): Promise<any> => {
     try {
-        const { timelineId } = req.params;
+        const timelineId = getParamValue(req.params.timelineId);
+        if (!timelineId) {
+            console.log(
+                `[WARN] Error Code 400 - Missing required parameter: timelineId.`
+            );
+            return res
+                .status(400)
+                .json({ error: 'Missing required parameter: timelineId.' });
+        }
         const deleted = await deleteMatchTimeline(timelineId);
         if (!deleted) {
             console.log(`[WARN] Error Code 404 - Timeline not found.`);

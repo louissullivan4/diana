@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import type { MessageAdapter, MessagePayload } from 'diana-core';
+import type { MessageAdapter, MessagePayload, MessageTarget } from 'diana-core';
 import { getDiscordClient } from './client';
 
 function buildEmbed(payload: MessagePayload): EmbedBuilder | null {
@@ -39,7 +39,7 @@ function buildEmbed(payload: MessagePayload): EmbedBuilder | null {
 
 export function createDiscordMessageAdapter(): MessageAdapter {
     return {
-        async sendMessage(target, payload) {
+        async sendMessage(target: MessageTarget, payload: MessagePayload) {
             const channelId =
                 target.channelId ?? process.env.DISCORD_CHANNEL_ID;
             if (!channelId) {

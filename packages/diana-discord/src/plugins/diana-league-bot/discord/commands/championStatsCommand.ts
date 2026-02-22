@@ -1,4 +1,8 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import {
+    EmbedBuilder,
+    SlashCommandBuilder,
+    type SlashCommandStringOption,
+} from 'discord.js';
 import { Constants } from 'twisted';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
@@ -318,21 +322,21 @@ export const championStatsCommand: SlashCommand = {
         .setDescription(
             "View a tracked summoner's performance on a specific champion."
         )
-        .addStringOption((option) =>
+        .addStringOption((option: SlashCommandStringOption) =>
             option
                 .setName('name')
                 .setDescription('Summoner game name (no tag).')
                 .setRequired(true)
                 .setAutocomplete(true)
         )
-        .addStringOption((option) =>
+        .addStringOption((option: SlashCommandStringOption) =>
             option
                 .setName('champion')
                 .setDescription('Champion name (e.g. Ahri).')
                 .setRequired(true)
                 .setAutocomplete(true)
         )
-        .addStringOption((option) =>
+        .addStringOption((option: SlashCommandStringOption) =>
             option
                 .setName('tag')
                 .setDescription('Summoner tagline (e.g. EUW).')
@@ -487,9 +491,12 @@ export const championStatsCommand: SlashCommand = {
                 typeof focused.value === 'string' ? focused.value : '';
 
             if (focused.name === 'name') {
-                const names = await searchSummonerGameNames(focusedValue, 25);
+                const names = (await searchSummonerGameNames(
+                    focusedValue,
+                    25
+                )) as string[];
                 await interaction.respond(
-                    names.map((gameName) => ({
+                    names.map((gameName: string) => ({
                         name: gameName,
                         value: gameName,
                     }))
@@ -499,18 +506,29 @@ export const championStatsCommand: SlashCommand = {
 
             if (focused.name === 'tag') {
                 const selectedName = interaction.options.getString('name');
-                const tags = await searchSummonerTags(
+                const tags = (await searchSummonerTags(
                     selectedName,
                     focusedValue,
                     25
-                );
+                )) as Array<{
+                    tagLine: string;
+                    matchRegionPrefix?: string | null;
+                }>;
                 await interaction.respond(
-                    tags.map(({ tagLine, matchRegionPrefix }) => ({
-                        name: matchRegionPrefix
-                            ? `${tagLine} (${matchRegionPrefix})`
-                            : tagLine,
-                        value: tagLine,
-                    }))
+                    tags.map(
+                        ({
+                            tagLine,
+                            matchRegionPrefix,
+                        }: {
+                            tagLine: string;
+                            matchRegionPrefix?: string | null;
+                        }) => ({
+                            name: matchRegionPrefix
+                                ? `${tagLine} (${matchRegionPrefix})`
+                                : tagLine,
+                            value: tagLine,
+                        })
+                    )
                 );
                 return;
             }

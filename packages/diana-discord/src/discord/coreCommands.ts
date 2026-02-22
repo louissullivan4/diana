@@ -1,11 +1,11 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, type SlashCommandStringOption } from 'discord.js';
 import type { SlashCommand } from './commandTypes';
 
 export const pingCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('ping')
         .setDescription('Replies with "Diana said pong."')
-        .addStringOption((option) =>
+        .addStringOption((option: SlashCommandStringOption) =>
             option
                 .setName('target')
                 .setDescription('Optional name or message to include.')

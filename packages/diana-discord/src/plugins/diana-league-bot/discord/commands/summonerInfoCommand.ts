@@ -1,4 +1,8 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import {
+    EmbedBuilder,
+    SlashCommandBuilder,
+    type SlashCommandStringOption,
+} from 'discord.js';
 import { Constants } from 'twisted';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
@@ -95,7 +99,9 @@ async function fetchRecentMatches(puuid: string): Promise<ParsedMatch[]> {
     return result.rows
         .map((row: RawMatchRow) => {
             const parsed = parseParticipants(row.participants);
-            const participant = parsed.find((p) => p.puuid === puuid);
+            const participant = parsed.find(
+                (p: RiotParticipant) => p.puuid === puuid
+            );
             if (!participant) return null;
             return {
                 id: row.matchId,
@@ -214,21 +220,21 @@ export const summonerInfoCommand: SlashCommand = {
             .setDescription(
                 'Displays a detailed profile for a tracked summoner.'
             )
-            .addStringOption((option) =>
+            .addStringOption((option: SlashCommandStringOption) =>
                 option
                     .setName('name')
                     .setDescription('Summoner game name (no tag).')
                     .setRequired(true)
                     .setAutocomplete(true)
             )
-            .addStringOption((option) =>
+            .addStringOption((option: SlashCommandStringOption) =>
                 option
                     .setName('tag')
                     .setDescription('Summoner tagline (e.g. EUW).')
                     .setRequired(false)
                     .setAutocomplete(true)
             )
-            .addStringOption((option) => {
+            .addStringOption((option: SlashCommandStringOption) => {
                 option
                     .setName('region')
                     .setDescription('Riot platform region.')
@@ -289,11 +295,11 @@ export const summonerInfoCommand: SlashCommand = {
             const { puuid, gameName, tagLine, tier, rank, lp, deepLolLink } =
                 summonerRecord as any;
 
-            const [matches, rankEntries, iotwCandidates] = await Promise.all([
+            const [matches, rankEntries, iotwCandidates] = (await Promise.all([
                 fetchRecentMatches(puuid),
                 lolService.getRankEntriesByPUUID(puuid),
                 getInterCandidatesLastWeek(puuid),
-            ]);
+            ])) as [ParsedMatch[], unknown, InterCandidate[]];
             void rankEntries;
 
             const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
@@ -343,7 +349,7 @@ export const summonerInfoCommand: SlashCommand = {
             const weeklyWinRate = formatWinRate(stats);
             const recentMatches = buildRecentMatches(matches);
             const iotwStats = iotwCandidates.find(
-                (candidate) => candidate.puuid === puuid
+                (candidate: InterCandidate) => candidate.puuid === puuid
             );
             const iotwStatsValue = formatIotwStats(iotwStats);
 
@@ -417,9 +423,12 @@ export const summonerInfoCommand: SlashCommand = {
                 typeof focused.value === 'string' ? focused.value : '';
 
             if (focused.name === 'name') {
-                const names = await searchSummonerGameNames(focusedValue, 25);
+                const names = (await searchSummonerGameNames(
+                    focusedValue,
+                    25
+                )) as string[];
                 await interaction.respond(
-                    names.map((gameName) => ({
+                    names.map((gameName: string) => ({
                         name: gameName,
                         value: gameName,
                     }))
@@ -429,18 +438,29 @@ export const summonerInfoCommand: SlashCommand = {
 
             if (focused.name === 'tag') {
                 const selectedName = interaction.options.getString('name');
-                const tags = await searchSummonerTags(
+                const tags = (await searchSummonerTags(
                     selectedName,
                     focusedValue,
                     25
-                );
+                )) as Array<{
+                    tagLine: string;
+                    matchRegionPrefix?: string | null;
+                }>;
                 await interaction.respond(
-                    tags.map(({ tagLine, matchRegionPrefix }) => ({
-                        name: matchRegionPrefix
-                            ? `${tagLine} (${matchRegionPrefix})`
-                            : tagLine,
-                        value: tagLine,
-                    }))
+                    tags.map(
+                        ({
+                            tagLine,
+                            matchRegionPrefix,
+                        }: {
+                            tagLine: string;
+                            matchRegionPrefix?: string | null;
+                        }) => ({
+                            name: matchRegionPrefix
+                                ? `${tagLine} (${matchRegionPrefix})`
+                                : tagLine,
+                            value: tagLine,
+                        })
+                    )
                 );
                 return;
             }
