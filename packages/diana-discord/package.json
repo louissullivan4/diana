@@ -15,7 +15,7 @@
     ],
     "scripts": {
         "build": "tsc -b",
-        "build:check": "tsc -b --noEmit",
+        "build:check": "tsc -b",
         "dev": "tsc -b -w"
     },
     "dependencies": {

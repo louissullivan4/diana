@@ -9,7 +9,7 @@
         "dev:debug": "nodemon --watch src --ext ts,tsx --exec \"node --inspect -r ts-node/register src/index.ts\"",
         "start": "node dist/index.js",
         "build": "tsc -b",
-        "build:check": "tsc -b --noEmit",
+        "build:check": "tsc -b",
         "user": "ts-node scripts/addUser.ts"
     },
     "dependencies": {
