@@ -1,0 +1,37 @@
+{
+    "name": "diana-core",
+    "version": "0.0.1",
+    "private": false,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -b",
+        "build:check": "tsc -b --noEmit",
+        "dev": "tsc -b -w",
+        "backfill:matches": "ts-node src/plugins/diana-league-bot/scripts/backfillMissingMatches.ts"
+    },
+    "dependencies": {
+        "axios": "^1.13.5",
+        "bcrypt": "^6.0.0",
+        "cookie-parser": "^1.4.7",
+        "dotenv": "^17.3.1",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "node-cron": "^4.2.1",
+        "pg": "^8.18.0",
+        "twisted": "^1.72.2"
+    },
+    "devDependencies": {
+        "@types/pg": "^8.16.0"
+    }
+}
