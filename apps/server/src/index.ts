@@ -21,6 +21,7 @@ import {
     createDiscordMessageAdapter,
     leagueDiscordCommands,
 } from 'diana-discord';
+import { createCompositeMessageAdapter } from './meepsAdapter';
 
 // Rate limiter for dashboard routes (100 requests per minute per IP)
 const dashboardLimiter = rateLimit({
@@ -75,7 +76,9 @@ async function main() {
     app.use('/api/plugins', requireAuth, pluginsApiRouter);
 
     setExpressApp(app);
-    setMessageAdapter(createDiscordMessageAdapter());
+    setMessageAdapter(
+        createCompositeMessageAdapter(createDiscordMessageAdapter())
+    );
 
     registerSlashCommands([pingCommand, ...leagueDiscordCommands]);
 
