@@ -225,18 +225,22 @@ docker run --env-file .env -p 3000:3000 diana
 
 ### Environment summary
 
-| Variable             | Required                | Description                            |
-| -------------------- | ----------------------- | -------------------------------------- |
-| `DISCORD_BOT_TOKEN`  | Yes                     | Discord bot token                      |
-| `DISCORD_CLIENT_ID`  | Yes                     | Discord application ID                 |
-| `DATABASE_URL`       | Yes (for League plugin) | PostgreSQL connection string           |
-| `JWT_SECRET`         | Yes (for dashboard)     | Secret key for JWT token signing       |
-| `DISCORD_GUILD_ID`   | No                      | Restrict slash commands to one server  |
-| `DISCORD_CHANNEL_ID` | No                      | Default notification channel           |
-| `USE_RIOT_API`       | No                      | `true` to use Riot API (League plugin) |
-| `RIOT_API_KEY`       | If `USE_RIOT_API=true`  | Riot API key                           |
-| `PORT`               | No                      | HTTP port (default 3000)               |
-| `DIANA_CONFIG_DIR`   | No                      | Dir for plugins.json (default ./data)  |
+| Variable                | Required                | Description                            |
+| ----------------------- | ----------------------- | -------------------------------------- |
+| `DISCORD_BOT_TOKEN`     | Yes                     | Discord bot token                      |
+| `DISCORD_CLIENT_ID`     | Yes                     | Discord application ID                 |
+| `DATABASE_URL`          | Yes (for League plugin) | PostgreSQL connection string           |
+| `JWT_SECRET`            | Yes (for dashboard)     | Secret key for JWT token signing       |
+| `DISCORD_GUILD_ID`      | No                      | Restrict slash commands to one server  |
+| `DISCORD_CHANNEL_ID`    | No                      | Default notification channel           |
+| `USE_RIOT_API`          | No                      | `true` to use Riot API (League plugin) |
+| `RIOT_API_KEY`          | If `USE_RIOT_API=true`  | Riot API key                           |
+| `PORT`                  | No                      | HTTP port (default 3000)               |
+| `DIANA_CONFIG_DIR`      | No                      | Dir for plugins.json (default ./data)  |
+| `DISABLE_DISCORD_POSTS` | No                      | Disable Discord notifications          |
+| `DISABLE_MEEPS_POSTS`   | No                      | Disable Meeps notifications            |
+| `MEEPS_WEBHOOK_URL`     | No                      | Meeps webhook base URL                 |
+| `MEEPS_WEBHOOK_SECRET`  | No                      | Meeps webhook shared secret            |
 
 ---
 

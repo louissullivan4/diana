@@ -2,11 +2,16 @@ import type { MessageAdapter, MessagePayload, MessageTarget } from 'diana-core';
 
 const MEEPS_WEBHOOK_URL = process.env.MEEPS_WEBHOOK_URL;
 const MEEPS_WEBHOOK_SECRET = process.env.MEEPS_WEBHOOK_SECRET;
+const DISABLE_MEEPS_POSTS = ['1', 'true', 'yes'].includes(
+    (process.env.DISABLE_MEEPS_POSTS ?? '').toLowerCase()
+);
 
 /**
  * Serialize MessagePayload for JSON (e.g. Date -> ISO string).
  */
-function serializePayload(payload: MessagePayload): Record<string, unknown> {
+function serializeMessagePayload(
+    payload: MessagePayload
+): Record<string, unknown> {
     const out: Record<string, unknown> = {
         title: payload.title,
         description: payload.description,
@@ -26,16 +31,15 @@ function serializePayload(payload: MessagePayload): Record<string, unknown> {
     return out;
 }
 
-/**
- * Creates a MessageAdapter that sends to both Discord and Meeps (when MEEPS_WEBHOOK_URL is set).
- * When the league bot posts a match/rank update, this adapter forwards it to Meeps' Matches channel.
- */
-export function createCompositeMessageAdapter(
-    discordAdapter: MessageAdapter
-): MessageAdapter {
+export function createMeepsMessageAdapter(): MessageAdapter {
     return {
-        async sendMessage(target: MessageTarget, payload: MessagePayload) {
-            await discordAdapter.sendMessage(target, payload);
+        async sendMessage(_target: MessageTarget, payload: MessagePayload) {
+            if (DISABLE_MEEPS_POSTS) {
+                console.log(
+                    '[Diana] DISABLE_MEEPS_POSTS enabled; skipping Meeps send.'
+                );
+                return;
+            }
 
             if (!MEEPS_WEBHOOK_URL?.trim()) return;
 
@@ -51,7 +55,7 @@ export function createCompositeMessageAdapter(
                 const res = await fetch(url, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify(serializePayload(payload)),
+                    body: JSON.stringify(serializeMessagePayload(payload)),
                 });
                 if (!res.ok) {
                     console.warn(
