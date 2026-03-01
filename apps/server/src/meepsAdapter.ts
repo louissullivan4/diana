@@ -43,8 +43,12 @@ export function createMeepsMessageAdapter(): MessageAdapter {
 
             if (!MEEPS_WEBHOOK_URL?.trim()) return;
 
+            const baseUrl = MEEPS_WEBHOOK_URL.trim();
+            const normalizedBaseUrl = /^https?:\/\//i.test(baseUrl)
+                ? baseUrl
+                : `https://${baseUrl}`;
             const url =
-                MEEPS_WEBHOOK_URL.replace(/\/$/, '') + '/api/diana-notify';
+                normalizedBaseUrl.replace(/\/$/, '') + '/api/diana-notify';
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
             };
