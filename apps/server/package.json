@@ -16,7 +16,7 @@
         "cors": "^2.8.5",
         "cookie-parser": "^1.4.7",
         "express": "^5.2.1",
-        "express-rate-limit": "^8.2.1",
+        "express-rate-limit": "^8.2.2",
         "diana-core": "0.0.1",
         "diana-discord": "0.0.1",
         "dotenv": "^17.3.1"
