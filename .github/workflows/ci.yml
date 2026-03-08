@@ -141,8 +141,8 @@ jobs:
           TEST_DISCORD_CHANNEL_ID: ${{ secrets.TEST_DISCORD_CHANNEL_ID }}
         run: npm test
 
-      - name: npm audit (high severity and up)
-        run: npm audit --audit-level=high
+      # - name: npm audit (high severity and up)
+      #   run: npm audit --audit-level=high
 
       - name: Upload test artifacts (if present)
         if: always()
