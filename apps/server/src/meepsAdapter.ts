@@ -6,6 +6,8 @@ const DISABLE_MEEPS_POSTS = ['1', 'true', 'yes'].includes(
     (process.env.DISABLE_MEEPS_POSTS ?? '').toLowerCase()
 );
 
+let _meepsConfigLogged = false;
+
 /**
  * Serialize MessagePayload for JSON (e.g. Date -> ISO string).
  */
@@ -44,11 +46,42 @@ export function createMeepsMessageAdapter(): MessageAdapter {
             if (!MEEPS_WEBHOOK_URL?.trim()) return;
 
             const baseUrl = MEEPS_WEBHOOK_URL.trim();
-            const normalizedBaseUrl = /^https?:\/\//i.test(baseUrl)
-                ? baseUrl
-                : `https://${baseUrl}`;
+            // Ensure we have a valid absolute URL (fetch requires a scheme)
+            let normalizedBaseUrl: string;
+            if (/^https?:\/\//i.test(baseUrl)) {
+                normalizedBaseUrl = baseUrl;
+            } else if (/^\/\//.test(baseUrl)) {
+                // Protocol-relative URL: //host -> https://host
+                normalizedBaseUrl = 'https:' + baseUrl;
+            } else {
+                normalizedBaseUrl = 'https://' + baseUrl;
+            }
             const url =
                 normalizedBaseUrl.replace(/\/$/, '') + '/api/diana-notify';
+
+            // Validate URL before fetch (helps catch misconfigured MEEPS_WEBHOOK_URL)
+            let parsed: URL;
+            try {
+                parsed = new URL(url);
+            } catch {
+                console.error(
+                    '[Diana] Invalid MEEPS_WEBHOOK_URL:',
+                    JSON.stringify(MEEPS_WEBHOOK_URL),
+                    '→ resolved to:',
+                    url,
+                    '(expected e.g. https://meeps.railway.internal)'
+                );
+                return;
+            }
+
+            if (!_meepsConfigLogged) {
+                _meepsConfigLogged = true;
+                console.log(
+                    '[Diana] Meeps webhook endpoint:',
+                    parsed.origin + '/api/diana-notify'
+                );
+            }
+
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
             };
@@ -56,7 +89,7 @@ export function createMeepsMessageAdapter(): MessageAdapter {
                 headers['x-diana-secret'] = MEEPS_WEBHOOK_SECRET;
             }
             try {
-                const res = await fetch(url, {
+                const res = await fetch(parsed.href, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(serializeMessagePayload(payload)),
