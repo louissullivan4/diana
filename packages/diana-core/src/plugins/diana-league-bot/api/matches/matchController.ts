@@ -204,6 +204,7 @@ export const getRecentMatchDetailsHandler = async (
                         'Unknown',
                     queueName,
                     result,
+                    gameLengthSeconds: gameDuration,
                     newRankMsg: rankDisplay || 'Unranked N/A (0 LP)',
                     lpChangeMsg: lpChange ?? 0,
                     championDisplay: champion,

@@ -10,3 +10,5 @@ dashboard/node_modules
 
 # TypeScript build info files (incremental compilation cache)
 *.tsbuildinfo
+
+.claude/**

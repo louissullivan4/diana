@@ -49,6 +49,16 @@ export function getRankedEmblem(tier: string) {
     return `https://raw.githubusercontent.com/louissullivan4/diana/refs/heads/main/assets/ranked-emblem/${sanitized}.webp`;
 }
 
+function formatGameLength(totalSeconds: number): string {
+    const safeSeconds = Math.max(
+        0,
+        Number.isFinite(totalSeconds) ? totalSeconds : 0
+    );
+    const minutes = Math.floor(safeSeconds / 60);
+    const seconds = Math.floor(safeSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 interface MessageBody {
     embeds: [EmbedBuilder];
 }
@@ -80,6 +90,7 @@ export function createMatchEndEmbed(
     summonerName: string,
     queueName: string,
     result: string,
+    gameLengthSeconds: number,
     newRankMsg: string,
     lpChangeMsg: number,
     championDisplay: string,
@@ -135,7 +146,9 @@ export function createMatchEndEmbed(
         .setThumbnail(getChampionThumbnail(championDisplay))
         .addFields(fields)
         .setTimestamp()
-        .setFooter({ text: 'Match Summary' });
+        .setFooter({
+            text: `Match Summary • Length ${formatGameLength(gameLengthSeconds)}`,
+        });
 }
 
 export function createRankChangeEmbed(
@@ -183,6 +196,7 @@ interface NotifyMatchEnd {
     summonerName: string;
     queueName: string;
     result: string;
+    gameLengthSeconds: number;
     newRankMsg: string;
     lpChangeMsg: number;
     championDisplay: string;
@@ -196,6 +210,7 @@ export async function notifyMatchEnd({
     summonerName,
     queueName,
     result,
+    gameLengthSeconds,
     newRankMsg,
     lpChangeMsg,
     championDisplay,
@@ -209,6 +224,7 @@ export async function notifyMatchEnd({
         summonerName,
         queueName,
         result,
+        gameLengthSeconds,
         newRankMsg,
         lpChangeMsg,
         championDisplay,
