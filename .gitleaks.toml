@@ -1,0 +1,7 @@
+[allowlist]
+description = "Historical commits with rotated/non-sensitive values"
+commits = [
+    "5c18985", # test/discordService.test.js - fake Discord channel ID fallback
+    "949582c", # .env - rotated API key
+    "dce12c3", # .env - rotated API key
+]
