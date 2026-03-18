@@ -315,6 +315,7 @@ const handleNewMatchCompleted = async (
         summonerName,
         queueName,
         result,
+        gameLengthSeconds: gameDuration,
         newRankMsg,
         lpChangeMsg,
         championDisplay: champion,

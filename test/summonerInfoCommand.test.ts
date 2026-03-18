@@ -1,3 +1,5 @@
+export {};
+
 const getRankEntriesByPUUIDMock = jest.fn();
 const mockRankColors = new Map<string, number>([
     ['UNRANKED', 0x95a5a6],
@@ -5,6 +7,12 @@ const mockRankColors = new Map<string, number>([
 ]);
 const getRankedEmblemMock = jest.fn();
 const getQueueNameByIdMock = jest.fn();
+const getSummonerByAccountNameMock = jest.fn();
+const searchSummonerGameNamesMock = jest.fn();
+const searchSummonerTagsMock = jest.fn();
+const getMostRecentRankByParticipantIdAndQueueTypeMock = jest.fn();
+const getInterCandidatesLastWeekMock = jest.fn();
+const dbQueryMock = jest.fn();
 
 class MockSlashCommandStringOption {
     public config: Record<string, unknown> = {};
@@ -126,49 +134,33 @@ jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
 }));
 
-jest.mock(
-    '../src/plugins/diana-league-bot/api/summoners/summonerService',
-    () => ({
-        getSummonerByAccountName: jest.fn(),
-        searchSummonerGameNames: jest.fn(),
-        searchSummonerTags: jest.fn(),
-        getMostRecentRankByParticipantIdAndQueueType: jest.fn(),
-    })
-);
-
-jest.mock('../src/plugins/diana-league-bot/api/utils/db', () => ({
-    db: {
-        query: jest.fn(),
+jest.mock('diana-core', () => ({
+    getSummonerByAccountName: getSummonerByAccountNameMock,
+    searchSummonerGameNames: searchSummonerGameNamesMock,
+    searchSummonerTags: searchSummonerTagsMock,
+    getMostRecentRankByParticipantIdAndQueueType:
+        getMostRecentRankByParticipantIdAndQueueTypeMock,
+    db: { query: dbQueryMock },
+    calculateWinRatePercentage: (wins: number, losses: number) => {
+        const total = wins + losses;
+        return total === 0 ? null : (wins / total) * 100;
     },
-}));
-
-jest.mock(
-    '../src/plugins/diana-league-bot/api/utils/dataDragonService',
-    () => ({
-        getQueueNameById: getQueueNameByIdMock,
-    })
-);
-
-jest.mock(
-    '../src/plugins/diana-league-bot/api/utils/lolService/lolServiceFactory',
-    () => ({
-        createLolService: jest.fn(() => ({
-            getRankEntriesByPUUID: getRankEntriesByPUUIDMock,
-        })),
-    })
-);
-
-jest.mock('../src/plugins/diana-league-bot/discord/discordService', () => ({
+    createLolService: jest.fn(() => ({
+        getRankEntriesByPUUID: getRankEntriesByPUUIDMock,
+    })),
+    getQueueNameById: getQueueNameByIdMock,
     rankColors: mockRankColors,
     getRankedEmblem: getRankedEmblemMock,
+    getInterCandidatesLastWeek: getInterCandidatesLastWeekMock,
+    parseParticipants: jest.fn((p: unknown) =>
+        Array.isArray(p) ? p : JSON.parse(p as string)
+    ),
+    ONE_WEEK_IN_MS: 604800000,
 }));
 
-const summonerService = require('../src/plugins/diana-league-bot/api/summoners/summonerService');
-const { db } = require('../src/plugins/diana-league-bot/api/utils/db');
 const {
     summonerInfoCommand,
-} = require('../src/plugins/diana-league-bot/discord/commands/summonerInfoCommand');
-const dbQueryMock: jest.Mock = db.query as jest.Mock;
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/summonerInfoCommand');
 
 describe('summonerInfoCommand', () => {
     beforeEach(() => {
@@ -177,6 +169,7 @@ describe('summonerInfoCommand', () => {
         getRankEntriesByPUUIDMock.mockReset();
         getRankedEmblemMock.mockReset();
         getQueueNameByIdMock.mockReset();
+        getInterCandidatesLastWeekMock.mockResolvedValue([]);
         getRankedEmblemMock.mockReturnValue('https://emblem.example/gold.png');
         getQueueNameByIdMock.mockReturnValue('Ranked Solo');
         getRankEntriesByPUUIDMock.mockResolvedValue([]);
@@ -199,33 +192,33 @@ describe('summonerInfoCommand', () => {
 
             const now = Date.now();
 
-            summonerService.getSummonerByAccountName.mockResolvedValue({
+            getSummonerByAccountNameMock.mockResolvedValue({
                 puuid: 'test-puuid',
                 gameName: 'Faker',
                 tagLine: 'NA1',
                 deepLolLink: 'https://deep.lol/summoner/faker',
             });
 
-            (
-                summonerService.getMostRecentRankByParticipantIdAndQueueType as jest.Mock
-            ).mockImplementation(async (_puuid: string, queueType: string) => {
-                if (queueType === 'RANKED_SOLO_5x5') {
+            getMostRecentRankByParticipantIdAndQueueTypeMock.mockImplementation(
+                async (_puuid: string, queueType: string) => {
+                    if (queueType === 'RANKED_SOLO_5x5') {
+                        return {
+                            queueType,
+                            tier: null,
+                            rank: undefined,
+                            lp: null,
+                            season: 2024,
+                        };
+                    }
                     return {
                         queueType,
-                        tier: null,
-                        rank: undefined,
-                        lp: null,
+                        tier: 'GOLD',
+                        rank: 'I',
+                        lp: 80,
                         season: 2024,
                     };
                 }
-                return {
-                    queueType,
-                    tier: 'GOLD',
-                    rank: 'I',
-                    lp: 80,
-                    season: 2024,
-                };
-            });
+            );
 
             dbQueryMock.mockResolvedValue({
                 rows: [
@@ -252,9 +245,11 @@ describe('summonerInfoCommand', () => {
             await summonerInfoCommand.execute(interaction as any);
 
             expect(interaction.deferReply).toHaveBeenCalledTimes(1);
-            expect(
-                summonerService.getSummonerByAccountName
-            ).toHaveBeenCalledWith('Faker', 'NA1', 'EUW');
+            expect(getSummonerByAccountNameMock).toHaveBeenCalledWith(
+                'Faker',
+                'NA1',
+                'EUW'
+            );
 
             const editReplyPayload = interaction.editReply.mock.calls[0][0];
             expect(editReplyPayload.embeds).toHaveLength(1);
@@ -294,7 +289,7 @@ describe('summonerInfoCommand', () => {
                 editReply: jest.fn().mockResolvedValue(undefined),
             };
 
-            summonerService.getSummonerByAccountName.mockResolvedValue(null);
+            getSummonerByAccountNameMock.mockResolvedValue(null);
 
             await summonerInfoCommand.execute(interaction as any);
 
@@ -302,7 +297,7 @@ describe('summonerInfoCommand', () => {
                 'Could not find **Unknown#EUW** in region EUW.'
             );
             expect(
-                summonerService.getMostRecentRankByParticipantIdAndQueueType
+                getMostRecentRankByParticipantIdAndQueueTypeMock
             ).not.toHaveBeenCalled();
             expect(dbQueryMock).not.toHaveBeenCalled();
         });
@@ -317,16 +312,14 @@ describe('summonerInfoCommand', () => {
                 respond: jest.fn().mockResolvedValue(undefined),
             };
 
-            summonerService.searchSummonerGameNames.mockResolvedValue([
+            searchSummonerGameNamesMock.mockResolvedValue([
                 'Faker',
                 'Fabulous',
             ]);
 
             await summonerInfoCommand.autocomplete(interaction as any);
 
-            expect(
-                summonerService.searchSummonerGameNames
-            ).toHaveBeenCalledWith('fa', 25);
+            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith('fa', 25);
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'Faker', value: 'Faker' },
                 { name: 'Fabulous', value: 'Fabulous' },
@@ -342,14 +335,14 @@ describe('summonerInfoCommand', () => {
                 respond: jest.fn().mockResolvedValue(undefined),
             };
 
-            summonerService.searchSummonerTags.mockResolvedValue([
+            searchSummonerTagsMock.mockResolvedValue([
                 { tagLine: 'EUW', matchRegionPrefix: 'Europe' },
                 { tagLine: 'EUNE', matchRegionPrefix: null },
             ]);
 
             await summonerInfoCommand.autocomplete(interaction as any);
 
-            expect(summonerService.searchSummonerTags).toHaveBeenCalledWith(
+            expect(searchSummonerTagsMock).toHaveBeenCalledWith(
                 'Faker',
                 'eu',
                 25

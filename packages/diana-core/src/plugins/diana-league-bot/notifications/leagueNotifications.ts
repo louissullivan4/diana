@@ -24,6 +24,7 @@ interface MatchEndMessageInput {
     summonerName: string;
     queueName: string;
     result: string;
+    gameLengthSeconds: number;
     newRankMsg: string;
     lpChangeMsg: number;
     championDisplay: string;
@@ -41,10 +42,21 @@ interface RankChangeMessageInput {
     deepLolLink: string;
 }
 
+function formatGameLength(totalSeconds: number): string {
+    const safeSeconds = Math.max(
+        0,
+        Number.isFinite(totalSeconds) ? totalSeconds : 0
+    );
+    const minutes = Math.floor(safeSeconds / 60);
+    const seconds = Math.floor(safeSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export function buildMatchEndMessage({
     summonerName,
     queueName,
     result,
+    gameLengthSeconds,
     newRankMsg,
     lpChangeMsg,
     championDisplay,
@@ -99,7 +111,7 @@ export function buildMatchEndMessage({
         colorHex,
         thumbnailUrl: getChampionThumbnail(championDisplay),
         fields,
-        footer: 'Match Summary',
+        footer: `Match Summary • Length ${formatGameLength(gameLengthSeconds)}`,
         timestamp: new Date().toISOString(),
     };
 }

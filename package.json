@@ -1,6 +1,6 @@
 {
     "name": "diana",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "private": true,
     "workspaces": [
         "packages/*",
@@ -16,6 +16,7 @@
         "build": "npm run build --workspaces --if-present",
         "build:dashboard": "npm run build --workspace dashboard",
         "test": "jest",
+        "test:coverage": "jest --coverage",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "lint": "eslint --fix --ext .js,.jsx .",
@@ -29,7 +30,7 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "description": "Diana - plugin-based Discord bot with dashboard. First plugin: diana-league-bot (League of Legends).",
+    "description": "Diana - plugin-based Discord bot with dashboard.",
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@tsconfig/recommended": "^1.0.13",

@@ -13,7 +13,7 @@ import {
     calculateRankChange,
     determineRankMovement,
     calculateWinRatePercentage,
-} from '../src/plugins/diana-league-bot/api/utils/rankService';
+} from '../packages/diana-core/src/plugins/diana-league-bot/api/utils/rankService';
 
 describe('rankService', () => {
     describe('calculateRankChange', () => {
