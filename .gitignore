@@ -8,7 +8,4 @@ dashboard/node_modules
 **/dist/**
 **/node_modules/**
 
-# TypeScript build info files (incremental compilation cache)
 *.tsbuildinfo
-
-.claude/**
