@@ -1,8 +1,11 @@
-jest.mock('../packages/diana-core/src/plugins/diana-league-bot/api/utils/db', () => ({
-    db: {
-        query: jest.fn(),
-    },
-}));
+jest.mock(
+    '../packages/diana-core/src/plugins/diana-league-bot/api/utils/db',
+    () => ({
+        db: {
+            query: jest.fn(),
+        },
+    })
+);
 
 import { db } from '../packages/diana-core/src/plugins/diana-league-bot/api/utils/db';
 import * as matchService from '../packages/diana-core/src/plugins/diana-league-bot/api/matches/matchService';

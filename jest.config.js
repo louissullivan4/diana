@@ -10,9 +10,23 @@ module.exports = {
     },
     testMatch: ['**/*.test.(ts|js)'],
     transform: {
-        '^.+\\.(ts|tsx)$': 'ts-jest',
+        '^.+\\.(ts|tsx)$': [
+            'ts-jest',
+            {
+                tsconfig: 'tsconfig.base.json',
+                diagnostics: { ignoreCodes: [151002] },
+            },
+        ],
         '^.+\\.(js)$': 'babel-jest',
     },
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     collectCoverage: false,
+    collectCoverageFrom: [
+        'packages/**/*.ts',
+        '!packages/**/dist/**',
+        '!packages/**/*.d.ts',
+        '!packages/**/index.ts',
+    ],
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov'],
 };
