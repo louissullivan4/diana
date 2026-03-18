@@ -1,3 +1,5 @@
+export {};
+
 const getInterCandidatesLastWeekMock = jest.fn();
 
 class MockSlashCommandBuilder {

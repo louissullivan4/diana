@@ -1,3 +1,5 @@
+export {};
+
 const getRankEntriesByPUUIDMock = jest.fn();
 const mockRankColors = new Map<string, number>([
     ['UNRANKED', 0x95a5a6],

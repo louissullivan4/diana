@@ -1,3 +1,5 @@
+export {};
+
 const getSummonerByAccountNameMock = jest.fn();
 const searchSummonerGameNamesMock = jest.fn();
 const searchSummonerTagsMock = jest.fn();
@@ -172,10 +174,15 @@ const defaultChampions = {
 describe('championStatsCommand', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.spyOn(console, 'error').mockImplementation(() => {});
         fetchChampionDataMock.mockResolvedValue(defaultChampions);
         getQueueNameByIdMock.mockReturnValue('Ranked Solo');
         getSummonerByAccountNameMock.mockResolvedValue(null);
         dbQueryMock.mockResolvedValue({ rows: [] });
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     describe('data', () => {

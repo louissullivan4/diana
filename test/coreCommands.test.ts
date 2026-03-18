@@ -1,3 +1,5 @@
+export {};
+
 class MockSlashCommandStringOption {
     public config: Record<string, unknown> = {};
 
