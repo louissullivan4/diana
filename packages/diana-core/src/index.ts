@@ -12,4 +12,5 @@ export * from './plugins/diana-league-bot/api/utils/dataDragonService';
 export * from './plugins/diana-league-bot/api/utils/rankService';
 export * from './plugins/diana-league-bot/api/utils/lolService/lolServiceFactory';
 export * from './plugins/diana-league-bot/api/summoners/summonerService';
+export * from './plugins/diana-league-bot/api/summoners/guildService';
 export * from './plugins/diana-league-bot/utils/interStats';

@@ -29,10 +29,35 @@ export const getSummonerByAccountName = async (
 
 export async function searchSummonerGameNames(
     search: string,
-    limit = 25
+    limit = 25,
+    guildId?: string
 ): Promise<string[]> {
     try {
         const trimmedSearch = search.trim();
+
+        if (guildId) {
+            const query = trimmedSearch
+                ? `
+                    SELECT DISTINCT s."gameName"
+                    FROM summoners s
+                    JOIN guild_summoners gs ON gs.puuid = s.puuid
+                    WHERE gs.guild_id = $1 AND s."gameName" ILIKE $2
+                    ORDER BY s."gameName" ASC
+                    LIMIT $3
+                `
+                : `
+                    SELECT DISTINCT s."gameName"
+                    FROM summoners s
+                    JOIN guild_summoners gs ON gs.puuid = s.puuid
+                    WHERE gs.guild_id = $1
+                    ORDER BY s."gameName" ASC
+                    LIMIT $2
+                `;
+            const params = trimmedSearch ? [guildId, `${trimmedSearch}%`, limit] : [guildId, limit];
+            const result = await db.query(query, params);
+            return result.rows.map((row: { gameName: string }) => row.gameName);
+        }
+
         const query = trimmedSearch
             ? `
                 SELECT DISTINCT "gameName"
@@ -66,11 +91,44 @@ interface SummonerTagSuggestion {
 export async function searchSummonerTags(
     gameName: string | null | undefined,
     search: string,
-    limit = 25
+    limit = 25,
+    guildId?: string
 ): Promise<SummonerTagSuggestion[]> {
     try {
         const trimmedSearch = search.trim();
         const trimmedName = gameName ? gameName.trim() : null;
+
+        if (guildId) {
+            const conditions: string[] = ['gs.guild_id = $1', 's."tagLine" IS NOT NULL'];
+            const params: Array<string | number> = [guildId];
+
+            if (trimmedName) {
+                params.push(trimmedName);
+                conditions.push(`s."gameName" = $${params.length}`);
+            }
+            if (trimmedSearch) {
+                params.push(`${trimmedSearch}%`);
+                conditions.push(`s."tagLine" ILIKE $${params.length}`);
+            }
+
+            params.push(limit);
+            const query = `
+                SELECT DISTINCT s."tagLine", s."matchRegionPrefix"
+                FROM summoners s
+                JOIN guild_summoners gs ON gs.puuid = s.puuid
+                WHERE ${conditions.join(' AND ')}
+                ORDER BY s."tagLine" ASC
+                LIMIT $${params.length}
+            `;
+            const result = await db.query(query, params);
+            return result.rows.map(
+                (row: { tagLine: string; matchRegionPrefix: string | null }) => ({
+                    tagLine: row.tagLine,
+                    matchRegionPrefix: row.matchRegionPrefix,
+                })
+            );
+        }
+
         const conditions: string[] = ['"tagLine" IS NOT NULL'];
         const params: Array<string | number> = [];
 

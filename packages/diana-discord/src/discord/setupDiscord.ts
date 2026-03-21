@@ -1,11 +1,38 @@
 import 'dotenv/config';
-import type { Interaction } from 'discord.js';
+import type { Guild, Interaction, TextChannel } from 'discord.js';
 import { getDiscordClient, loginDiscord } from './client';
 import {
     syncCommandsToDiscord,
     handleSlashCommand,
     handleAutocomplete,
 } from './commandRegistry';
+
+const WELCOME_MESSAGE =
+    "👋 Hi! I'm **Diana**, a League of Legends match tracking bot.\n\n" +
+    "Get started:\n" +
+    "1. Run `/setchannel` to choose where match notifications are posted.\n" +
+    "2. Run `/add` to start tracking summoners.\n" +
+    "3. Run `/help` to see all available commands.";
+
+async function sendWelcomeMessage(guild: Guild): Promise<void> {
+    try {
+        const systemChannel = guild.systemChannel;
+        if (systemChannel?.isSendable()) {
+            await systemChannel.send(WELCOME_MESSAGE);
+            return;
+        }
+        // Fallback: find the first sendable text channel
+        const textChannel = guild.channels.cache
+            .filter((c): c is TextChannel => c.isTextBased() && 'send' in c)
+            .sort((a, b) => a.position - b.position)
+            .first();
+        if (textChannel?.isSendable()) {
+            await textChannel.send(WELCOME_MESSAGE);
+        }
+    } catch (err) {
+        console.error(`[Diana] Failed to send welcome message to guild ${guild.id}:`, err);
+    }
+}
 
 export async function setupAndStartDiscord(): Promise<void> {
     const client = getDiscordClient();
@@ -19,6 +46,11 @@ export async function setupAndStartDiscord(): Promise<void> {
         } catch (err) {
             console.error('[Diana] Failed to register slash commands:', err);
         }
+    });
+
+    client.on('guildCreate', async (guild: Guild) => {
+        console.log(`[Diana] Joined new guild: ${guild.name} (${guild.id})`);
+        await sendWelcomeMessage(guild);
     });
 
     client.on('interactionCreate', async (interaction: Interaction) => {

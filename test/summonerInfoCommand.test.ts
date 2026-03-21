@@ -319,7 +319,7 @@ describe('summonerInfoCommand', () => {
 
             await summonerInfoCommand.autocomplete(interaction as any);
 
-            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith('fa', 25);
+            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith('fa', 25, undefined);
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'Faker', value: 'Faker' },
                 { name: 'Fabulous', value: 'Fabulous' },
@@ -345,7 +345,8 @@ describe('summonerInfoCommand', () => {
             expect(searchSummonerTagsMock).toHaveBeenCalledWith(
                 'Faker',
                 'eu',
-                25
+                25,
+                undefined
             );
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'EUW (Europe)', value: 'EUW' },

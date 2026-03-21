@@ -64,6 +64,17 @@ export class MockLolService implements ILolService {
         };
     }
 
+    async getAccountByRiotId(
+        gameName: string,
+        tagLine: string
+    ): Promise<AccountDto> {
+        return {
+            puuid: 'mock-puuid-' + gameName.toLowerCase().replace(/\s/g, '-'),
+            gameName,
+            tagLine,
+        };
+    }
+
     async getActiveRegionByPUUID(puuid: string): Promise<AccountRegionDto> {
         return {
             puuid,

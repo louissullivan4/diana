@@ -14,21 +14,13 @@ DROP TABLE IF EXISTS "match_scores" CASCADE;
 DROP TABLE IF EXISTS "rank_tracking" CASCADE;
 DROP TABLE IF EXISTS "match_timeline" CASCADE;
 DROP TABLE IF EXISTS "match_details" CASCADE;
+DROP TABLE IF EXISTS "guild_summoners" CASCADE;
+DROP TABLE IF EXISTS "guild_config" CASCADE;
 DROP TABLE IF EXISTS "summoners" CASCADE;
-DROP TABLE IF EXISTS "users" CASCADE;
-DROP TABLE IF EXISTS "schema_migrations" CASCADE;
+DROP TABLE IF EXISTS "regions" CASCADE;
 
 -- ====================================
--- 1. Create schema_migrations Table
--- ====================================
-CREATE TABLE "schema_migrations" (
-    "id"         SERIAL PRIMARY KEY,
-    "filename"   VARCHAR(255) NOT NULL UNIQUE,
-    "applied_at" TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ====================================
--- 2. Create Summoners Table
+-- 1. Create Summoners Table
 -- ====================================
 CREATE TABLE "summoners" (
     "puuid" VARCHAR(200) PRIMARY KEY,
@@ -46,8 +38,83 @@ CREATE TABLE "summoners" (
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW()
 );
 
+INSERT INTO "summoners" (
+    "puuid",
+    "gameName",
+    "tagLine",
+    "region",
+    "matchRegionPrefix",
+    "deepLolLink",
+    "discordChannelId",
+    "regionGroup"
+) VALUES
+(
+    '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ',
+    'FM Stew',
+    'RATS',
+    'EU_WEST',
+    'EUW1',
+    'https://www.deeplol.gg/summoner/euw/FM%20Stew-RATS',
+    '1424782745300893879',
+    'EUROPE'
+),
+(
+    '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g',
+    'FM Pruhaps',
+    'BAUSS',
+    'EU_WEST',
+    'EUW1',
+    'https://www.deeplol.gg/summoner/EUW/FM%20Pruhaps-BAUSS',
+    '1424782745300893879',
+    'EUROPE'
+),
+(
+    'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A',
+    'Melon',
+    'FM Fishy',
+    'EU_WEST',
+    'EUW1',
+    'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy',
+    '1424782745300893879',
+    'EUROPE'
+)
+ON CONFLICT ("puuid") DO NOTHING;
+
 -- ====================================
--- 3. Create Match_Details Table
+-- 2. Create Guild Config Table
+-- ====================================
+CREATE TABLE "guild_config" (
+    "guild_id"     VARCHAR(30) PRIMARY KEY,
+    "channel_id"   VARCHAR(30),
+    "live_posting" BOOLEAN NOT NULL DEFAULT TRUE,
+    "created_at"   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ====================================
+-- 3. Create Guild Summoners Table
+-- ====================================
+CREATE TABLE "guild_summoners" (
+    "guild_id"  VARCHAR(30) NOT NULL,
+    "puuid"     VARCHAR(200) NOT NULL,
+    "added_by"  VARCHAR(30),
+    "added_at"  TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY ("guild_id", "puuid"),
+    FOREIGN KEY ("puuid") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
+);
+
+-- Seed: link hardcoded summoners to the dev guild
+INSERT INTO "guild_config" ("guild_id", "channel_id", "live_posting")
+VALUES ('1424782745300893876', '1424782745300893879', TRUE)
+ON CONFLICT ("guild_id") DO NOTHING;
+
+INSERT INTO "guild_summoners" ("guild_id", "puuid") VALUES
+('1424782745300893876', '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ'),
+('1424782745300893876', '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g'),
+('1424782745300893876', 'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A')
+ON CONFLICT DO NOTHING;
+
+-- ====================================
+-- 5. Create Match_Details Table
 -- ====================================
 CREATE TABLE "match_details" (
     "mid" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -66,12 +133,12 @@ CREATE TABLE "match_details" (
     "participants" JSONB,
     "teams" JSONB,
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryPlayerPuuid"),
+    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryPlayerPuuid")
     FOREIGN KEY ("entryPlayerPuuid") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
 -- ====================================
--- 4. Create Match_Timeline Table
+-- 6. Create Match_Timeline Table
 -- ====================================
 CREATE TABLE "match_timeline" (
     "tid" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -82,13 +149,13 @@ CREATE TABLE "match_timeline" (
     "participantFrames" JSONB,
     "events" JSONB,
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_timeline UNIQUE ("mid", "entryParticipantId"),
+    CONSTRAINT unique_match_participant UNIQUE ("mid", "entryParticipantId")
     FOREIGN KEY ("mid") REFERENCES "match_details" ("mid") ON DELETE CASCADE,
     FOREIGN KEY ("entryParticipantId") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
 -- ====================================
--- 5. Create rank_tracking Table
+-- 7. Create rank_tracking Table
 -- ====================================
 CREATE TABLE "rank_tracking" (
     "rid" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -99,12 +166,27 @@ CREATE TABLE "rank_tracking" (
     "lp" INT DEFAULT 0,
     "queueType" VARCHAR(50),
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_rank_tracking UNIQUE ("matchId", "entryParticipantId"),
+    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryParticipantId"),
     FOREIGN KEY ("entryParticipantId") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
 -- ====================================
--- 6. Create Indexes
+-- 8. Create match_scores Table
+-- ====================================
+CREATE TABLE "match_scores" (
+    "sid"       INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "matchId"   VARCHAR(50)    NOT NULL,
+    "puuid"     VARCHAR(200)   NOT NULL,
+    "score"     NUMERIC(8, 4)  NOT NULL,
+    "placement" SMALLINT       NOT NULL,
+    "role"      VARCHAR(20),
+    "win"       BOOLEAN        NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ    DEFAULT NOW(),
+    CONSTRAINT "unique_match_score" UNIQUE ("matchId", "puuid")
+);
+
+-- ====================================
+-- 9. Create Indexes
 -- ====================================
 CREATE INDEX "idx_match_details_entryPlayerPuuid" ON "match_details" ("entryPlayerPuuid");
 CREATE INDEX "idx_match_details_participants" ON "match_details" USING GIN ("participants");
@@ -112,3 +194,5 @@ CREATE INDEX "idx_match_details_teams" ON "match_details" USING GIN ("teams");
 CREATE INDEX "idx_match_timeline_events" ON "match_timeline" USING GIN ("events");
 CREATE INDEX "idx_match_timeline_participantFrames" ON "match_timeline" USING GIN ("participantFrames");
 CREATE INDEX "idx_rank_tracking_entryParticipantId" ON "rank_tracking" ("entryParticipantId", "matchId");
+CREATE INDEX "idx_match_scores_matchId" ON "match_scores" ("matchId");
+CREATE INDEX "idx_match_scores_puuid"   ON "match_scores" ("puuid");

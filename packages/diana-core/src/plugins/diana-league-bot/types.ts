@@ -74,6 +74,11 @@ export interface ILolService {
     ): Promise<MatchV5DTOs.MatchDto>;
     getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
     getAccountByPUUID(puuid: string, regionGroup?: string): Promise<AccountDto>;
+    getAccountByRiotId(
+        gameName: string,
+        tagLine: string,
+        regionGroup?: string
+    ): Promise<AccountDto>;
     getActiveRegionByPUUID(
         puuid: string,
         regionGroup?: string
