@@ -190,6 +190,77 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('💥 **Damage Dealt**');
     });
 
+    it('includes Match Placement field when placement and totalPlayers are provided', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            placement: 3,
+            totalPlayers: 10,
+        });
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).toContain('🏆 **Match Placement**');
+    });
+
+    it('placement field value shows ordinal and total (e.g. "3rd / 10")', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            placement: 3,
+            totalPlayers: 10,
+        });
+        const placementField = msg.fields!.find(
+            (f) => f.name === '🏆 **Match Placement**'
+        );
+        expect(placementField?.value).toContain('3rd');
+        expect(placementField?.value).toContain('10');
+    });
+
+    it('placement field uses correct ordinal for 1st place', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            placement: 1,
+            totalPlayers: 10,
+        });
+        const placementField = msg.fields!.find(
+            (f) => f.name === '🏆 **Match Placement**'
+        );
+        expect(placementField?.value).toContain('1st');
+    });
+
+    it('placement field uses correct ordinal for 2nd place', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            placement: 2,
+            totalPlayers: 10,
+        });
+        const placementField = msg.fields!.find(
+            (f) => f.name === '🏆 **Match Placement**'
+        );
+        expect(placementField?.value).toContain('2nd');
+    });
+
+    it('does not include Match Placement field when placement is omitted', () => {
+        const msg = buildMatchEndMessage(baseMatchInput);
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).not.toContain('🏆 **Match Placement**');
+    });
+
+    it('does not include Match Placement field when only placement is provided (no totalPlayers)', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            placement: 3,
+        });
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).not.toContain('🏆 **Match Placement**');
+    });
+
+    it('does not include Match Placement field when only totalPlayers is provided (no placement)', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            totalPlayers: 10,
+        });
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).not.toContain('🏆 **Match Placement**');
+    });
+
     it('rank fields appear before champion field in ranked queues', () => {
         const msg = buildMatchEndMessage({
             ...baseMatchInput,

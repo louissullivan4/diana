@@ -6,6 +6,8 @@ import {
     getRankTagsById,
 } from '../api/utils/dataDragonService';
 import { createMatchDetail } from '../api/matches/matchService';
+import { calculateMatchScores } from '../scoring/scoringAlgorithm';
+import { saveMatchScores } from '../scoring/scoringService';
 import {
     calculateRankChange,
     determineRankMovement,
@@ -225,6 +227,22 @@ const handleNewMatchCompleted = async (
             console.log(
                 `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
             );
+            // Score all 10 participants — gated on new insert so two tracked
+            // summoners in the same match only trigger one scoring run.
+            try {
+                const scores = calculateMatchScores(
+                    participants as Record<string, any>[]
+                );
+                await saveMatchScores(fullMatchId, scores);
+                console.log(
+                    `[Info] [${new Date().toISOString()}] Saved match scores for [${fullMatchId}] (${scores.length} participants)`
+                );
+            } catch (scoringError) {
+                console.error(
+                    `[Error] Failed to calculate/save match scores for [${fullMatchId}]:`,
+                    scoringError
+                );
+            }
         } else {
             console.log(
                 `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
@@ -242,6 +260,18 @@ const handleNewMatchCompleted = async (
         (p: MatchV5DTOs.ParticipantDto) => p.puuid === puuid
     );
     const gameDuration = info.gameDuration ?? 0;
+
+    // Derive placement from the already-computed (or freshly computed) scores
+    let summonerPlacement: number | undefined;
+    try {
+        const allScores = calculateMatchScores(
+            participants as Record<string, any>[]
+        );
+        const myScore = allScores.find((s) => s.puuid === puuid);
+        summonerPlacement = myScore?.placement;
+    } catch {
+        // Non-fatal — notification will omit the placement field
+    }
 
     let result = 'Lose';
     if (gameDuration < 300) result = 'Remake';
@@ -324,6 +354,8 @@ const handleNewMatchCompleted = async (
         damage,
         discordChannelId: overrideChannelId,
         deepLolLink: summoner.deepLolLink || '',
+        placement: summonerPlacement,
+        totalPlayers: participants.length || undefined,
     };
 
     const messageSent = await notifyMatchEnd(messageAdapter, matchSummary);

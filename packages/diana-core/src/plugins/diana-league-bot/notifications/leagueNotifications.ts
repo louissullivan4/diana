@@ -5,6 +5,7 @@ import {
     getRankedEmblem,
     rankColors,
 } from '../presentation/leaguePresentation';
+import { getOrdinal } from '../scoring/scoringAlgorithm';
 
 const resultColors = new Map<string, number>([
     ['win', 0x28a745],
@@ -32,6 +33,10 @@ interface MatchEndMessageInput {
     kdaStr: string;
     damage: number;
     deepLolLink: string;
+    /** 1-based placement in this match (1 = best performer across all 10 players) */
+    placement?: number;
+    /** Total number of players scored (typically 10) */
+    totalPlayers?: number;
 }
 
 interface RankChangeMessageInput {
@@ -64,6 +69,8 @@ export function buildMatchEndMessage({
     kdaStr,
     damage,
     deepLolLink,
+    placement,
+    totalPlayers,
 }: MatchEndMessageInput): MessagePayload {
     const colorHex = resultColors.get(result.toLowerCase()) || 0x95a5a6;
     const fields = [
@@ -88,6 +95,13 @@ export function buildMatchEndMessage({
         { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
         { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
     );
+    if (placement != null && totalPlayers != null) {
+        fields.push({
+            name: '🏆 **Match Placement**',
+            value: `**${getOrdinal(placement)} / ${totalPlayers}**`,
+            inline: true,
+        });
+    }
     if (queueName.toLowerCase().includes('ranked')) {
         fields.splice(
             1,
