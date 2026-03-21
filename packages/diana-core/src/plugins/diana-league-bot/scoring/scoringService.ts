@@ -50,7 +50,9 @@ export async function getMatchScore(
 }
 
 /** Retrieve all participant scores for a match, ordered by placement. */
-export async function getMatchScores(matchId: string): Promise<MatchScoreRow[]> {
+export async function getMatchScores(
+    matchId: string
+): Promise<MatchScoreRow[]> {
     try {
         const result = await db.query(
             `SELECT * FROM match_scores WHERE "matchId" = $1 ORDER BY "placement" ASC`,

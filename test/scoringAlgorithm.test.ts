@@ -31,17 +31,21 @@ interface ParticipantOverrides {
     challenges?: Record<string, number>;
 }
 
-function makeParticipant(overrides: ParticipantOverrides = {}): Record<string, any> {
+function makeParticipant(
+    overrides: ParticipantOverrides = {}
+): Record<string, any> {
     return {
         puuid: overrides.puuid ?? `puuid-${overrides.participantId ?? 0}`,
         participantId: overrides.participantId ?? 1,
         teamPosition: overrides.teamPosition ?? 'MIDDLE',
-        individualPosition: overrides.individualPosition ?? overrides.teamPosition ?? 'MIDDLE',
+        individualPosition:
+            overrides.individualPosition ?? overrides.teamPosition ?? 'MIDDLE',
         win: overrides.win ?? false,
         kills: overrides.kills ?? 5,
         deaths: overrides.deaths ?? 3,
         assists: overrides.assists ?? 5,
-        totalDamageDealtToChampions: overrides.totalDamageDealtToChampions ?? 20000,
+        totalDamageDealtToChampions:
+            overrides.totalDamageDealtToChampions ?? 20000,
         totalMinionsKilled: overrides.totalMinionsKilled ?? 150,
         neutralMinionsKilled: overrides.neutralMinionsKilled ?? 50,
         goldEarned: overrides.goldEarned ?? 12000,
@@ -83,7 +87,9 @@ function makeLobby(
             teamPosition: role,
             win: isWinner,
         };
-        participants.push(makeParticipant({ ...base, ...(overridesByIndex[i] ?? {}) }));
+        participants.push(
+            makeParticipant({ ...base, ...(overridesByIndex[i] ?? {}) })
+        );
     }
     return participants;
 }
@@ -129,7 +135,9 @@ describe('calculateMatchScores — basic behaviour', () => {
     it('result is sorted ascending by placement', () => {
         const scores = calculateMatchScores(makeLobby());
         for (let i = 1; i < scores.length; i++) {
-            expect(scores[i].placement).toBeGreaterThan(scores[i - 1].placement);
+            expect(scores[i].placement).toBeGreaterThan(
+                scores[i - 1].placement
+            );
         }
     });
 
@@ -171,7 +179,9 @@ describe('calculateMatchScores — basic behaviour', () => {
     });
 
     it('works with a single participant', () => {
-        const single = [makeParticipant({ puuid: 'solo', participantId: 1, win: true })];
+        const single = [
+            makeParticipant({ puuid: 'solo', participantId: 1, win: true }),
+        ];
         const scores = calculateMatchScores(single);
         expect(scores).toHaveLength(1);
         expect(scores[0].placement).toBe(1);
@@ -225,11 +235,26 @@ describe('calculateMatchScores — normalisation', () => {
 describe('calculateMatchScores — win bonus', () => {
     it('winner with identical stats to a loser scores higher by WIN_BONUS', () => {
         // Two mid laners with identical stats — one wins, one loses
-        const p1 = makeParticipant({ puuid: 'winner', participantId: 1, teamPosition: 'MIDDLE', win: true });
-        const p2 = makeParticipant({ puuid: 'loser', participantId: 2, teamPosition: 'MIDDLE', win: false });
+        const p1 = makeParticipant({
+            puuid: 'winner',
+            participantId: 1,
+            teamPosition: 'MIDDLE',
+            win: true,
+        });
+        const p2 = makeParticipant({
+            puuid: 'loser',
+            participantId: 2,
+            teamPosition: 'MIDDLE',
+            win: false,
+        });
         // Pad to 10 with filler participants
         const fillers = Array.from({ length: 8 }, (_, i) =>
-            makeParticipant({ puuid: `filler-${i}`, participantId: i + 3, teamPosition: 'MIDDLE', win: false })
+            makeParticipant({
+                puuid: `filler-${i}`,
+                participantId: i + 3,
+                teamPosition: 'MIDDLE',
+                win: false,
+            })
         );
 
         const scores = calculateMatchScores([p1, p2, ...fillers]);
@@ -255,7 +280,7 @@ describe('calculateMatchScores — role-specific weighting', () => {
             // participant index 3 = BOTTOM (ADC)
             3: {
                 totalDamageDealtToChampions: 150000, // massive damage
-                visionScore: 1,                      // terrible vision — irrelevant for ADC
+                visionScore: 1, // terrible vision — irrelevant for ADC
                 totalMinionsKilled: 350,
                 challenges: {
                     kda: 10,
@@ -307,7 +332,7 @@ describe('calculateMatchScores — role-specific weighting', () => {
                 challenges: {
                     kda: 6,
                     killParticipation: 0.85,
-                    dragonTakedowns: 5,  // dominated dragons
+                    dragonTakedowns: 5, // dominated dragons
                     baronTakedowns: 2,
                     riftHeraldTakedowns: 2,
                     controlWardsPlaced: 5,
@@ -323,7 +348,8 @@ describe('calculateMatchScores — role-specific weighting', () => {
 
     it('top laner damage and CS both contribute to their score', () => {
         const lobby = makeLobby({
-            0: { // TOP laner
+            0: {
+                // TOP laner
                 totalDamageDealtToChampions: 80000,
                 totalMinionsKilled: 300,
                 damageSelfMitigated: 50000,
@@ -391,7 +417,12 @@ describe('calculateMatchScores — edge cases', () => {
     it('treats missing numeric stats as 0 (not NaN or undefined)', () => {
         const lobby = makeLobby();
         // Wipe all stats from one participant
-        lobby[0] = { puuid: 'bare', participantId: 1, teamPosition: 'TOP', win: false };
+        lobby[0] = {
+            puuid: 'bare',
+            participantId: 1,
+            teamPosition: 'TOP',
+            win: false,
+        };
         const scores = calculateMatchScores(lobby);
         const bare = scores.find((s) => s.puuid === 'bare');
         expect(bare).toBeDefined();
@@ -423,7 +454,14 @@ describe('calculateMatchScores — edge cases', () => {
 // ---------------------------------------------------------------------------
 
 describe('scoringWeights config sanity', () => {
-    const expectedRoles = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY', 'DEFAULT'];
+    const expectedRoles = [
+        'TOP',
+        'JUNGLE',
+        'MIDDLE',
+        'BOTTOM',
+        'UTILITY',
+        'DEFAULT',
+    ];
 
     it('defines weights for all expected roles', () => {
         for (const role of expectedRoles) {

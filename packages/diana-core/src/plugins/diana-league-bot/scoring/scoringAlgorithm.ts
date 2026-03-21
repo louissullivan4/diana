@@ -41,106 +41,321 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
     TOP: {
         stats: [
             // KDA ratio rewards strong lane presence and survivability
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.25 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.25,
+            },
             // Damage output — top laners are expected to threaten in team fights
-            { key: 'totalDamageDealtToChampions', source: 'direct', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // CS reflects laning dominance
-            { key: 'totalMinionsKilled', source: 'direct', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'totalMinionsKilled',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Damage absorbed shows effective tanking / frontline value
-            { key: 'damageSelfMitigated', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'damageSelfMitigated',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // Gold parity — income signals win conditions being hit
-            { key: 'goldEarned', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // Turret pressure is a core top lane win condition
-            { key: 'damageDealtToTurrets', source: 'direct', higherIsBetter: true, weight: 0.08 },
+            {
+                key: 'damageDealtToTurrets',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.08,
+            },
             // Being in fights matters for a champion expected to set plays
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.07 },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.07,
+            },
             // Vision control is expected even in solo lanes
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
         ],
     },
     JUNGLE: {
         stats: [
             // KDA captures efficient skirmishing
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // Kill participation is the primary jungler performance metric
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // Dragon control is a core jungler objective
-            { key: 'dragonTakedowns', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'dragonTakedowns',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Baron secures late-game win conditions
-            { key: 'baronTakedowns', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'baronTakedowns',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Camp clear efficiency separates good from great junglers
-            { key: 'neutralMinionsKilled', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'neutralMinionsKilled',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // Rift Herald usage drives early tower advantages
-            { key: 'riftHeraldTakedowns', source: 'challenges', higherIsBetter: true, weight: 0.07 },
+            {
+                key: 'riftHeraldTakedowns',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.07,
+            },
             // Stealing objectives from the enemy is high-value play
-            { key: 'objectivesStolen', source: 'direct', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'objectivesStolen',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
             // Vision around objectives is specifically a jungler's job
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
             // Gold income validates efficient pathing
-            { key: 'goldEarned', source: 'direct', higherIsBetter: true, weight: 0.03 },
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.03,
+            },
         ],
     },
     MIDDLE: {
         stats: [
             // Mid laners are expected to be primary damage dealers
-            { key: 'totalDamageDealtToChampions', source: 'direct', higherIsBetter: true, weight: 0.25 },
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.25,
+            },
             // KDA rewards good decision making and survivability
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // Roaming and skirmishing show impact across the map
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // CS is the primary laning metric for mid
-            { key: 'totalMinionsKilled', source: 'direct', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'totalMinionsKilled',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Gold income validates both CS and kill leads
-            { key: 'goldEarned', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // Mid is a high traffic area — vision matters
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // Solo kills demonstrate individual skill
-            { key: 'soloKills', source: 'challenges', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'soloKills',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
         ],
     },
     BOTTOM: {
         stats: [
             // ADCs are the late-game primary damage source
-            { key: 'totalDamageDealtToChampions', source: 'direct', higherIsBetter: true, weight: 0.30 },
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.3,
+            },
             // CS is the ADC's main income vehicle early/mid game
-            { key: 'totalMinionsKilled', source: 'direct', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'totalMinionsKilled',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // KDA — ADCs die often but staying alive multiplies their damage
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.20 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
             // Gold tracks item progression which drives ADC power spikes
-            { key: 'goldEarned', source: 'direct', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Being in fights is important even for a positioned carry
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // ADCs should share vision duties with support
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
         ],
     },
     UTILITY: {
         stats: [
             // Vision is the entire job description of a support
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.25 },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.25,
+            },
             // Control wards are the most impactful vision tool
-            { key: 'controlWardsPlaced', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'controlWardsPlaced',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Presence in fights validates roaming and engage
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Assists are the support's primary combat contribution
-            { key: 'assists', source: 'direct', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'assists',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Healing and shielding quantifies protective value
-            { key: 'effectiveHealAndShielding', source: 'challenges', higherIsBetter: true, weight: 0.15 },
+            {
+                key: 'effectiveHealAndShielding',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
             // Hard CC secures kills and saves allies
-            { key: 'timeCCingOthers', source: 'direct', higherIsBetter: true, weight: 0.10 },
+            {
+                key: 'timeCCingOthers',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
             // KDA matters but support deaths are less punishing
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
         ],
     },
     // Fallback: used for ARAM, Swiftplay, unknown positions, and anything else
     DEFAULT: {
         stats: [
-            { key: 'kda', source: 'challenges', higherIsBetter: true, weight: 0.25 },
-            { key: 'totalDamageDealtToChampions', source: 'direct', higherIsBetter: true, weight: 0.25 },
-            { key: 'killParticipation', source: 'challenges', higherIsBetter: true, weight: 0.20 },
-            { key: 'goldEarned', source: 'direct', higherIsBetter: true, weight: 0.15 },
-            { key: 'visionScore', source: 'direct', higherIsBetter: true, weight: 0.10 },
-            { key: 'totalMinionsKilled', source: 'direct', higherIsBetter: true, weight: 0.05 },
+            {
+                key: 'kda',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.25,
+            },
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.25,
+            },
+            {
+                key: 'killParticipation',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.2,
+            },
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
+            {
+                key: 'visionScore',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
+            {
+                key: 'totalMinionsKilled',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.05,
+            },
         ],
     },
 };
@@ -183,9 +398,7 @@ export function getOrdinal(n: number): string {
     const mod100 = n % 100;
     // 11–13 are irregular ("11th", not "11st")
     const suffix =
-        mod100 >= 11 && mod100 <= 13
-            ? 'th'
-            : (suffixes[n % 10] ?? 'th');
+        mod100 >= 11 && mod100 <= 13 ? 'th' : (suffixes[n % 10] ?? 'th');
     return `${n}${suffix}`;
 }
 
@@ -221,9 +434,7 @@ export function calculateMatchScores(
         const normalised = minMaxNormalize(rawValues);
         normalisedCache.set(
             cacheKey,
-            statDef.higherIsBetter
-                ? normalised
-                : normalised.map((v) => 1 - v)
+            statDef.higherIsBetter ? normalised : normalised.map((v) => 1 - v)
         );
     }
 
@@ -231,8 +442,7 @@ export function calculateMatchScores(
     const rawScores = participants.map((participant, idx) => {
         const position: string =
             participant.teamPosition || participant.individualPosition || '';
-        const role =
-            position in scoringWeights ? position : 'DEFAULT';
+        const role = position in scoringWeights ? position : 'DEFAULT';
         const roleConfig = scoringWeights[role];
 
         let total = 0;
