@@ -6,44 +6,12 @@ import type { LeagueBotConfig } from './types';
 
 /** Default configuration for the League Bot plugin */
 const defaultConfig: LeagueBotConfig = {
-    trackedSummoners: [],
     matchCheckCron: '*/20 * * * * *',
     defaultDiscordChannelId: undefined,
 };
 
 /** Config schema for the dashboard UI */
 const configSchema: ConfigField[] = [
-    {
-        key: 'trackedSummoners',
-        label: 'Tracked Summoners',
-        type: 'array',
-        description: 'List of summoners to track for match notifications',
-        required: false,
-        default: [],
-        arrayItemSchema: [
-            {
-                key: 'puuid',
-                label: 'PUUID',
-                type: 'string',
-                description: 'Riot PUUID of the summoner',
-                required: true,
-            },
-            {
-                key: 'name',
-                label: 'Display Name',
-                type: 'string',
-                description: 'Optional display name for the dashboard',
-                required: false,
-            },
-            {
-                key: 'discordChannelId',
-                label: 'Discord Channel ID',
-                type: 'string',
-                description: 'Override Discord channel for this summoner',
-                required: false,
-            },
-        ],
-    },
     {
         key: 'matchCheckCron',
         label: 'Match Check Schedule',
@@ -82,7 +50,6 @@ export const leagueBotPlugin: DianaPlugin = {
         const config: LeagueBotConfig = { ...defaultConfig, ...storedConfig };
 
         console.log(`[LeagueBot] Enabling with config:`, {
-            trackedSummoners: config.trackedSummoners.length,
             matchCheckCron: config.matchCheckCron,
             defaultDiscordChannelId: config.defaultDiscordChannelId,
         });

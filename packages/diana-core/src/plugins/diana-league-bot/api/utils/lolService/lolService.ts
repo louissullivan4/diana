@@ -142,6 +142,30 @@ export class LolService implements ILolService {
         }
     }
 
+    async getAccountByRiotId(
+        gameName: string,
+        tagLine: string,
+        regionGroup: RegionGroup = Constants.RegionGroups.EUROPE
+    ): Promise<AccountDto> {
+        try {
+            const safeRegionGroup: AccountRegionGroup =
+                regionGroup === Constants.RegionGroups.SEA
+                    ? Constants.RegionGroups.EUROPE
+                    : (regionGroup as AccountRegionGroup);
+            const { response } = await this.riotApi.Account.getByRiotId(
+                gameName,
+                tagLine,
+                safeRegionGroup
+            );
+            return response;
+        } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
     async getActiveRegionByPUUID(
         puuid: string,
         regionGroup: RegionGroup = Constants.RegionGroups.EUROPE

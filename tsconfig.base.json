@@ -7,6 +7,10 @@
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "paths": {
+            "diana-core": ["./packages/diana-core/src/index.ts"],
+            "diana-discord": ["./packages/diana-discord/src/index.ts"]
+        }
     }
 }

@@ -74,6 +74,11 @@ export interface ILolService {
     ): Promise<MatchV5DTOs.MatchDto>;
     getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]>;
     getAccountByPUUID(puuid: string, regionGroup?: string): Promise<AccountDto>;
+    getAccountByRiotId(
+        gameName: string,
+        tagLine: string,
+        regionGroup?: string
+    ): Promise<AccountDto>;
     getActiveRegionByPUUID(
         puuid: string,
         regionGroup?: string
@@ -81,23 +86,9 @@ export interface ILolService {
 }
 
 /**
- * Tracked summoner configuration
- */
-export interface TrackedSummonerConfig {
-    /** Riot PUUID of the summoner */
-    puuid: string;
-    /** Display name (optional, for dashboard display) */
-    name?: string;
-    /** Override Discord channel for this summoner's notifications */
-    discordChannelId?: string;
-}
-
-/**
  * League Bot plugin configuration
  */
 export interface LeagueBotConfig {
-    /** List of summoners to track for match notifications */
-    trackedSummoners: TrackedSummonerConfig[];
     /** Cron schedule for match checking (default: every 20 seconds) */
     matchCheckCron: string;
     /** Default Discord channel ID for notifications */

@@ -50,7 +50,7 @@ describe('summonerService', () => {
                 'NA'
             );
 
-            expect(result).toEqual({ msg: 'No summoner found' });
+            expect(result).toBeNull();
             expect(console.info).toHaveBeenCalled();
         });
 
@@ -178,11 +178,11 @@ describe('summonerService', () => {
             expect(result).toBe(row);
         });
 
-        it('returns message when not found', async () => {
+        it('returns null when not found', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
             const result = await summonerService.getSummonerByPuuid('123');
-            expect(result).toEqual({ msg: 'No summoner found' });
+            expect(result).toBeNull();
         });
     });
 
@@ -227,11 +227,11 @@ describe('summonerService', () => {
             expect(result).toBe(row);
         });
 
-        it('returns message when summoner not found', async () => {
+        it('returns null when summoner not found', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
             const result = await summonerService.deleteSummoner('123');
-            expect(result).toEqual({ msg: 'No summoner found' });
+            expect(result).toBeNull();
         });
     });
 
@@ -248,7 +248,7 @@ describe('summonerService', () => {
             expect(result).toBe(row);
         });
 
-        it('returns message when summoner missing', async () => {
+        it('returns null when summoner missing', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
             const result =
@@ -256,7 +256,7 @@ describe('summonerService', () => {
                     '123',
                     'XYZ'
                 );
-            expect(result).toEqual({ msg: 'No summoner found' });
+            expect(result).toBeNull();
         });
     });
 
@@ -321,7 +321,7 @@ describe('summonerService', () => {
             expect(result).toBe(row);
         });
 
-        it('returns message when rank history missing', async () => {
+        it('returns null when rank history missing', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
             const result = await summonerService.updateRankHistory(
@@ -332,7 +332,7 @@ describe('summonerService', () => {
                 'RANKED_SOLO_5x5'
             );
 
-            expect(result).toEqual({ msg: 'No rank history found' });
+            expect(result).toBeNull();
             expect(console.info).toHaveBeenCalledWith(
                 'Rank history with RID 1 not found.'
             );
@@ -348,11 +348,11 @@ describe('summonerService', () => {
             expect(result).toBe(row);
         });
 
-        it('returns message when not found', async () => {
+        it('returns null when not found', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
             const result = await summonerService.deleteRankHistory(3);
-            expect(result).toEqual({ msg: 'No rank history found' });
+            expect(result).toBeNull();
         });
     });
 });

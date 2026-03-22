@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { trackedSummoners } from '../config/trackedSummoners';
 import { createLolService } from '../api/utils/lolService/lolServiceFactory';
 import { getSummonerByPuuid } from '../api/summoners/summonerService';
+import { getAllTrackedPuuids } from '../api/summoners/guildService';
 import { createMatchDetail } from '../api/matches/matchService';
 import { db } from '../api/utils/db';
 import { Summoner } from '../types';
@@ -132,12 +132,13 @@ const run = async () => {
         process.exit(1);
     }
 
-    for (const tracked of trackedSummoners) {
-        const summoner = await getSummonerByPuuid(tracked.puuid);
+    const trackedPuuids = await getAllTrackedPuuids();
+    for (const puuid of trackedPuuids) {
+        const summoner = await getSummonerByPuuid(puuid);
 
         if (!isSummoner(summoner)) {
             console.log(
-                `[Warn] [${new Date().toISOString()}] Tracked PUUID ${tracked.puuid} not found in DB, skipping.`
+                `[Warn] [${new Date().toISOString()}] Tracked PUUID ${puuid} not found in DB, skipping.`
             );
             continue;
         }

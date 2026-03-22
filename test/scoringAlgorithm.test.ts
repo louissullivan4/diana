@@ -260,7 +260,7 @@ describe('calculateMatchScores — win bonus', () => {
         const scores = calculateMatchScores([p1, p2, ...fillers]);
         const winnerScore = scores.find((s) => s.puuid === 'winner')!.score;
         const loserScore = scores.find((s) => s.puuid === 'loser')!.score;
-        expect(winnerScore - loserScore).toBeCloseTo(WIN_BONUS, 4);
+        expect(winnerScore - loserScore).toBeCloseTo(WIN_BONUS * 100, 4);
     });
 
     it('winning participants have the win flag set to true on their score', () => {

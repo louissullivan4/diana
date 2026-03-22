@@ -284,7 +284,7 @@ export const summonerInfoCommand: SlashCommand = {
 
             const summonerRecord = resolution.record;
 
-            if (!summonerRecord || (summonerRecord as any).msg) {
+            if (!summonerRecord) {
                 const missingTarget = tag ? `${name}#${tag}` : name;
                 await interaction.editReply(
                     `Could not find **${missingTarget}** in region ${region}.`
@@ -425,7 +425,8 @@ export const summonerInfoCommand: SlashCommand = {
             if (focused.name === 'name') {
                 const names = (await searchSummonerGameNames(
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as string[];
                 await interaction.respond(
                     names.map((gameName: string) => ({
@@ -441,7 +442,8 @@ export const summonerInfoCommand: SlashCommand = {
                 const tags = (await searchSummonerTags(
                     selectedName,
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as Array<{
                     tagLine: string;
                     matchRegionPrefix?: string | null;

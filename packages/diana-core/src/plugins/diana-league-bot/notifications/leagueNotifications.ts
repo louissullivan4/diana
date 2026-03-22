@@ -37,6 +37,8 @@ interface MatchEndMessageInput {
     placement?: number;
     /** Total number of players scored (typically 10) */
     totalPlayers?: number;
+    /** Raw AI score from the scoring algorithm */
+    aiScore?: number;
 }
 
 interface RankChangeMessageInput {
@@ -71,6 +73,7 @@ export function buildMatchEndMessage({
     deepLolLink,
     placement,
     totalPlayers,
+    aiScore,
 }: MatchEndMessageInput): MessagePayload {
     const colorHex = resultColors.get(result.toLowerCase()) || 0x95a5a6;
     const fields = [
@@ -98,7 +101,14 @@ export function buildMatchEndMessage({
     if (placement != null && totalPlayers != null) {
         fields.push({
             name: '🏆 **Match Placement**',
-            value: `**${getOrdinal(placement)} / ${totalPlayers}**`,
+            value: `**${getOrdinal(placement)}**`,
+            inline: true,
+        });
+    }
+    if (aiScore != null) {
+        fields.push({
+            name: '🤖 **AI Score**',
+            value: `**${aiScore}**`,
             inline: true,
         });
     }

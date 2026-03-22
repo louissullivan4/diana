@@ -18,22 +18,21 @@ services:
             retries: 5
 
     migrate:
-        image: postgres:15-alpine
+        build:
+            context: ./db
+            dockerfile: Dockerfile.migrate
         container_name: migrate
         depends_on:
             postgres:
                 condition: service_healthy
-        volumes:
-            - ./db/migrations:/migrations
-            - ./db/migrate.sh:/migrate.sh
         environment:
             - PGHOST=postgres
             - PGPORT=5432
             - PGUSER=postgres
             - PGPASSWORD=admin
             - PGDATABASE=diana
-            - MIGRATIONS_DIR=/migrations
-        command: ['sh', '/migrate.sh']
+            - MIGRATIONS_DIR=/db/migrations
+        command: ['sh', '/db/migrate.sh']
         restart: 'no'
 
 volumes:

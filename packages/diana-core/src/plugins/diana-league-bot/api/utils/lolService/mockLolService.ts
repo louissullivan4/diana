@@ -10,7 +10,20 @@ import {
 } from 'twisted/dist/models-dto/matches/match-v5';
 
 class JsonLoader {
-    private static readonly basePath = join('db', 'data', 'riot');
+    private static readonly basePath = join(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        '..',
+        '..',
+        '..',
+        '..',
+        '..',
+        'db',
+        'data',
+        'riot'
+    );
 
     static load<T>(filename: string): T {
         const filePath = join(this.basePath, filename);
@@ -59,8 +72,19 @@ export class MockLolService implements ILolService {
     async getAccountByPUUID(puuid: string): Promise<AccountDto> {
         return {
             puuid,
-            gameName: 'MockGame',
+            gameName: `MockGame${puuid.slice(0, 4)}`,
             tagLine: 'MOCK',
+        };
+    }
+
+    async getAccountByRiotId(
+        gameName: string,
+        tagLine: string
+    ): Promise<AccountDto> {
+        return {
+            puuid: 'mock-puuid-' + gameName.toLowerCase().replace(/\s/g, '-'),
+            gameName,
+            tagLine,
         };
     }
 

@@ -376,7 +376,7 @@ export const championStatsCommand: SlashCommand = {
 
             const summonerRecord = resolution.record;
 
-            if (!summonerRecord || (summonerRecord as any).msg) {
+            if (!summonerRecord) {
                 await interaction.editReply(
                     `Could not find **${tag ? `${name}#${tag}` : name}** in the tracked summoners list.`
                 );
