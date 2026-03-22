@@ -60,7 +60,7 @@ export const configCommand: SlashCommand = {
             const config = await getGuildConfig(guildId);
             const channel = config?.channel_id
                 ? `<#${config.channel_id}>`
-                : 'Not set — use `/setchannel` to configure.';
+                : 'Not set - use `/setchannel` to configure.';
             const livePosting = config
                 ? config.live_posting
                     ? 'Enabled'
@@ -68,7 +68,7 @@ export const configCommand: SlashCommand = {
                 : 'Enabled (default)';
 
             const embed = new EmbedBuilder()
-                .setTitle('Diana — Server Configuration')
+                .setTitle('Diana - Server Configuration')
                 .addFields(
                     {
                         name: 'Notification Channel',

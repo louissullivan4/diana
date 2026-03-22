@@ -8,43 +8,43 @@ export const helpCommand: SlashCommand = {
 
     execute: async (interaction) => {
         const embed = new EmbedBuilder()
-            .setTitle('Diana — Command Reference')
+            .setTitle('Diana - Command Reference')
             .setDescription('Here are all available commands:')
             .setColor(0x5865f2)
             .addFields(
                 {
                     name: '⚙️ Setup',
                     value: [
-                        '`/setchannel #channel` — Set the channel where match notifications are posted. Requires **Manage Channels**.',
-                        '`/config live-posting true/false` — Enable or disable live match notifications. Requires **Manage Server**.',
-                        '`/config view` — View the current bot settings for this server.',
+                        '`/setchannel #channel` - Set the channel where match notifications are posted. Requires **Manage Channels**.',
+                        '`/config live-posting true/false` - Enable or disable live match notifications. Requires **Manage Server**.',
+                        '`/config view` - View the current bot settings for this server.',
                     ].join('\n'),
                     inline: false,
                 },
                 {
                     name: '👤 Summoner Tracking',
                     value: [
-                        '`/add <name> <tag> [region]` — Start tracking a summoner in this server.',
-                        '`/remove <name> [tag]` — Stop tracking a summoner in this server.',
+                        '`/add <name> <tag> [region]` - Start tracking a summoner in this server.',
+                        '`/remove <name> [tag]` - Stop tracking a summoner in this server.',
                     ].join('\n'),
                     inline: false,
                 },
                 {
                     name: '📊 Stats',
                     value: [
-                        "`/summoner <name> [tag] [region]` — View a tracked summoner's profile and recent stats.",
-                        '`/champion-stats` — View champion statistics.',
-                        '`/inter-of-the-week` — View the Inter of the Week rankings.',
+                        "`/summoner <name> [tag] [region]` - View a tracked summoner's profile and recent stats.",
+                        '`/champion-stats` - View champion statistics.',
+                        '`/inter-of-the-week` - View the Inter of the Week rankings.',
                     ].join('\n'),
                     inline: false,
                 },
                 {
                     name: '🔧 Other',
-                    value: '`/help` — Show this help message.',
+                    value: '`/help` - Show this help message.',
                     inline: false,
                 }
             )
-            .setFooter({ text: 'Diana — League of Legends match tracking bot' })
+            .setFooter({ text: 'Diana - League of Legends match tracking bot' })
             .setTimestamp();
 
         await interaction.reply({

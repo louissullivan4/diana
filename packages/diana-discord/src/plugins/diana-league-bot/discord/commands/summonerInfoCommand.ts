@@ -359,7 +359,7 @@ export const summonerInfoCommand: SlashCommand = {
             const emblem = getRankedEmblem(embedTier);
 
             const embed = new EmbedBuilder()
-                .setTitle(`Summoner Info — ${gameName}#${tagLine}`)
+                .setTitle(`Summoner Info - ${gameName}#${tagLine}`)
                 .setDescription(
                     deepLolLink
                         ? `[View on DeepLOL](${deepLolLink})`

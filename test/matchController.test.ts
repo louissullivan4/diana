@@ -219,7 +219,7 @@ describe('matchController', () => {
 
             await createMatchDetailHandler(req as Request, res as Response);
 
-            // The handler returns 201 regardless — null signals a skipped insert
+            // The handler returns 201 regardless - null signals a skipped insert
             expect(statusMock).toHaveBeenCalledWith(201);
             expect(jsonMock).toHaveBeenCalledWith(null);
         });

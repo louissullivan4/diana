@@ -10,7 +10,7 @@ jest.mock('fs', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Always fetches the *current* mock instance — safe to call after resetModules()
+// Always fetches the *current* mock instance - safe to call after resetModules()
 function fsMock() {
     return jest.requireMock('fs') as {
         existsSync: jest.Mock;

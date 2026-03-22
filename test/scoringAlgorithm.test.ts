@@ -113,10 +113,10 @@ describe('getOrdinal', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — basic behaviour
+// calculateMatchScores - basic behaviour
 // ---------------------------------------------------------------------------
 
-describe('calculateMatchScores — basic behaviour', () => {
+describe('calculateMatchScores - basic behaviour', () => {
     it('returns an empty array for empty input', () => {
         expect(calculateMatchScores([])).toEqual([]);
     });
@@ -189,12 +189,12 @@ describe('calculateMatchScores — basic behaviour', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — normalisation
+// calculateMatchScores - normalisation
 // ---------------------------------------------------------------------------
 
-describe('calculateMatchScores — normalisation', () => {
+describe('calculateMatchScores - normalisation', () => {
     it('all-identical stats still produce valid placements 1-N', () => {
-        // 10 identical mid laners — scores will all be 0.5 per stat + win bonus
+        // 10 identical mid laners - scores will all be 0.5 per stat + win bonus
         const lobby = Array.from({ length: 10 }, (_, i) =>
             makeParticipant({
                 puuid: `p${i}`,
@@ -213,7 +213,7 @@ describe('calculateMatchScores — normalisation', () => {
         }
     });
 
-    it('score is proportional — participant with double the stats scores higher', () => {
+    it('score is proportional - participant with double the stats scores higher', () => {
         const lobby = makeLobby();
         // Give participant 0 (TOP) dramatically better stats
         lobby[0].totalDamageDealtToChampions = 100000;
@@ -229,12 +229,12 @@ describe('calculateMatchScores — normalisation', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — win bonus
+// calculateMatchScores - win bonus
 // ---------------------------------------------------------------------------
 
-describe('calculateMatchScores — win bonus', () => {
+describe('calculateMatchScores - win bonus', () => {
     it('winner with identical stats to a loser scores higher by WIN_BONUS', () => {
-        // Two mid laners with identical stats — one wins, one loses
+        // Two mid laners with identical stats - one wins, one loses
         const p1 = makeParticipant({
             puuid: 'winner',
             participantId: 1,
@@ -271,16 +271,16 @@ describe('calculateMatchScores — win bonus', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — role-specific weighting
+// calculateMatchScores - role-specific weighting
 // ---------------------------------------------------------------------------
 
-describe('calculateMatchScores — role-specific weighting', () => {
+describe('calculateMatchScores - role-specific weighting', () => {
     it('ADC with very high damage scores well even with low vision', () => {
         const lobby = makeLobby({
             // participant index 3 = BOTTOM (ADC)
             3: {
                 totalDamageDealtToChampions: 150000, // massive damage
-                visionScore: 1, // terrible vision — irrelevant for ADC
+                visionScore: 1, // terrible vision - irrelevant for ADC
                 totalMinionsKilled: 350,
                 challenges: {
                     kda: 10,
@@ -397,10 +397,10 @@ describe('calculateMatchScores — role-specific weighting', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — edge cases and robustness
+// calculateMatchScores - edge cases and robustness
 // ---------------------------------------------------------------------------
 
-describe('calculateMatchScores — edge cases', () => {
+describe('calculateMatchScores - edge cases', () => {
     it('does not crash when challenges object is missing entirely', () => {
         const lobby = makeLobby();
         delete lobby[0].challenges;
@@ -450,7 +450,7 @@ describe('calculateMatchScores — edge cases', () => {
 });
 
 // ---------------------------------------------------------------------------
-// calculateMatchScores — scoring weights sanity
+// calculateMatchScores - scoring weights sanity
 // ---------------------------------------------------------------------------
 
 describe('scoringWeights config sanity', () => {

@@ -144,7 +144,7 @@ describe('configCommand', () => {
         });
     });
 
-    describe('execute — live-posting subcommand', () => {
+    describe('execute - live-posting subcommand', () => {
         it('disables live posting and confirms', async () => {
             setGuildLivePostingMock.mockResolvedValue(undefined);
             const interaction = makeInteraction({
@@ -197,7 +197,7 @@ describe('configCommand', () => {
         });
     });
 
-    describe('execute — view subcommand', () => {
+    describe('execute - view subcommand', () => {
         it('shows channel and live_posting from DB config', async () => {
             getGuildConfigMock.mockResolvedValue({
                 channel_id: 'c-123',
@@ -244,7 +244,7 @@ describe('configCommand', () => {
         });
     });
 
-    describe('execute — guildId guard', () => {
+    describe('execute - guildId guard', () => {
         it('replies with error when not in a guild', async () => {
             const interaction = makeInteraction({ guildId: null });
 

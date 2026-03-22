@@ -79,7 +79,7 @@ export async function setupAndStartDiscord(): Promise<void> {
         try {
             await handleSlashCommand(interaction);
         } catch (err: any) {
-            if (err?.code === 10062) return; // Interaction expired — nothing to do
+            if (err?.code === 10062) return; // Interaction expired - nothing to do
             console.error('[Diana] Slash command error:', err);
             const msg = 'An unexpected error occurred.';
             try {

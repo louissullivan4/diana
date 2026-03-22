@@ -53,23 +53,46 @@ function buildFunStats(candidates: InterCandidate[]): string {
     const lines: string[] = [];
 
     lines.push(
-        `💥 **Least damage** — ${linkedName(leastDamage)} (${formatNumber(leastDamage.avgDamage)} dmg/game)`
+        `💥 **Least damage** - ${linkedName(leastDamage)} (${formatNumber(leastDamage.avgDamage)} dmg/game)`
     );
     lines.push(
-        `⚰️ **Worst KDA** — ${linkedName(worstKda)} (${Number.isFinite(worstKda.kdaRatio) ? worstKda.kdaRatio.toFixed(2) : '0.00'} — ${worstKda.totalKills}/${worstKda.totalDeaths}/${worstKda.totalAssists})`
+        `⚰️ **Worst KDA** - ${linkedName(worstKda)} (${Number.isFinite(worstKda.kdaRatio) ? worstKda.kdaRatio.toFixed(2) : '0.00'} - ${worstKda.totalKills}/${worstKda.totalDeaths}/${worstKda.totalAssists})`
     );
     lines.push(
-        `👁️‍🗨️ **Worst vision** — ${linkedName(worstVision)} (avg ${formatNumber(worstVision.avgVisionScore, 1)})`
+        `👁️‍🗨️ **Worst vision** - ${linkedName(worstVision)} (avg ${formatNumber(worstVision.avgVisionScore, 1)})`
     );
     lines.push(
-        `🕒 **Most games** — ${linkedName(mostGames)} (${mostGames.matchesPlayed} game${mostGames.matchesPlayed === 1 ? '' : 's'})`
+        `🕒 **Most games** - ${linkedName(mostGames)} (${mostGames.matchesPlayed} game${mostGames.matchesPlayed === 1 ? '' : 's'})`
     );
     if (lowestWinRate) {
         const winPct = (lowestWinRate.winRate * 100).toFixed(1);
         lines.push(
-            `📉 **Lowest winrate** — ${linkedName(lowestWinRate)} (${winPct}% — ${lowestWinRate.wins}W/${lowestWinRate.losses}L)`
+            `📉 **Lowest winrate** - ${linkedName(lowestWinRate)} (${winPct}% - ${lowestWinRate.wins}W/${lowestWinRate.losses}L)`
         );
     }
+
+    return lines.join('\n');
+}
+
+function buildLeaderboard(candidates: InterCandidate[]): string {
+    const scored = [...candidates]
+        .filter((c) => c.scoredMatchesCount > 0)
+        .sort((a, b) => a.avgAiScore - b.avgAiScore);
+
+    if (scored.length === 0) return '';
+
+    const [winner, ...rest] = scored;
+    const lines: string[] = [];
+
+    lines.push(
+        `👑 **${linkedName(winner)}** - ${winner.avgAiScore} (${winner.scoredMatchesCount} game${winner.scoredMatchesCount === 1 ? '' : 's'})`
+    );
+
+    rest.slice(0, 5).forEach((c, i) => {
+        lines.push(
+            `${i + 2}. ${linkedName(c)} - ${c.avgAiScore} (${c.scoredMatchesCount} game${c.scoredMatchesCount === 1 ? '' : 's'})`
+        );
+    });
 
     return lines.join('\n');
 }
@@ -99,6 +122,14 @@ function buildEmbed(candidates: InterCandidate[]): EmbedBuilder {
         .setFooter({ text: 'Last week of matches' })
         .setTimestamp();
 
+    const leaderboard = buildLeaderboard(candidates);
+    if (leaderboard) {
+        embed.addFields({
+            name: 'Leaderboard',
+            value: leaderboard,
+        });
+    }
+
     const funStats = buildFunStats(candidates);
     if (funStats) {
         embed.addFields({
@@ -122,7 +153,7 @@ export const interOfTheWeekCommand: SlashCommand = {
 
             if (candidates.length === 0) {
                 await interaction.editReply(
-                    'No matches found in the last 7 days. Nobody is inting—yet.'
+                    'No matches found in the last 7 days. Nobody is inting-yet.'
                 );
                 return;
             }

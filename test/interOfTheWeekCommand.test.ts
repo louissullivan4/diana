@@ -279,6 +279,104 @@ describe('interOfTheWeekCommand', () => {
             );
         });
 
+        it('includes a Leaderboard field when candidates have scored matches', async () => {
+            getInterCandidatesLastWeekMock.mockResolvedValue([makeCandidate()]);
+
+            const interaction = {
+                deferReply: jest.fn().mockResolvedValue(undefined),
+                editReply: jest.fn().mockResolvedValue(undefined),
+            };
+
+            await interOfTheWeekCommand.execute(interaction as any);
+
+            const embed = interaction.editReply.mock.calls[0][0].embeds[0];
+            const leaderboard = embed.data.fields.find(
+                (f: any) => f.name === 'Leaderboard'
+            );
+            expect(leaderboard).toBeDefined();
+        });
+
+        it('leaderboard lists winner first with crown, then runners-up sorted by avgAiScore', async () => {
+            const players = [
+                makeCandidate({
+                    puuid: 'p1',
+                    displayName: 'Alpha',
+                    avgAiScore: 60,
+                }),
+                makeCandidate({
+                    puuid: 'p2',
+                    displayName: 'Beta',
+                    avgAiScore: 30,
+                }),
+                makeCandidate({
+                    puuid: 'p3',
+                    displayName: 'Gamma',
+                    avgAiScore: 50,
+                }),
+            ];
+            getInterCandidatesLastWeekMock.mockResolvedValue(players);
+
+            const interaction = {
+                deferReply: jest.fn().mockResolvedValue(undefined),
+                editReply: jest.fn().mockResolvedValue(undefined),
+            };
+
+            await interOfTheWeekCommand.execute(interaction as any);
+
+            const embed = interaction.editReply.mock.calls[0][0].embeds[0];
+            const leaderboard = embed.data.fields.find(
+                (f: any) => f.name === 'Leaderboard'
+            );
+            const lines: string[] = leaderboard.value.split('\n');
+            expect(lines[0]).toContain('Beta');
+            expect(lines[0]).toContain('👑');
+            expect(lines[1]).toContain('Gamma');
+            expect(lines[2]).toContain('Alpha');
+        });
+
+        it('leaderboard caps at winner + 5 runners-up', async () => {
+            const players = Array.from({ length: 8 }, (_, i) =>
+                makeCandidate({
+                    puuid: `p${i}`,
+                    displayName: `Player${i}`,
+                    avgAiScore: i * 10,
+                })
+            );
+            getInterCandidatesLastWeekMock.mockResolvedValue(players);
+
+            const interaction = {
+                deferReply: jest.fn().mockResolvedValue(undefined),
+                editReply: jest.fn().mockResolvedValue(undefined),
+            };
+
+            await interOfTheWeekCommand.execute(interaction as any);
+
+            const embed = interaction.editReply.mock.calls[0][0].embeds[0];
+            const leaderboard = embed.data.fields.find(
+                (f: any) => f.name === 'Leaderboard'
+            );
+            expect(leaderboard.value.split('\n')).toHaveLength(6);
+        });
+
+        it('leaderboard is absent when no candidates have scored matches', async () => {
+            getInterCandidatesLastWeekMock.mockResolvedValue([
+                makeCandidate({ scoredMatchesCount: 0, avgAiScore: 0 }),
+            ]);
+
+            const interaction = {
+                deferReply: jest.fn().mockResolvedValue(undefined),
+                editReply: jest.fn().mockResolvedValue(undefined),
+            };
+
+            await interOfTheWeekCommand.execute(interaction as any);
+
+            const embed = interaction.editReply.mock.calls[0][0].embeds[0];
+            const leaderboard = embed.data.fields.find(
+                (f: any) => f.name === 'Leaderboard'
+            );
+            expect(leaderboard).toBeUndefined();
+        });
+
         it('includes the candidate display name in the Fun Stats field value', async () => {
             const candidate = makeCandidate({
                 displayName: 'StatsTarget',

@@ -109,7 +109,7 @@ describe('getRoleNameTranslation', () => {
         expect(getRoleNameTranslation('')).toBe('Unknown Role');
     });
 
-    it('is case-sensitive — lowercase input does not match', () => {
+    it('is case-sensitive - lowercase input does not match', () => {
         expect(getRoleNameTranslation('top')).toBe('Unknown Role');
         expect(getRoleNameTranslation('jungle')).toBe('Unknown Role');
         expect(getRoleNameTranslation('bottom')).toBe('Unknown Role');

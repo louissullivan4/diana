@@ -4,7 +4,7 @@
  * Each participant in a match receives a score derived from role-specific
  * weighted stats. Stats are min-max normalised across all 10 participants in
  * the same match before weights are applied, so the score is always relative
- * to the actual lobby — a "good" CS for this match, not an absolute threshold.
+ * to the actual lobby - a "good" CS for this match, not an absolute threshold.
  *
  * Placements are assigned 1–10 where 1 is the best performer.
  */
@@ -16,7 +16,7 @@ export interface StatDef {
     source: 'direct' | 'challenges';
     /** When false the normalised value is flipped so that lower raw = higher score */
     higherIsBetter: boolean;
-    /** Contribution fraction — ideally all weights per role sum to 1.0 */
+    /** Contribution fraction - ideally all weights per role sum to 1.0 */
     weight: number;
 }
 
@@ -47,7 +47,7 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
                 higherIsBetter: true,
                 weight: 0.25,
             },
-            // Damage output — top laners are expected to threaten in team fights
+            // Damage output - top laners are expected to threaten in team fights
             {
                 key: 'totalDamageDealtToChampions',
                 source: 'direct',
@@ -68,7 +68,7 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
                 higherIsBetter: true,
                 weight: 0.1,
             },
-            // Gold parity — income signals win conditions being hit
+            // Gold parity - income signals win conditions being hit
             {
                 key: 'goldEarned',
                 source: 'direct',
@@ -202,7 +202,7 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
                 higherIsBetter: true,
                 weight: 0.1,
             },
-            // Mid is a high traffic area — vision matters
+            // Mid is a high traffic area - vision matters
             {
                 key: 'visionScore',
                 source: 'direct',
@@ -234,7 +234,7 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
                 higherIsBetter: true,
                 weight: 0.2,
             },
-            // KDA — ADCs die often but staying alive multiplies their damage
+            // KDA - ADCs die often but staying alive multiplies their damage
             {
                 key: 'kda',
                 source: 'challenges',
@@ -427,7 +427,7 @@ export function calculateMatchScores(
         }
     }
 
-    // Normalise every stat once across all participants — O(stats * participants)
+    // Normalise every stat once across all participants - O(stats * participants)
     const normalisedCache = new Map<string, number[]>();
     for (const [cacheKey, statDef] of allStatDefs) {
         const rawValues = participants.map((p) => getStatValue(p, statDef));
@@ -454,7 +454,7 @@ export function calculateMatchScores(
             }
         }
 
-        // Win bonus applied last so it cannot dominate — only breaks ties
+        // Win bonus applied last so it cannot dominate - only breaks ties
         if (participant.win) total += WIN_BONUS;
 
         return {
