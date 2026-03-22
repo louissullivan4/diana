@@ -39,7 +39,7 @@ The first plugin is **diana-league-bot**: League of Legends match tracking, summ
 Run the init SQL so the League plugin has tables and (optionally) seed summoners:
 
 ```bash
-psql -U postgres -d diana -f db/init/data.sql
+psql -U postgres -d diana
 ```
 
 Or use Docker:

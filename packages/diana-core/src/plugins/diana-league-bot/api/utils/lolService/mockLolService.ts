@@ -63,7 +63,10 @@ export class MockLolService implements ILolService {
         );
     }
 
-    async getRankEntriesByPUUID(puuid: string): Promise<SummonerLeagueDto[]> {
+    async getRankEntriesByPUUID(
+        puuid: string,
+        _region?: string
+    ): Promise<SummonerLeagueDto[]> {
         return JsonLoader.load<SummonerLeagueDto[]>(
             'riot_league_account_info.json'
         );

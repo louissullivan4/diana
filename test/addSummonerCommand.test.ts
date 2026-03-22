@@ -42,13 +42,21 @@ class MockSlashCommandBuilder {
 // ─── diana-core mocks ─────────────────────────────────────────────────────────
 
 const getAccountByRiotIdMock = jest.fn();
+const getRankEntriesByPUUIDMock = jest.fn().mockResolvedValue([]);
+const getMatchesByPUUIDMock = jest.fn().mockResolvedValue([]);
 const createLolServiceMock = jest.fn(() => ({
     getAccountByRiotId: getAccountByRiotIdMock,
+    getRankEntriesByPUUID: getRankEntriesByPUUIDMock,
+    getMatchesByPUUID: getMatchesByPUUIDMock,
 }));
 const getSummonerByPuuidMock = jest.fn();
 const createSummonerMock = jest.fn();
 const addSummonerToGuildMock = jest.fn();
 const isSummonerInGuildMock = jest.fn();
+const createRankHistoryMock = jest.fn().mockResolvedValue(undefined);
+const setSummonerCurrentMatchIdByPuuidMock = jest
+    .fn()
+    .mockResolvedValue(undefined);
 
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
@@ -68,6 +76,8 @@ jest.mock('diana-core', () => ({
     createSummoner: createSummonerMock,
     addSummonerToGuild: addSummonerToGuildMock,
     isSummonerInGuild: isSummonerInGuildMock,
+    createRankHistory: createRankHistoryMock,
+    setSummonerCurrentMatchIdByPuuid: setSummonerCurrentMatchIdByPuuidMock,
 }));
 
 const {

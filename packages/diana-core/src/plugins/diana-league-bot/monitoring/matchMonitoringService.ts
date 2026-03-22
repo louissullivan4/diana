@@ -5,7 +5,10 @@ import {
     getRankTagsById,
 } from '../api/utils/dataDragonService';
 import { createMatchDetail } from '../api/matches/matchService';
-import { calculateMatchScores } from '../scoring/scoringAlgorithm';
+import {
+    calculateMatchScores,
+    type PlayerScore,
+} from '../scoring/scoringAlgorithm';
 import { saveMatchScores } from '../scoring/scoringService';
 import {
     calculateRankChange,
@@ -38,10 +41,6 @@ const shouldForceDevelopmentTimers = Boolean(
 );
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 let lastSummonerMetadataSync = 0;
-
-async function getTrackedSummonerPuuids(): Promise<string[]> {
-    return getAllTrackedPuuids();
-}
 
 const buildDeepLolLink = (gameName: string, tagLine: string) => {
     const encodedGameName = encodeURIComponent(gameName);
@@ -163,8 +162,6 @@ const handleNewMatchCompleted = async (
 ) => {
     const { puuid, gameName: summonerName } = summoner;
 
-    const fullMatchId = newMatchId;
-
     let matchSummaryData: MatchV5DTOs.MatchDto = {
         metadata: { dataVersion: '', matchId: '', participants: [] },
         info: {
@@ -188,10 +185,10 @@ const handleNewMatchCompleted = async (
     };
 
     try {
-        matchSummaryData = await lolService.getMatchSummary(fullMatchId);
+        matchSummaryData = await lolService.getMatchSummary(newMatchId);
     } catch {
         console.error(
-            `[Error] Failed to get match summary for ${summonerName} (${fullMatchId})`
+            `[Error] Failed to get match summary for ${summonerName} (${newMatchId})`
         );
     }
 
@@ -200,7 +197,7 @@ const handleNewMatchCompleted = async (
     const teams = info.teams ?? [];
 
     const matchDetails = {
-        matchId: fullMatchId,
+        matchId: newMatchId,
         entryPlayerPuuid: puuid,
         gameCreation: info.gameCreation ?? 0,
         gameStartTime: info.gameStartTimestamp ?? 0,
@@ -215,31 +212,36 @@ const handleNewMatchCompleted = async (
         teams: JSON.stringify(teams),
     };
 
+    let scores: PlayerScore[] = [];
+    try {
+        scores = calculateMatchScores(participants as Record<string, any>[]);
+    } catch (scoringError) {
+        console.error(
+            `[Error] Failed to calculate match scores for [${newMatchId}]:`,
+            scoringError
+        );
+    }
+
     try {
         const createdMatchDetail = await createMatchDetail(matchDetails);
         if (createdMatchDetail) {
             console.log(
-                `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${fullMatchId})`
+                `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${newMatchId})`
             );
-            // Score all 10 participants — gated on new insert so two tracked
-            // summoners in the same match only trigger one scoring run.
             try {
-                const scores = calculateMatchScores(
-                    participants as Record<string, any>[]
-                );
-                await saveMatchScores(fullMatchId, scores);
+                await saveMatchScores(newMatchId, scores);
                 console.log(
-                    `[Info] [${new Date().toISOString()}] Saved match scores for [${fullMatchId}] (${scores.length} participants)`
+                    `[Info] [${new Date().toISOString()}] Saved match scores for [${newMatchId}] (${scores.length} participants)`
                 );
             } catch (scoringError) {
                 console.error(
-                    `[Error] Failed to calculate/save match scores for [${fullMatchId}]:`,
+                    `[Error] Failed to save match scores for [${newMatchId}]:`,
                     scoringError
                 );
             }
         } else {
             console.log(
-                `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping insert (matchId: ${fullMatchId})`
+                `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping insert (matchId: ${newMatchId})`
             );
         }
     } catch (error: any) {
@@ -255,19 +257,9 @@ const handleNewMatchCompleted = async (
     );
     const gameDuration = info.gameDuration ?? 0;
 
-    // Derive placement from the already-computed (or freshly computed) scores
-    let summonerPlacement: number | undefined;
-    let summonerAiScore: number | undefined;
-    try {
-        const allScores = calculateMatchScores(
-            participants as Record<string, any>[]
-        );
-        const myScore = allScores.find((s) => s.puuid === puuid);
-        summonerPlacement = myScore?.placement;
-        summonerAiScore = myScore?.score;
-    } catch {
-        // Non-fatal — notification will omit the placement field
-    }
+    const myScore = scores.find((s) => s.puuid === puuid);
+    const summonerPlacement = myScore?.placement;
+    const summonerAiScore = myScore?.score;
 
     let result = 'Lose';
     if (gameDuration < 300) result = 'Remake';
@@ -307,25 +299,31 @@ const handleNewMatchCompleted = async (
                     puuid,
                 };
 
-                await createRankHistory(
-                    newMatchId,
-                    puuid,
-                    summonerNewRankInfo.tier,
-                    summonerNewRankInfo.rank,
-                    summonerNewRankInfo.lp,
-                    matchRank
-                );
-
                 const rankChange = calculateRankChange(
                     oldRankInfo,
                     summonerNewRankInfo
                 );
-                checkForRankUp = await determineRankMovement(
+                checkForRankUp = determineRankMovement(
                     oldRankInfo,
                     summonerNewRankInfo
                 );
                 newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
                 lpChangeMsg = rankChange.lpChange;
+
+                try {
+                    await createRankHistory(
+                        newMatchId,
+                        puuid,
+                        summonerNewRankInfo.tier,
+                        summonerNewRankInfo.rank,
+                        summonerNewRankInfo.lp,
+                        matchRank
+                    );
+                } catch (dbError) {
+                    console.error(
+                        `[Error] Failed to save rank history for ${summonerName} (${newMatchId}): ${dbError}`
+                    );
+                }
             }
         }
     } catch (error) {
@@ -351,7 +349,6 @@ const handleNewMatchCompleted = async (
         aiScore: summonerAiScore,
     };
 
-    // Fan out notifications to all guilds tracking this summoner
     let anyMessageSent = false;
     try {
         const guildTargets = await getGuildsTrackingSummoner(puuid);
@@ -378,7 +375,6 @@ const handleNewMatchCompleted = async (
             }
         }
 
-        // Dev fallback: if no guild targets, use env var channel
         if (guildTargets.length === 0 && process.env.DISCORD_CHANNEL_ID) {
             const fallbackChannelId = process.env.DISCORD_CHANNEL_ID;
             const matchSummary = {
@@ -417,10 +413,6 @@ const handleNewMatchCompleted = async (
     await setSummonerCurrentMatchIdByPuuid(puuid, newMatchId);
 };
 
-/**
- * Creates a match monitoring tick function configured with the given config.
- * Used by diana-league-bot plugin to run on a cron.
- */
 export function createMatchMonitoringTick(
     config: LeagueBotConfig,
     messageAdapter: MessageAdapter | null | undefined
@@ -434,7 +426,7 @@ export function createMatchMonitoringTick(
         }
         const apiValid = await lolService.checkConnection();
         if (apiValid) {
-            const trackedPuuids = await getTrackedSummonerPuuids();
+            const trackedPuuids = await getAllTrackedPuuids();
 
             const now = Date.now();
             if (
@@ -467,16 +459,4 @@ export function createMatchMonitoringTick(
             );
         }
     };
-}
-
-/**
- * Single tick of match monitoring using default config.
- * @deprecated Use createMatchMonitoringTick with config instead.
- */
-export async function runMatchMonitoringTick(): Promise<void> {
-    const defaultConfig: LeagueBotConfig = {
-        matchCheckCron: '*/20 * * * * *',
-    };
-    const tick = createMatchMonitoringTick(defaultConfig, null);
-    return tick();
 }

@@ -4,13 +4,11 @@ import { matchRouter } from './api/matches/matchRoutes';
 import { createMatchMonitoringTick } from './monitoring/matchMonitoringService';
 import type { LeagueBotConfig } from './types';
 
-/** Default configuration for the League Bot plugin */
 const defaultConfig: LeagueBotConfig = {
     matchCheckCron: '*/20 * * * * *',
     defaultDiscordChannelId: undefined,
 };
 
-/** Config schema for the dashboard UI */
 const configSchema: ConfigField[] = [
     {
         key: 'matchCheckCron',
@@ -45,7 +43,6 @@ export const leagueBotPlugin: DianaPlugin = {
     },
 
     async onEnable(context) {
-        // Merge default config with stored config
         const storedConfig = context.getConfig<Partial<LeagueBotConfig>>();
         const config: LeagueBotConfig = { ...defaultConfig, ...storedConfig };
 
@@ -54,7 +51,6 @@ export const leagueBotPlugin: DianaPlugin = {
             defaultDiscordChannelId: config.defaultDiscordChannelId,
         });
 
-        // Create a monitoring tick function with the current config
         const runTick = createMatchMonitoringTick(
             config,
             context.getMessageAdapter()

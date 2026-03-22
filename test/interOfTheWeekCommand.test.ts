@@ -68,6 +68,8 @@ jest.mock('discord.js', () => ({
 
 jest.mock('diana-core', () => ({
     getInterCandidatesLastWeek: getInterCandidatesLastWeekMock,
+    backfillMissingScores: jest.fn().mockResolvedValue(0),
+    ONE_WEEK_IN_MS: 7 * 24 * 60 * 60 * 1000,
 }));
 
 const {
