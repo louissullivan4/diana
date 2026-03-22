@@ -36,26 +36,12 @@ The first plugin is **diana-league-bot**: League of Legends match tracking, summ
 
 ### Database (for diana-league-bot)
 
-Run the init SQL so the League plugin has tables and (optionally) seed summoners:
-
-```bash
-psql -U postgres -d diana -f db/init/data.sql
-```
-
-Or use Docker:
-
-```bash
-docker compose up -d postgres
-```
-
-Then run the SQL above against the container.
-
 ### Authentication Setup
 
 1. Run the users table migration:
 
 ```bash
-psql -U postgres -d diana -f db/migrations/001_add_users_table.sql
+npm run db:migrate
 ```
 
 2. Set the JWT secret in your `.env` file:

@@ -1,5 +1,5 @@
 import { db } from '../api/utils/db';
-import type { PlayerScore } from './scoringAlgorithm';
+import { calculateMatchScores, type PlayerScore } from './scoringAlgorithm';
 
 export interface MatchScoreRow {
     sid: number;
@@ -12,12 +12,6 @@ export interface MatchScoreRow {
     createdAt: string;
 }
 
-/**
- * Persist scores for every participant in a match.
- *
- * Idempotent — uses ON CONFLICT DO NOTHING so calling this twice for the same
- * match (e.g. when two tracked summoners play together) is safe.
- */
 export async function saveMatchScores(
     matchId: string,
     scores: PlayerScore[]
@@ -32,7 +26,6 @@ export async function saveMatchScores(
     }
 }
 
-/** Retrieve the score row for a specific participant in a match. */
 export async function getMatchScore(
     matchId: string,
     puuid: string
@@ -49,7 +42,43 @@ export async function getMatchScore(
     }
 }
 
-/** Retrieve all participant scores for a match, ordered by placement. */
+export async function backfillMissingScores(
+    sinceTimestamp: number
+): Promise<number> {
+    const result = await db.query(
+        `SELECT DISTINCT md."matchId", md."participants"
+         FROM match_details md
+         WHERE md."gameCreation" >= $1
+           AND NOT EXISTS (
+               SELECT 1 FROM match_scores ms WHERE ms."matchId" = md."matchId"
+           )`,
+        [sinceTimestamp]
+    );
+
+    let backfilled = 0;
+    for (const row of result.rows) {
+        try {
+            const participants =
+                typeof row.participants === 'string'
+                    ? JSON.parse(row.participants)
+                    : row.participants;
+            if (!Array.isArray(participants) || participants.length === 0)
+                continue;
+            const scores = calculateMatchScores(
+                participants as Record<string, any>[]
+            );
+            await saveMatchScores(row.matchId, scores);
+            backfilled++;
+        } catch (err) {
+            console.error(
+                `[Error] Failed to backfill scores for match ${row.matchId}:`,
+                err
+            );
+        }
+    }
+    return backfilled;
+}
+
 export async function getMatchScores(
     matchId: string
 ): Promise<MatchScoreRow[]> {

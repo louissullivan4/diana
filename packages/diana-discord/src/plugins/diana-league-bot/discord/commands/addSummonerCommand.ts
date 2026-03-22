@@ -7,6 +7,8 @@ import {
     createSummoner,
     addSummonerToGuild,
     isSummonerInGuild,
+    createRankHistory,
+    setSummonerCurrentMatchIdByPuuid,
 } from 'diana-core';
 
 const lolService = createLolService();
@@ -124,14 +126,12 @@ export const addSummonerCommand: SlashCommand = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            // Resolve account via Riot API
             const account = await lolService.getAccountByRiotId(
                 name,
                 tag,
                 meta.regionGroup as any
             );
 
-            // Check if already tracked in this guild
             const alreadyTracked = await isSummonerInGuild(
                 guildId,
                 account.puuid
@@ -143,7 +143,6 @@ export const addSummonerCommand: SlashCommand = {
                 return;
             }
 
-            // Upsert summoner in global summoners table
             const existing = await getSummonerByPuuid(account.puuid);
             const isNew = !existing;
             if (isNew) {
@@ -151,6 +150,22 @@ export const addSummonerCommand: SlashCommand = {
                     account.gameName,
                     account.tagLine
                 );
+
+                let initialTier = 'UNRANKED';
+                let initialRank = 'N/A';
+                let initialLp = 0;
+                const rankEntries = await lolService
+                    .getRankEntriesByPUUID(account.puuid, region as any)
+                    .catch(() => []);
+                const soloEntry = rankEntries.find(
+                    (e) => e.queueType === 'RANKED_SOLO_5x5'
+                );
+                if (soloEntry) {
+                    initialTier = soloEntry.tier;
+                    initialRank = soloEntry.rank;
+                    initialLp = soloEntry.leaguePoints;
+                }
+
                 await createSummoner({
                     puuid: account.puuid,
                     gameName: account.gameName,
@@ -159,14 +174,38 @@ export const addSummonerCommand: SlashCommand = {
                     matchRegionPrefix: meta.matchRegionPrefix,
                     regionGroup: meta.regionGroup,
                     deepLolLink,
-                    tier: 'UNRANKED',
-                    rank: 'N/A',
-                    lp: 0,
+                    tier: initialTier,
+                    rank: initialRank,
+                    lp: initialLp,
                     discordChannelId: undefined,
                 });
+
+                for (const entry of rankEntries) {
+                    await createRankHistory(
+                        'INIT',
+                        account.puuid,
+                        entry.tier,
+                        entry.rank,
+                        entry.leaguePoints,
+                        entry.queueType
+                    ).catch(() => {});
+                }
+
+                const recentMatches = await lolService
+                    .getMatchesByPUUID(
+                        account.puuid,
+                        1,
+                        meta.regionGroup as any
+                    )
+                    .catch(() => []);
+                if (recentMatches.length > 0) {
+                    await setSummonerCurrentMatchIdByPuuid(
+                        account.puuid,
+                        recentMatches[0]
+                    );
+                }
             }
 
-            // Link to this guild
             await addSummonerToGuild(
                 guildId,
                 account.puuid,

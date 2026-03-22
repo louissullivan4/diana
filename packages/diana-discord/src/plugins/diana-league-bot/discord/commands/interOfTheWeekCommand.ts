@@ -1,6 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
-import { getInterCandidatesLastWeek, type InterCandidate } from 'diana-core';
+import {
+    getInterCandidatesLastWeek,
+    backfillMissingScores,
+    ONE_WEEK_IN_MS,
+    type InterCandidate,
+} from 'diana-core';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -70,8 +75,6 @@ function buildFunStats(candidates: InterCandidate[]): string {
 }
 
 function buildEmbed(candidates: InterCandidate[]): EmbedBuilder {
-    // Crown the player with the worst average AI score (lowest = worst)
-    // Only consider players with at least one scored match
     const scoredCandidates = candidates.filter((c) => c.scoredMatchesCount > 0);
 
     let description: string;
@@ -115,13 +118,27 @@ export const interOfTheWeekCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            const candidates = await getInterCandidatesLastWeek();
+            let candidates = await getInterCandidatesLastWeek();
 
             if (candidates.length === 0) {
                 await interaction.editReply(
                     'No matches found in the last 7 days. Nobody is inting—yet.'
                 );
                 return;
+            }
+
+            const totalScoredMatches = candidates.reduce(
+                (sum, c) => sum + c.scoredMatchesCount,
+                0
+            );
+
+            if (totalScoredMatches < 5) {
+                const backfilled = await backfillMissingScores(
+                    Date.now() - ONE_WEEK_IN_MS
+                );
+                if (backfilled > 0) {
+                    candidates = await getInterCandidatesLastWeek();
+                }
             }
 
             const embed = buildEmbed(candidates);
