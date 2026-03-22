@@ -85,12 +85,12 @@ function buildLeaderboard(candidates: InterCandidate[]): string {
     const lines: string[] = [];
 
     lines.push(
-        `👑 **${linkedName(winner)}** - ${winner.avgAiScore} (${winner.scoredMatchesCount} game${winner.scoredMatchesCount === 1 ? '' : 's'})`
+        `1. **${linkedName(winner)}** - ${Math.round(winner.avgAiScore)} (${winner.scoredMatchesCount} game${winner.scoredMatchesCount === 1 ? '' : 's'})`
     );
 
     rest.slice(0, 5).forEach((c, i) => {
         lines.push(
-            `${i + 2}. ${linkedName(c)} - ${c.avgAiScore} (${c.scoredMatchesCount} game${c.scoredMatchesCount === 1 ? '' : 's'})`
+            `${i + 2}. ${linkedName(c)} - ${Math.round(c.avgAiScore)} (${c.scoredMatchesCount} game${c.scoredMatchesCount === 1 ? '' : 's'})`
         );
     });
 

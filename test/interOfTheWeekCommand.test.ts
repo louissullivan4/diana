@@ -329,7 +329,6 @@ describe('interOfTheWeekCommand', () => {
             );
             const lines: string[] = leaderboard.value.split('\n');
             expect(lines[0]).toContain('Beta');
-            expect(lines[0]).toContain('👑');
             expect(lines[1]).toContain('Gamma');
             expect(lines[2]).toContain('Alpha');
         });
