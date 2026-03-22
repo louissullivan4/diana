@@ -17,5 +17,24 @@ services:
             timeout: 5s
             retries: 5
 
+    migrate:
+        image: postgres:15-alpine
+        container_name: migrate
+        depends_on:
+            postgres:
+                condition: service_healthy
+        volumes:
+            - ./db/migrations:/migrations
+            - ./db/migrate.sh:/migrate.sh
+        environment:
+            - PGHOST=postgres
+            - PGPORT=5432
+            - PGUSER=postgres
+            - PGPASSWORD=admin
+            - PGDATABASE=diana
+            - MIGRATIONS_DIR=/migrations
+        command: ['sh', '/migrate.sh']
+        restart: 'no'
+
 volumes:
     postgres_data:
