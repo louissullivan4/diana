@@ -45,6 +45,7 @@ const removeSummonerFromGuildMock = jest.fn();
 
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
+    MessageFlags: { Ephemeral: 64 },
 }));
 
 jest.mock('diana-core', () => ({

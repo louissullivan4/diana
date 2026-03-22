@@ -58,7 +58,11 @@ export async function setupAndStartDiscord(): Promise<void> {
         await sendWelcomeMessage(guild);
     });
 
+    console.log('[Diana:debug] Registering interactionCreate listener...');
     client.on('interactionCreate', async (interaction: Interaction) => {
+        console.log(
+            `[Diana:debug] Interaction received: type=${interaction.type} user=${interaction.user?.tag ?? 'unknown'}`
+        );
         if (interaction.isAutocomplete()) {
             try {
                 await handleAutocomplete(interaction);

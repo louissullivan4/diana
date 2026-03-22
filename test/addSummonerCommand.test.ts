@@ -52,6 +52,7 @@ const isSummonerInGuildMock = jest.fn();
 
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
+    MessageFlags: { Ephemeral: 64 },
 }));
 
 jest.mock('twisted', () => ({
@@ -147,9 +148,7 @@ describe('addSummonerCommand', () => {
             };
             getAccountByRiotIdMock.mockResolvedValue(account);
             isSummonerInGuildMock.mockResolvedValue(false);
-            getSummonerByPuuidMock.mockResolvedValue({
-                msg: 'No summoner found',
-            });
+            getSummonerByPuuidMock.mockResolvedValue(null);
             createSummonerMock.mockResolvedValue(account);
             addSummonerToGuildMock.mockResolvedValue(undefined);
 

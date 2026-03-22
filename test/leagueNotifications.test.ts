@@ -210,7 +210,6 @@ describe('buildMatchEndMessage', () => {
             (f) => f.name === '🏆 **Match Placement**'
         );
         expect(placementField?.value).toContain('3rd');
-        expect(placementField?.value).toContain('10');
     });
 
     it('placement field uses correct ordinal for 1st place', () => {

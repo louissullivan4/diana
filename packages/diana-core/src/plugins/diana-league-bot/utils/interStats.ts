@@ -31,6 +31,7 @@ export interface RawMatchRow {
     gameDuration?: number | string | null;
     participants: string | RiotParticipant[];
     gameCreation: string | number | null;
+    aiScore?: number | string | null;
 }
 
 export interface InterCandidate {
@@ -50,6 +51,8 @@ export interface InterCandidate {
     kdaRatio: number;
     winRate: number;
     avgVisionScore: number;
+    avgAiScore: number;
+    scoredMatchesCount: number;
 }
 
 export function parseParticipants(
@@ -91,9 +94,11 @@ export async function getInterCandidatesSince(
             s."deepLolLink",
             md."matchId",
             md."participants",
-            md."gameCreation"
+            md."gameCreation",
+            ms."score" AS "aiScore"
         FROM summoners s
         JOIN match_details md ON md."entryPlayerPuuid" = s."puuid"
+        LEFT JOIN match_scores ms ON ms."matchId" = md."matchId" AND ms."puuid" = s."puuid"
         WHERE md."gameCreation" IS NOT NULL
           AND md."gameCreation" >= $1
     `;
@@ -110,12 +115,19 @@ export async function getInterCandidatesSince(
 
     const accumulator = new Map<
         string,
-        InterCandidate & { matchIds: Set<string> }
+        InterCandidate & { matchIds: Set<string>; totalAiScore: number }
     >();
 
     for (const row of rows) {
-        const { puuid, gameName, tagLine, deepLolLink, participants, matchId } =
-            row;
+        const {
+            puuid,
+            gameName,
+            tagLine,
+            deepLolLink,
+            participants,
+            matchId,
+            aiScore,
+        } = row;
 
         if (!matchId) continue;
         if (targetPuuid && puuid !== targetPuuid) continue;
@@ -140,6 +152,9 @@ export async function getInterCandidatesSince(
                 kdaRatio: 0,
                 winRate: 0,
                 avgVisionScore: 0,
+                avgAiScore: 0,
+                scoredMatchesCount: 0,
+                totalAiScore: 0,
                 matchIds: new Set<string>(),
             };
             accumulator.set(puuid, candidate);
@@ -170,6 +185,12 @@ export async function getInterCandidatesSince(
         candidate.losses += win ? 0 : 1;
         candidate.latestProfileIconId =
             participant.profileIcon ?? candidate.latestProfileIconId;
+
+        const parsedAiScore = aiScore != null ? Number(aiScore) : null;
+        if (parsedAiScore != null && Number.isFinite(parsedAiScore)) {
+            candidate.totalAiScore += parsedAiScore;
+            candidate.scoredMatchesCount += 1;
+        }
     }
 
     const candidates: InterCandidate[] = [];
@@ -185,8 +206,16 @@ export async function getInterCandidatesSince(
             ? entry.wins / entry.matchesPlayed
             : 0;
         const avgVisionScore = entry.totalVisionScore / entry.matchesPlayed;
+        const avgAiScore =
+            entry.scoredMatchesCount > 0
+                ? entry.totalAiScore / entry.scoredMatchesCount
+                : 0;
 
-        const { matchIds: _matchIds, ...rest } = entry;
+        const {
+            matchIds: _matchIds,
+            totalAiScore: _totalAiScore,
+            ...rest
+        } = entry;
 
         candidates.push({
             ...rest,
@@ -194,6 +223,7 @@ export async function getInterCandidatesSince(
             kdaRatio,
             winRate,
             avgVisionScore,
+            avgAiScore,
         });
     }
 

@@ -22,7 +22,7 @@
         "lint": "eslint --fix --ext .js,.jsx .",
         "lint:check": "eslint --ext .js,.jsx .",
         "build:check": "npm run build:check --workspaces --if-present",
-        "db:init": "psql $DATABASE_URL -f db/init/data.sql",
+        "db:migrate": "docker compose down -v && docker compose up --build -d",
         "db:seed": "psql $DATABASE_URL -f db/seed.sql",
         "backfill:matches": "npm run backfill:matches --workspace diana-core",
         "user": "npm run user --workspace apps/server",

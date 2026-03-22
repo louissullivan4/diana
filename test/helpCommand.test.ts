@@ -44,6 +44,7 @@ class MockEmbedBuilder {
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
     EmbedBuilder: MockEmbedBuilder,
+    MessageFlags: { Ephemeral: 64 },
 }));
 
 const {
@@ -84,7 +85,7 @@ describe('helpCommand', () => {
             await helpCommand.execute(interaction as any);
 
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ ephemeral: true })
+                expect.objectContaining({ flags: 64 })
             );
         });
 

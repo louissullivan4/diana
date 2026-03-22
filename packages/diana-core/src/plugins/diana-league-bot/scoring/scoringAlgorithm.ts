@@ -461,7 +461,8 @@ export function calculateMatchScores(
             puuid: String(participant.puuid ?? ''),
             participantId: Number(participant.participantId ?? idx + 1),
             role,
-            score: Math.round(total * 10000) / 10000,
+            // round this score and mupltiple by 100
+            score: Math.round((Math.round(total * 10000) / 10000) * 100),
             win: Boolean(participant.win),
         };
     });

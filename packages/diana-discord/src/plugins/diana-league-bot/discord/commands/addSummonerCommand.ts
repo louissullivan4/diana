@@ -76,15 +76,13 @@ export const addSummonerCommand: SlashCommand = {
             .addStringOption((option) =>
                 option
                     .setName('name')
-                    .setDescription(
-                        'Summoner game name (no tag, e.g. FM Stew).'
-                    )
+                    .setDescription('Summoner game name (no tag, e.g. Stew).')
                     .setRequired(true)
             )
             .addStringOption((option) =>
                 option
                     .setName('tag')
-                    .setDescription('Summoner tagline (e.g. RATS).')
+                    .setDescription('Summoner tagline (e.g. EUW).')
                     .setRequired(true)
             )
             .addStringOption((option) => {

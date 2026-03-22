@@ -257,12 +257,14 @@ const handleNewMatchCompleted = async (
 
     // Derive placement from the already-computed (or freshly computed) scores
     let summonerPlacement: number | undefined;
+    let summonerAiScore: number | undefined;
     try {
         const allScores = calculateMatchScores(
             participants as Record<string, any>[]
         );
         const myScore = allScores.find((s) => s.puuid === puuid);
         summonerPlacement = myScore?.placement;
+        summonerAiScore = myScore?.score;
     } catch {
         // Non-fatal — notification will omit the placement field
     }
@@ -346,6 +348,7 @@ const handleNewMatchCompleted = async (
         deepLolLink: summoner.deepLolLink || '',
         placement: summonerPlacement,
         totalPlayers: participants.length || undefined,
+        aiScore: summonerAiScore,
     };
 
     // Fan out notifications to all guilds tracking this summoner
@@ -397,6 +400,12 @@ const handleNewMatchCompleted = async (
                 };
                 await notifyRankChange(messageAdapter, rankChangeInfo);
             }
+        }
+
+        if (!anyMessageSent) {
+            console.warn(
+                `[Warn] [${new Date().toISOString()}] No notification sent for [${summonerName}] match ${newMatchId}: no channel configured for any tracking guild.`
+            );
         }
     } catch (error) {
         console.error(

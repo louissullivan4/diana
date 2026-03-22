@@ -52,6 +52,7 @@ jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
     PermissionFlagsBits: { ManageChannels: BigInt(16) },
     ChannelType: { GuildText: 0 },
+    MessageFlags: { Ephemeral: 64 },
 }));
 
 jest.mock('diana-core', () => ({
@@ -71,6 +72,8 @@ function makeInteraction(overrides: Record<string, unknown> = {}) {
             getChannel: jest.fn().mockReturnValue({ id: 'channel-456' }),
         },
         reply: jest.fn().mockResolvedValue(undefined),
+        deferReply: jest.fn().mockResolvedValue(undefined),
+        editReply: jest.fn().mockResolvedValue(undefined),
         ...overrides,
     };
 }
@@ -107,7 +110,7 @@ describe('setChannelCommand', () => {
                 'guild-123',
                 'channel-456'
             );
-            expect(interaction.reply).toHaveBeenCalledWith(
+            expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({
                     content: expect.stringContaining('<#channel-456>'),
                 })
@@ -120,8 +123,8 @@ describe('setChannelCommand', () => {
 
             await setChannelCommand.execute(interaction as any);
 
-            expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ ephemeral: true })
+            expect(interaction.deferReply).toHaveBeenCalledWith(
+                expect.objectContaining({ flags: 64 })
             );
         });
 
@@ -132,7 +135,7 @@ describe('setChannelCommand', () => {
 
             expect(setGuildChannelMock).not.toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ ephemeral: true })
+                expect.objectContaining({ flags: 64 })
             );
         });
     });

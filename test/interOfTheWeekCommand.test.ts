@@ -90,6 +90,8 @@ function makeCandidate(overrides: Record<string, unknown> = {}) {
         totalKills: 15,
         totalDeaths: 6,
         totalAssists: 10,
+        avgAiScore: 45.0,
+        scoredMatchesCount: 5,
         ...overrides,
     };
 }
@@ -195,7 +197,7 @@ describe('interOfTheWeekCommand', () => {
             expect(embed.data.description).toContain('FakeCrowned');
         });
 
-        it('embed includes a Stats field', async () => {
+        it('embed includes a Fun Stats field', async () => {
             getInterCandidatesLastWeekMock.mockResolvedValue([makeCandidate()]);
 
             const interaction = {
@@ -207,34 +209,23 @@ describe('interOfTheWeekCommand', () => {
 
             const embed = interaction.editReply.mock.calls[0][0].embeds[0];
             const statsField = embed.data.fields.find(
-                (f: any) => f.name === 'Stats'
+                (f: any) => f.name === 'Fun Stats'
             );
             expect(statsField).toBeDefined();
         });
 
-        it('handles two candidates and crowns the one with more category wins', async () => {
-            // InterPlayer has very bad stats in most categories → should win more crowns
+        it('crowns the candidate with the lowest average AI score', async () => {
             const bad = makeCandidate({
                 puuid: 'puuid-bad',
                 displayName: 'InterPlayer',
-                avgDamage: 100, // lowest (asc) → wins "least damage"
-                kdaRatio: 0.1, // lowest (asc) → wins "worst kda"
-                winRate: 0.0, // lowest (asc) → wins "lowest winrate"
-                matchesPlayed: 20, // highest (desc) → wins "most matches"
-                avgVisionScore: 1, // lowest (asc) → wins "worst vision"
-                wins: 0,
-                losses: 10,
+                avgAiScore: 20.0,
+                scoredMatchesCount: 5,
             });
             const good = makeCandidate({
                 puuid: 'puuid-good',
                 displayName: 'GoodPlayer',
-                avgDamage: 50000,
-                kdaRatio: 10,
-                winRate: 0.9,
-                matchesPlayed: 3,
-                avgVisionScore: 50,
-                wins: 9,
-                losses: 1,
+                avgAiScore: 75.0,
+                scoredMatchesCount: 5,
             });
 
             getInterCandidatesLastWeekMock.mockResolvedValue([good, bad]);
@@ -248,6 +239,25 @@ describe('interOfTheWeekCommand', () => {
 
             const embed = interaction.editReply.mock.calls[0][0].embeds[0];
             expect(embed.data.description).toContain('InterPlayer');
+            expect(embed.data.description).not.toContain('GoodPlayer');
+        });
+
+        it('shows "no scored matches" message when no candidates have AI scores', async () => {
+            const candidate = makeCandidate({
+                scoredMatchesCount: 0,
+                avgAiScore: 0,
+            });
+            getInterCandidatesLastWeekMock.mockResolvedValue([candidate]);
+
+            const interaction = {
+                deferReply: jest.fn().mockResolvedValue(undefined),
+                editReply: jest.fn().mockResolvedValue(undefined),
+            };
+
+            await interOfTheWeekCommand.execute(interaction as any);
+
+            const embed = interaction.editReply.mock.calls[0][0].embeds[0];
+            expect(embed.data.description).toMatch(/no scored matches/i);
         });
 
         it('replies with an error message when getInterCandidatesLastWeek throws', async () => {
@@ -267,7 +277,7 @@ describe('interOfTheWeekCommand', () => {
             );
         });
 
-        it('includes the candidate display name in the Stats field value', async () => {
+        it('includes the candidate display name in the Fun Stats field value', async () => {
             const candidate = makeCandidate({
                 displayName: 'StatsTarget',
                 matchesPlayed: 5,
@@ -283,7 +293,7 @@ describe('interOfTheWeekCommand', () => {
 
             const embed = interaction.editReply.mock.calls[0][0].embeds[0];
             const statsField = embed.data.fields.find(
-                (f: any) => f.name === 'Stats'
+                (f: any) => f.name === 'Fun Stats'
             );
             expect(statsField.value).toContain('StatsTarget');
         });

@@ -85,6 +85,7 @@ jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
     PermissionFlagsBits: { ManageGuild: BigInt(32) },
     EmbedBuilder: MockEmbedBuilder,
+    MessageFlags: { Ephemeral: 64 },
 }));
 
 jest.mock('diana-core', () => ({
@@ -117,6 +118,8 @@ function makeInteraction(
             getBoolean: jest.fn().mockReturnValue(enabled),
         },
         reply: jest.fn().mockResolvedValue(undefined),
+        deferReply: jest.fn().mockResolvedValue(undefined),
+        editReply: jest.fn().mockResolvedValue(undefined),
     };
 }
 
@@ -155,7 +158,7 @@ describe('configCommand', () => {
                 'guild-7',
                 false
             );
-            expect(interaction.reply).toHaveBeenCalledWith(
+            expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({
                     content: expect.stringContaining('disabled'),
                 })
@@ -175,7 +178,7 @@ describe('configCommand', () => {
                 'guild-7',
                 true
             );
-            expect(interaction.reply).toHaveBeenCalledWith(
+            expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({
                     content: expect.stringContaining('enabled'),
                 })
@@ -188,8 +191,8 @@ describe('configCommand', () => {
 
             await configCommand.execute(interaction as any);
 
-            expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ ephemeral: true })
+            expect(interaction.deferReply).toHaveBeenCalledWith(
+                expect.objectContaining({ flags: 64 })
             );
         });
     });
@@ -204,7 +207,7 @@ describe('configCommand', () => {
 
             await configCommand.execute(interaction as any);
 
-            expect(interaction.reply).toHaveBeenCalledWith(
+            expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
@@ -215,7 +218,7 @@ describe('configCommand', () => {
 
             await configCommand.execute(interaction as any);
 
-            const reply = interaction.reply.mock.calls[0][0];
+            const reply = interaction.editReply.mock.calls[0][0];
             const embed: MockEmbedBuilder = reply.embeds[0];
             const channelField = embed.data.fields.find(
                 (f: any) => f.name === 'Notification Channel'
@@ -232,7 +235,7 @@ describe('configCommand', () => {
 
             await configCommand.execute(interaction as any);
 
-            const reply = interaction.reply.mock.calls[0][0];
+            const reply = interaction.editReply.mock.calls[0][0];
             const embed: MockEmbedBuilder = reply.embeds[0];
             const liveField = embed.data.fields.find(
                 (f: any) => f.name === 'Live Match Posting'

@@ -6,6 +6,9 @@ import {
     type AutocompleteInteraction,
 } from 'discord.js';
 import type { SlashCommand } from './commandTypes';
+import { getGuildConfig } from 'diana-core';
+
+const CHANNEL_EXEMPT_COMMANDS = new Set(['help', 'setchannel']);
 
 const commandHandlers = new Map<string, SlashCommand['execute']>();
 const autocompleteHandlers = new Map<
@@ -30,6 +33,9 @@ export function registerSlashCommands(commands: SlashCommand[]): void {
         }
     }
     commandDefinitions = [...commandDefinitions, ...commands];
+    console.log(
+        `[Diana] Registered commands: [${[...commandHandlers.keys()].join(', ')}]`
+    );
 }
 
 export function getRegisteredCommands(): SlashCommand[] {
@@ -79,12 +85,31 @@ export async function handleSlashCommand(
 ): Promise<void> {
     const handler = commandHandlers.get(interaction.commandName);
     if (!handler) {
+        console.warn(
+            `[Diana] No handler for command "${interaction.commandName}". Registered: [${[...commandHandlers.keys()].join(', ')}]`
+        );
         await interaction.reply({
             content: 'This command is not available.',
             flags: MessageFlags.Ephemeral,
         });
         return;
     }
+
+    if (
+        !CHANNEL_EXEMPT_COMMANDS.has(interaction.commandName) &&
+        interaction.guildId
+    ) {
+        const guildConfig = await getGuildConfig(interaction.guildId);
+        if (!guildConfig?.channel_id) {
+            await interaction.reply({
+                content:
+                    'No notification channel has been set up yet. Please run `/setchannel` first.',
+                flags: MessageFlags.Ephemeral,
+            });
+            return;
+        }
+    }
+
     await handler(interaction);
 }
 
