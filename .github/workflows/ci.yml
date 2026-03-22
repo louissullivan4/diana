@@ -221,22 +221,6 @@ jobs:
           sbom: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           provenance: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'mode=max' || '' }}
 
-      - name: Trivy image scan (main push only)
-        id: trivy
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
-          format: sarif
-          output: trivy-results.sarif
-
-      - name: Upload Trivy SARIF to Code Scanning (main push only)
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.trivy.outcome == 'success' }}
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: trivy-results.sarif
-
       - name: Generate downloadable SBOM artifact (main push only)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: anchore/sbom-action@v0
