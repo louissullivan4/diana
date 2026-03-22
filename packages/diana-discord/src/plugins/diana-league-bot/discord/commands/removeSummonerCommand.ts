@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
     getSummonersForGuild,
@@ -20,7 +20,9 @@ export const removeSummonerCommand: SlashCommand = {
         .addStringOption((option) =>
             option
                 .setName('tag')
-                .setDescription('Summoner tagline (required if multiple with the same name).')
+                .setDescription(
+                    'Summoner tagline (required if multiple with the same name).'
+                )
                 .setRequired(false)
                 .setAutocomplete(true)
         ),
@@ -30,7 +32,7 @@ export const removeSummonerCommand: SlashCommand = {
         if (!guildId) {
             await interaction.reply({
                 content: 'This command can only be used in a server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -38,15 +40,19 @@ export const removeSummonerCommand: SlashCommand = {
         const name = interaction.options.getString('name', true).trim();
         const tag = interaction.options.getString('tag')?.trim() ?? null;
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             const guildSummoners = await getSummonersForGuild(guildId);
 
             const matches = guildSummoners.filter((s: GuildSummonerRow) => {
-                const nameMatch = s.gameName.toLowerCase() === name.toLowerCase();
+                const nameMatch =
+                    s.gameName.toLowerCase() === name.toLowerCase();
                 if (tag) {
-                    return nameMatch && s.tagLine.toLowerCase() === tag.toLowerCase();
+                    return (
+                        nameMatch &&
+                        s.tagLine.toLowerCase() === tag.toLowerCase()
+                    );
                 }
                 return nameMatch;
             });
@@ -59,7 +65,11 @@ export const removeSummonerCommand: SlashCommand = {
             }
 
             if (matches.length > 1) {
-                const list = matches.map((s: GuildSummonerRow) => `• ${s.gameName}#${s.tagLine}`).join('\n');
+                const list = matches
+                    .map(
+                        (s: GuildSummonerRow) => `• ${s.gameName}#${s.tagLine}`
+                    )
+                    .join('\n');
                 await interaction.editReply(
                     `Multiple summoners match **${name}**. Please re-run with a tag:\n${list}`
                 );
@@ -93,23 +103,39 @@ export const removeSummonerCommand: SlashCommand = {
             const focusedValue = focused.value.toString().toLowerCase();
 
             if (focused.name === 'name') {
-                const allNames: string[] = guildSummoners.map((s: GuildSummonerRow) => s.gameName);
+                const allNames: string[] = guildSummoners.map(
+                    (s: GuildSummonerRow) => s.gameName
+                );
                 const unique = [...new Set(allNames)];
                 const filtered = unique
-                    .filter((n: string) => n.toLowerCase().startsWith(focusedValue))
+                    .filter((n: string) =>
+                        n.toLowerCase().startsWith(focusedValue)
+                    )
                     .slice(0, 25);
-                await interaction.respond(filtered.map((n: string) => ({ name: n, value: n })));
+                await interaction.respond(
+                    filtered.map((n: string) => ({ name: n, value: n }))
+                );
                 return;
             }
 
             if (focused.name === 'tag') {
-                const selectedName = interaction.options.getString('name')?.toLowerCase();
+                const selectedName = interaction.options
+                    .getString('name')
+                    ?.toLowerCase();
                 const tags: string[] = guildSummoners
-                    .filter((s: GuildSummonerRow) => !selectedName || s.gameName.toLowerCase() === selectedName)
+                    .filter(
+                        (s: GuildSummonerRow) =>
+                            !selectedName ||
+                            s.gameName.toLowerCase() === selectedName
+                    )
                     .map((s: GuildSummonerRow) => s.tagLine)
-                    .filter((t: string) => t.toLowerCase().startsWith(focusedValue));
+                    .filter((t: string) =>
+                        t.toLowerCase().startsWith(focusedValue)
+                    );
                 const unique = [...new Set(tags)].slice(0, 25);
-                await interaction.respond(unique.map((t: string) => ({ name: t, value: t })));
+                await interaction.respond(
+                    unique.map((t: string) => ({ name: t, value: t }))
+                );
                 return;
             }
 

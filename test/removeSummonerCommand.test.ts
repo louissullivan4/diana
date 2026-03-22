@@ -4,17 +4,32 @@ export {};
 
 class MockStringOption {
     public config: Record<string, unknown> = {};
-    setName(n: string) { this.config.name = n; return this; }
-    setDescription(_d: string) { return this; }
-    setRequired(r: boolean) { this.config.required = r; return this; }
-    setAutocomplete(_a: boolean) { return this; }
+    setName(n: string) {
+        this.config.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
+    setRequired(r: boolean) {
+        this.config.required = r;
+        return this;
+    }
+    setAutocomplete(_a: boolean) {
+        return this;
+    }
 }
 
 class MockSlashCommandBuilder {
     public name?: string;
     public options: MockStringOption[] = [];
-    setName(n: string) { this.name = n; return this; }
-    setDescription(_d: string) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
     addStringOption(cb: (o: MockStringOption) => unknown) {
         const o = new MockStringOption();
         cb(o);
@@ -28,26 +43,32 @@ class MockSlashCommandBuilder {
 const getSummonersForGuildMock = jest.fn();
 const removeSummonerFromGuildMock = jest.fn();
 
-jest.mock('discord.js', () => ({ SlashCommandBuilder: MockSlashCommandBuilder }));
+jest.mock('discord.js', () => ({
+    SlashCommandBuilder: MockSlashCommandBuilder,
+}));
 
 jest.mock('diana-core', () => ({
     getSummonersForGuild: getSummonersForGuildMock,
     removeSummonerFromGuild: removeSummonerFromGuildMock,
 }));
 
-const { removeSummonerCommand } = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/removeSummonerCommand');
+const {
+    removeSummonerCommand,
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/removeSummonerCommand');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const ALICE = { puuid: 'p-alice', gameName: 'Alice', tagLine: 'EUW' };
-const BOB   = { puuid: 'p-bob',   gameName: 'Bob',   tagLine: 'NA1' };
+const BOB = { puuid: 'p-bob', gameName: 'Bob', tagLine: 'NA1' };
 const ALICE2 = { puuid: 'p-alice2', gameName: 'Alice', tagLine: 'KR' };
 
-function makeInteraction(opts: {
-    name?: string;
-    tag?: string | null;
-    guildId?: string | null;
-} = {}) {
+function makeInteraction(
+    opts: {
+        name?: string;
+        tag?: string | null;
+        guildId?: string | null;
+    } = {}
+) {
     const { name = 'Alice', tag = null, guildId = 'guild-1' } = opts;
     return {
         guildId,
@@ -77,12 +98,16 @@ describe('removeSummonerCommand', () => {
         });
 
         it('name option is required', () => {
-            const opt = removeSummonerCommand.data.options.find((o: any) => o.config.name === 'name');
+            const opt = removeSummonerCommand.data.options.find(
+                (o: any) => o.config.name === 'name'
+            );
             expect(opt?.config.required).toBe(true);
         });
 
         it('tag option is optional', () => {
-            const opt = removeSummonerCommand.data.options.find((o: any) => o.config.name === 'tag');
+            const opt = removeSummonerCommand.data.options.find(
+                (o: any) => o.config.name === 'tag'
+            );
             expect(opt?.config.required).toBe(false);
         });
     });
@@ -95,7 +120,10 @@ describe('removeSummonerCommand', () => {
             const interaction = makeInteraction({ name: 'Alice' });
             await removeSummonerCommand.execute(interaction as any);
 
-            expect(removeSummonerFromGuildMock).toHaveBeenCalledWith('guild-1', 'p-alice');
+            expect(removeSummonerFromGuildMock).toHaveBeenCalledWith(
+                'guild-1',
+                'p-alice'
+            );
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.stringContaining('Stopped tracking')
             );
@@ -108,7 +136,10 @@ describe('removeSummonerCommand', () => {
             const interaction = makeInteraction({ name: 'Alice', tag: 'EUW' });
             await removeSummonerCommand.execute(interaction as any);
 
-            expect(removeSummonerFromGuildMock).toHaveBeenCalledWith('guild-1', 'p-alice');
+            expect(removeSummonerFromGuildMock).toHaveBeenCalledWith(
+                'guild-1',
+                'p-alice'
+            );
         });
 
         it('asks for tag disambiguation when multiple summoners match name', async () => {
@@ -142,7 +173,11 @@ describe('removeSummonerCommand', () => {
 
             expect(getSummonersForGuildMock).not.toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('only be used in a server') })
+                expect.objectContaining({
+                    content: expect.stringContaining(
+                        'only be used in a server'
+                    ),
+                })
             );
         });
 
@@ -164,7 +199,9 @@ describe('removeSummonerCommand', () => {
             const interaction = {
                 guildId: 'guild-1',
                 options: {
-                    getFocused: jest.fn().mockReturnValue({ name: 'name', value: 'Al' }),
+                    getFocused: jest
+                        .fn()
+                        .mockReturnValue({ name: 'name', value: 'Al' }),
                     getString: jest.fn().mockReturnValue(null),
                 },
                 respond: jest.fn().mockResolvedValue(undefined),
@@ -186,7 +223,9 @@ describe('removeSummonerCommand', () => {
             const interaction = {
                 guildId: 'guild-1',
                 options: {
-                    getFocused: jest.fn().mockReturnValue({ name: 'tag', value: '' }),
+                    getFocused: jest
+                        .fn()
+                        .mockReturnValue({ name: 'tag', value: '' }),
                     getString: jest.fn().mockReturnValue('Alice'),
                 },
                 respond: jest.fn().mockResolvedValue(undefined),
@@ -195,7 +234,10 @@ describe('removeSummonerCommand', () => {
 
             await removeSummonerCommand.autocomplete(interaction as any);
 
-            const responded = interaction.respond.mock.calls[0][0] as { name: string; value: string }[];
+            const responded = interaction.respond.mock.calls[0][0] as {
+                name: string;
+                value: string;
+            }[];
             expect(responded.map((r) => r.value)).toContain('EUW');
             expect(responded.map((r) => r.value)).toContain('KR');
             expect(responded.map((r) => r.value)).not.toContain('NA1');

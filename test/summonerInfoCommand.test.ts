@@ -319,7 +319,11 @@ describe('summonerInfoCommand', () => {
 
             await summonerInfoCommand.autocomplete(interaction as any);
 
-            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith('fa', 25, undefined);
+            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith(
+                'fa',
+                25,
+                undefined
+            );
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'Faker', value: 'Faker' },
                 { name: 'Fabulous', value: 'Fabulous' },

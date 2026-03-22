@@ -4,17 +4,33 @@ export {};
 
 class MockStringOption {
     public config: Record<string, unknown> = {};
-    setName(n: string) { this.config.name = n; return this; }
-    setDescription(d: string) { this.config.description = d; return this; }
-    setRequired(r: boolean) { this.config.required = r; return this; }
-    addChoices(..._choices: unknown[]) { return this; }
+    setName(n: string) {
+        this.config.name = n;
+        return this;
+    }
+    setDescription(d: string) {
+        this.config.description = d;
+        return this;
+    }
+    setRequired(r: boolean) {
+        this.config.required = r;
+        return this;
+    }
+    addChoices(..._choices: unknown[]) {
+        return this;
+    }
 }
 
 class MockSlashCommandBuilder {
     public name?: string;
     public options: MockStringOption[] = [];
-    setName(n: string) { this.name = n; return this; }
-    setDescription(_d: string) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
     addStringOption(cb: (o: MockStringOption) => unknown) {
         const o = new MockStringOption();
         cb(o);
@@ -26,13 +42,17 @@ class MockSlashCommandBuilder {
 // ─── diana-core mocks ─────────────────────────────────────────────────────────
 
 const getAccountByRiotIdMock = jest.fn();
-const createLolServiceMock = jest.fn(() => ({ getAccountByRiotId: getAccountByRiotIdMock }));
+const createLolServiceMock = jest.fn(() => ({
+    getAccountByRiotId: getAccountByRiotIdMock,
+}));
 const getSummonerByPuuidMock = jest.fn();
 const createSummonerMock = jest.fn();
 const addSummonerToGuildMock = jest.fn();
 const isSummonerInGuildMock = jest.fn();
 
-jest.mock('discord.js', () => ({ SlashCommandBuilder: MockSlashCommandBuilder }));
+jest.mock('discord.js', () => ({
+    SlashCommandBuilder: MockSlashCommandBuilder,
+}));
 
 jest.mock('twisted', () => ({
     Constants: {
@@ -49,16 +69,20 @@ jest.mock('diana-core', () => ({
     isSummonerInGuild: isSummonerInGuildMock,
 }));
 
-const { addSummonerCommand } = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/addSummonerCommand');
+const {
+    addSummonerCommand,
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/addSummonerCommand');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeInteraction(opts: {
-    name?: string;
-    tag?: string;
-    region?: string;
-    guildId?: string | null;
-} = {}) {
+function makeInteraction(
+    opts: {
+        name?: string;
+        tag?: string;
+        region?: string;
+        guildId?: string | null;
+    } = {}
+) {
     const {
         name = 'FM Stew',
         tag = 'RATS',
@@ -96,45 +120,75 @@ describe('addSummonerCommand', () => {
         });
 
         it('has required name and tag options', () => {
-            const nameOpt = addSummonerCommand.data.options.find((o: any) => o.config.name === 'name');
-            const tagOpt = addSummonerCommand.data.options.find((o: any) => o.config.name === 'tag');
+            const nameOpt = addSummonerCommand.data.options.find(
+                (o: any) => o.config.name === 'name'
+            );
+            const tagOpt = addSummonerCommand.data.options.find(
+                (o: any) => o.config.name === 'tag'
+            );
             expect(nameOpt?.config.required).toBe(true);
             expect(tagOpt?.config.required).toBe(true);
         });
 
         it('has an optional region option', () => {
-            const regionOpt = addSummonerCommand.data.options.find((o: any) => o.config.name === 'region');
+            const regionOpt = addSummonerCommand.data.options.find(
+                (o: any) => o.config.name === 'region'
+            );
             expect(regionOpt?.config.required).toBe(false);
         });
     });
 
     describe('execute', () => {
         it('adds a new summoner and links to guild', async () => {
-            const account = { puuid: 'puuid-1', gameName: 'FM Stew', tagLine: 'RATS' };
+            const account = {
+                puuid: 'puuid-1',
+                gameName: 'FM Stew',
+                tagLine: 'RATS',
+            };
             getAccountByRiotIdMock.mockResolvedValue(account);
             isSummonerInGuildMock.mockResolvedValue(false);
-            getSummonerByPuuidMock.mockResolvedValue({ msg: 'No summoner found' });
+            getSummonerByPuuidMock.mockResolvedValue({
+                msg: 'No summoner found',
+            });
             createSummonerMock.mockResolvedValue(account);
             addSummonerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction();
             await addSummonerCommand.execute(interaction as any);
 
-            expect(getAccountByRiotIdMock).toHaveBeenCalledWith('FM Stew', 'RATS', expect.any(String));
-            expect(createSummonerMock).toHaveBeenCalledWith(
-                expect.objectContaining({ puuid: 'puuid-1', gameName: 'FM Stew' })
+            expect(getAccountByRiotIdMock).toHaveBeenCalledWith(
+                'FM Stew',
+                'RATS',
+                expect.any(String)
             );
-            expect(addSummonerToGuildMock).toHaveBeenCalledWith('guild-99', 'puuid-1', 'user-111');
+            expect(createSummonerMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    puuid: 'puuid-1',
+                    gameName: 'FM Stew',
+                })
+            );
+            expect(addSummonerToGuildMock).toHaveBeenCalledWith(
+                'guild-99',
+                'puuid-1',
+                'user-111'
+            );
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.stringContaining('FM Stew#RATS')
             );
         });
 
         it('skips createSummoner when summoner already exists globally', async () => {
-            const account = { puuid: 'puuid-2', gameName: 'FM Stew', tagLine: 'RATS' };
+            const account = {
+                puuid: 'puuid-2',
+                gameName: 'FM Stew',
+                tagLine: 'RATS',
+            };
             getAccountByRiotIdMock.mockResolvedValue(account);
             isSummonerInGuildMock.mockResolvedValue(false);
-            getSummonerByPuuidMock.mockResolvedValue({ puuid: 'puuid-2', gameName: 'FM Stew' });
+            getSummonerByPuuidMock.mockResolvedValue({
+                puuid: 'puuid-2',
+                gameName: 'FM Stew',
+            });
             addSummonerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction();
@@ -145,7 +199,11 @@ describe('addSummonerCommand', () => {
         });
 
         it('replies with "already tracked" when summoner is already in guild', async () => {
-            const account = { puuid: 'puuid-3', gameName: 'FM Stew', tagLine: 'RATS' };
+            const account = {
+                puuid: 'puuid-3',
+                gameName: 'FM Stew',
+                tagLine: 'RATS',
+            };
             getAccountByRiotIdMock.mockResolvedValue(account);
             isSummonerInGuildMock.mockResolvedValue(true);
 
@@ -189,7 +247,11 @@ describe('addSummonerCommand', () => {
 
             expect(getAccountByRiotIdMock).not.toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('only be used in a server') })
+                expect.objectContaining({
+                    content: expect.stringContaining(
+                        'only be used in a server'
+                    ),
+                })
             );
         });
     });

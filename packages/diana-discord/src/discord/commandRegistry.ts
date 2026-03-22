@@ -1,6 +1,7 @@
 import {
     REST,
     Routes,
+    MessageFlags,
     type ChatInputCommandInteraction,
     type AutocompleteInteraction,
 } from 'discord.js';
@@ -80,7 +81,7 @@ export async function handleSlashCommand(
     if (!handler) {
         await interaction.reply({
             content: 'This command is not available.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }

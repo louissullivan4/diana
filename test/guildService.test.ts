@@ -21,7 +21,11 @@ describe('guildService', () => {
 
     describe('getGuildConfig', () => {
         it('returns config row when found', async () => {
-            const row = { guild_id: 'g1', channel_id: 'c1', live_posting: true };
+            const row = {
+                guild_id: 'g1',
+                channel_id: 'c1',
+                live_posting: true,
+            };
             queryMock.mockResolvedValue({ rows: [row] });
 
             const result = await guildService.getGuildConfig('g1');
@@ -46,7 +50,11 @@ describe('guildService', () => {
 
     describe('getOrCreateGuildConfig', () => {
         it('upserts and returns the config row', async () => {
-            const row = { guild_id: 'g1', channel_id: null, live_posting: true };
+            const row = {
+                guild_id: 'g1',
+                channel_id: null,
+                live_posting: true,
+            };
             queryMock.mockResolvedValue({ rows: [row] });
 
             const result = await guildService.getOrCreateGuildConfig('g1');
@@ -63,7 +71,11 @@ describe('guildService', () => {
 
     describe('setGuildChannel', () => {
         it('upserts channel_id and returns updated row', async () => {
-            const row = { guild_id: 'g1', channel_id: 'c99', live_posting: true };
+            const row = {
+                guild_id: 'g1',
+                channel_id: 'c99',
+                live_posting: true,
+            };
             queryMock.mockResolvedValue({ rows: [row] });
 
             const result = await guildService.setGuildChannel('g1', 'c99');
@@ -80,7 +92,11 @@ describe('guildService', () => {
 
     describe('setGuildLivePosting', () => {
         it('sets live_posting to false', async () => {
-            const row = { guild_id: 'g1', channel_id: 'c1', live_posting: false };
+            const row = {
+                guild_id: 'g1',
+                channel_id: 'c1',
+                live_posting: false,
+            };
             queryMock.mockResolvedValue({ rows: [row] });
 
             const result = await guildService.setGuildLivePosting('g1', false);
@@ -93,16 +109,20 @@ describe('guildService', () => {
         });
 
         it('sets live_posting to true', async () => {
-            const row = { guild_id: 'g1', channel_id: 'c1', live_posting: true };
+            const row = {
+                guild_id: 'g1',
+                channel_id: 'c1',
+                live_posting: true,
+            };
             queryMock.mockResolvedValue({ rows: [row] });
 
             const result = await guildService.setGuildLivePosting('g1', true);
 
             expect(result).toBe(row);
-            expect(queryMock).toHaveBeenCalledWith(
-                expect.anything(),
-                ['g1', true]
-            );
+            expect(queryMock).toHaveBeenCalledWith(expect.anything(), [
+                'g1',
+                true,
+            ]);
         });
     });
 
@@ -112,7 +132,11 @@ describe('guildService', () => {
         it('inserts with addedBy when provided', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
-            await guildService.addSummonerToGuild('g1', 'puuid-abc', 'user-123');
+            await guildService.addSummonerToGuild(
+                'g1',
+                'puuid-abc',
+                'user-123'
+            );
 
             expect(queryMock).toHaveBeenCalledWith(
                 expect.stringContaining('guild_summoners'),
@@ -125,10 +149,11 @@ describe('guildService', () => {
 
             await guildService.addSummonerToGuild('g1', 'puuid-abc');
 
-            expect(queryMock).toHaveBeenCalledWith(
-                expect.anything(),
-                ['g1', 'puuid-abc', null]
-            );
+            expect(queryMock).toHaveBeenCalledWith(expect.anything(), [
+                'g1',
+                'puuid-abc',
+                null,
+            ]);
         });
     });
 
@@ -136,9 +161,15 @@ describe('guildService', () => {
 
     describe('removeSummonerFromGuild', () => {
         it('returns true when a row was deleted', async () => {
-            queryMock.mockResolvedValue({ rows: [{ puuid: 'p1' }], rowCount: 1 });
+            queryMock.mockResolvedValue({
+                rows: [{ puuid: 'p1' }],
+                rowCount: 1,
+            });
 
-            const result = await guildService.removeSummonerFromGuild('g1', 'p1');
+            const result = await guildService.removeSummonerFromGuild(
+                'g1',
+                'p1'
+            );
 
             expect(result).toBe(true);
             expect(queryMock).toHaveBeenCalledWith(
@@ -150,7 +181,10 @@ describe('guildService', () => {
         it('returns false when no row was deleted', async () => {
             queryMock.mockResolvedValue({ rows: [], rowCount: 0 });
 
-            const result = await guildService.removeSummonerFromGuild('g1', 'missing');
+            const result = await guildService.removeSummonerFromGuild(
+                'g1',
+                'missing'
+            );
 
             expect(result).toBe(false);
         });
@@ -161,8 +195,18 @@ describe('guildService', () => {
     describe('getSummonersForGuild', () => {
         it('returns joined rows for the given guild', async () => {
             const rows = [
-                { guild_id: 'g1', puuid: 'p1', gameName: 'Alice', tagLine: 'EUW' },
-                { guild_id: 'g1', puuid: 'p2', gameName: 'Bob', tagLine: 'NA1' },
+                {
+                    guild_id: 'g1',
+                    puuid: 'p1',
+                    gameName: 'Alice',
+                    tagLine: 'EUW',
+                },
+                {
+                    guild_id: 'g1',
+                    puuid: 'p2',
+                    gameName: 'Bob',
+                    tagLine: 'NA1',
+                },
             ];
             queryMock.mockResolvedValue({ rows });
 
@@ -178,7 +222,8 @@ describe('guildService', () => {
         it('returns empty array when guild has no summoners', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
-            const result = await guildService.getSummonersForGuild('empty-guild');
+            const result =
+                await guildService.getSummonersForGuild('empty-guild');
 
             expect(result).toEqual([]);
         });
@@ -188,7 +233,10 @@ describe('guildService', () => {
 
     describe('isSummonerInGuild', () => {
         it('returns true when summoner is tracked in the guild', async () => {
-            queryMock.mockResolvedValue({ rows: [{ '?column?': 1 }], rowCount: 1 });
+            queryMock.mockResolvedValue({
+                rows: [{ '?column?': 1 }],
+                rowCount: 1,
+            });
 
             const result = await guildService.isSummonerInGuild('g1', 'p1');
 
@@ -198,7 +246,10 @@ describe('guildService', () => {
         it('returns false when summoner is not tracked in the guild', async () => {
             queryMock.mockResolvedValue({ rows: [], rowCount: 0 });
 
-            const result = await guildService.isSummonerInGuild('g1', 'p-unknown');
+            const result = await guildService.isSummonerInGuild(
+                'g1',
+                'p-unknown'
+            );
 
             expect(result).toBe(false);
         });
@@ -237,7 +288,8 @@ describe('guildService', () => {
         it('returns empty array when no guilds track the summoner', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
-            const result = await guildService.getGuildsTrackingSummoner('p-new');
+            const result =
+                await guildService.getGuildsTrackingSummoner('p-new');
 
             expect(result).toEqual([]);
         });

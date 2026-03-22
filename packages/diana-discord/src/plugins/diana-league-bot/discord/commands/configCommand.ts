@@ -1,4 +1,9 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    MessageFlags,
+} from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import { getGuildConfig, setGuildLivePosting } from 'diana-core';
 
@@ -13,14 +18,18 @@ export const configCommand: SlashCommand = {
                 .addBooleanOption((option) =>
                     option
                         .setName('enabled')
-                        .setDescription('True to enable live posting, false to disable.')
+                        .setDescription(
+                            'True to enable live posting, false to disable.'
+                        )
                         .setRequired(true)
                 )
         )
         .addSubcommand((sub) =>
             sub
                 .setName('view')
-                .setDescription('View the current bot configuration for this server.')
+                .setDescription(
+                    'View the current bot configuration for this server.'
+                )
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
@@ -29,38 +38,53 @@ export const configCommand: SlashCommand = {
         if (!guildId) {
             await interaction.reply({
                 content: 'This command can only be used in a server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
 
         const subcommand = interaction.options.getSubcommand();
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         if (subcommand === 'live-posting') {
             const enabled = interaction.options.getBoolean('enabled', true);
             await setGuildLivePosting(guildId, enabled);
-            await interaction.reply({
+            await interaction.editReply({
                 content: `Live match posting is now **${enabled ? 'enabled' : 'disabled'}** for this server.`,
-                ephemeral: true,
             });
             return;
         }
 
         if (subcommand === 'view') {
             const config = await getGuildConfig(guildId);
-            const channel = config?.channel_id ? `<#${config.channel_id}>` : 'Not set — use `/setchannel` to configure.';
-            const livePosting = config ? (config.live_posting ? 'Enabled' : 'Disabled') : 'Enabled (default)';
+            const channel = config?.channel_id
+                ? `<#${config.channel_id}>`
+                : 'Not set — use `/setchannel` to configure.';
+            const livePosting = config
+                ? config.live_posting
+                    ? 'Enabled'
+                    : 'Disabled'
+                : 'Enabled (default)';
 
             const embed = new EmbedBuilder()
                 .setTitle('Diana — Server Configuration')
                 .addFields(
-                    { name: 'Notification Channel', value: channel, inline: false },
-                    { name: 'Live Match Posting', value: livePosting, inline: false }
+                    {
+                        name: 'Notification Channel',
+                        value: channel,
+                        inline: false,
+                    },
+                    {
+                        name: 'Live Match Posting',
+                        value: livePosting,
+                        inline: false,
+                    }
                 )
                 .setColor(0x5865f2)
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.editReply({ embeds: [embed] });
         }
     },
 };

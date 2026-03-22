@@ -4,17 +4,36 @@ export {};
 
 class MockSlashCommandBuilder {
     public name?: string;
-    setName(n: string) { this.name = n; return this; }
-    setDescription(_d: string) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
 }
 
 class MockEmbedBuilder {
     public data: Record<string, any> = { fields: [] };
-    setTitle(t: string) { this.data.title = t; return this; }
-    setDescription(d: string) { this.data.description = d; return this; }
-    setColor(c: number) { this.data.color = c; return this; }
-    setFooter(f: Record<string, string>) { this.data.footer = f; return this; }
-    setTimestamp() { return this; }
+    setTitle(t: string) {
+        this.data.title = t;
+        return this;
+    }
+    setDescription(d: string) {
+        this.data.description = d;
+        return this;
+    }
+    setColor(c: number) {
+        this.data.color = c;
+        return this;
+    }
+    setFooter(f: Record<string, string>) {
+        this.data.footer = f;
+        return this;
+    }
+    setTimestamp() {
+        return this;
+    }
     addFields(...fields: any[]) {
         const normalized = Array.isArray(fields[0]) ? fields[0] : fields;
         this.data.fields = [...this.data.fields, ...normalized];
@@ -27,7 +46,9 @@ jest.mock('discord.js', () => ({
     EmbedBuilder: MockEmbedBuilder,
 }));
 
-const { helpCommand } = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/helpCommand');
+const {
+    helpCommand,
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/helpCommand');
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -47,7 +68,11 @@ describe('helpCommand', () => {
             await helpCommand.execute(interaction as any);
 
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ embeds: expect.arrayContaining([expect.any(MockEmbedBuilder)]) })
+                expect.objectContaining({
+                    embeds: expect.arrayContaining([
+                        expect.any(MockEmbedBuilder),
+                    ]),
+                })
             );
         });
 
@@ -70,8 +95,11 @@ describe('helpCommand', () => {
 
             await helpCommand.execute(interaction as any);
 
-            const embed: MockEmbedBuilder = interaction.reply.mock.calls[0][0].embeds[0];
-            const allFieldValues = embed.data.fields.map((f: any) => f.value).join(' ');
+            const embed: MockEmbedBuilder =
+                interaction.reply.mock.calls[0][0].embeds[0];
+            const allFieldValues = embed.data.fields
+                .map((f: any) => f.value)
+                .join(' ');
             expect(allFieldValues).toContain('/add');
             expect(allFieldValues).toContain('/remove');
             expect(allFieldValues).toContain('/setchannel');
@@ -85,7 +113,8 @@ describe('helpCommand', () => {
 
             await helpCommand.execute(interaction as any);
 
-            const embed: MockEmbedBuilder = interaction.reply.mock.calls[0][0].embeds[0];
+            const embed: MockEmbedBuilder =
+                interaction.reply.mock.calls[0][0].embeds[0];
             expect(typeof embed.data.title).toBe('string');
             expect(embed.data.title.length).toBeGreaterThan(0);
         });

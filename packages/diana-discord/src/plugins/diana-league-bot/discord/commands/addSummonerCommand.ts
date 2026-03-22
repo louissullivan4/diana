@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Constants } from 'twisted';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
@@ -12,22 +12,49 @@ import {
 const lolService = createLolService();
 
 // Maps a twisted Regions value to { matchRegionPrefix, regionGroup }
-const regionMeta: Record<string, { matchRegionPrefix: string; regionGroup: string }> = {
-    [Constants.Regions.EU_WEST]:      { matchRegionPrefix: 'EUW1',  regionGroup: 'EUROPE'   },
-    [Constants.Regions.EU_EAST]:      { matchRegionPrefix: 'EUN1',  regionGroup: 'EUROPE'   },
-    [Constants.Regions.NA_1]:         { matchRegionPrefix: 'NA1',   regionGroup: 'AMERICAS' },
-    [Constants.Regions.LA_1]:         { matchRegionPrefix: 'LA1',   regionGroup: 'AMERICAS' },
-    [Constants.Regions.LA_2]:         { matchRegionPrefix: 'LA2',   regionGroup: 'AMERICAS' },
-    [Constants.Regions.KR]:           { matchRegionPrefix: 'KR',    regionGroup: 'ASIA'     },
-    [Constants.Regions.JP_1]:         { matchRegionPrefix: 'JP1',   regionGroup: 'ASIA'     },
-    [Constants.Regions.BR_1]:         { matchRegionPrefix: 'BR1',   regionGroup: 'AMERICAS' },
-    [Constants.Regions.TR_1]:         { matchRegionPrefix: 'TR1',   regionGroup: 'EUROPE'   },
-    [Constants.Regions.RU]:           { matchRegionPrefix: 'RU',    regionGroup: 'EUROPE'   },
-    [Constants.Regions.OC_1]:         { matchRegionPrefix: 'OC1',   regionGroup: 'SEA'      },
-    [Constants.Regions.SG_2]:         { matchRegionPrefix: 'SG2',   regionGroup: 'SEA'      },
-    [Constants.Regions.TW_2]:         { matchRegionPrefix: 'TW2',   regionGroup: 'SEA'      },
-    [Constants.Regions.VN_2]:         { matchRegionPrefix: 'VN2',   regionGroup: 'SEA'      },
-    [Constants.Regions.ME_1]:         { matchRegionPrefix: 'ME1',   regionGroup: 'EUROPE'   },
+const regionMeta: Record<
+    string,
+    { matchRegionPrefix: string; regionGroup: string }
+> = {
+    [Constants.Regions.EU_WEST]: {
+        matchRegionPrefix: 'EUW1',
+        regionGroup: 'EUROPE',
+    },
+    [Constants.Regions.EU_EAST]: {
+        matchRegionPrefix: 'EUN1',
+        regionGroup: 'EUROPE',
+    },
+    [Constants.Regions.NA_1]: {
+        matchRegionPrefix: 'NA1',
+        regionGroup: 'AMERICAS',
+    },
+    [Constants.Regions.LA_1]: {
+        matchRegionPrefix: 'LA1',
+        regionGroup: 'AMERICAS',
+    },
+    [Constants.Regions.LA_2]: {
+        matchRegionPrefix: 'LA2',
+        regionGroup: 'AMERICAS',
+    },
+    [Constants.Regions.KR]: { matchRegionPrefix: 'KR', regionGroup: 'ASIA' },
+    [Constants.Regions.JP_1]: { matchRegionPrefix: 'JP1', regionGroup: 'ASIA' },
+    [Constants.Regions.BR_1]: {
+        matchRegionPrefix: 'BR1',
+        regionGroup: 'AMERICAS',
+    },
+    [Constants.Regions.TR_1]: {
+        matchRegionPrefix: 'TR1',
+        regionGroup: 'EUROPE',
+    },
+    [Constants.Regions.RU]: { matchRegionPrefix: 'RU', regionGroup: 'EUROPE' },
+    [Constants.Regions.OC_1]: { matchRegionPrefix: 'OC1', regionGroup: 'SEA' },
+    [Constants.Regions.SG_2]: { matchRegionPrefix: 'SG2', regionGroup: 'SEA' },
+    [Constants.Regions.TW_2]: { matchRegionPrefix: 'TW2', regionGroup: 'SEA' },
+    [Constants.Regions.VN_2]: { matchRegionPrefix: 'VN2', regionGroup: 'SEA' },
+    [Constants.Regions.ME_1]: {
+        matchRegionPrefix: 'ME1',
+        regionGroup: 'EUROPE',
+    },
 };
 
 const regionChoices = Object.entries(Constants.Regions)
@@ -49,7 +76,9 @@ export const addSummonerCommand: SlashCommand = {
             .addStringOption((option) =>
                 option
                     .setName('name')
-                    .setDescription('Summoner game name (no tag, e.g. FM Stew).')
+                    .setDescription(
+                        'Summoner game name (no tag, e.g. FM Stew).'
+                    )
                     .setRequired(true)
             )
             .addStringOption((option) =>
@@ -64,7 +93,10 @@ export const addSummonerCommand: SlashCommand = {
                     .setDescription('Riot platform region (default: EU_WEST).')
                     .setRequired(false);
                 for (const choice of regionChoices) {
-                    option.addChoices({ name: choice.name, value: choice.value });
+                    option.addChoices({
+                        name: choice.name,
+                        value: choice.value,
+                    });
                 }
                 return option;
             });
@@ -76,24 +108,36 @@ export const addSummonerCommand: SlashCommand = {
         if (!guildId) {
             await interaction.reply({
                 content: 'This command can only be used in a server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
 
         const name = interaction.options.getString('name', true).trim();
         const tag = interaction.options.getString('tag', true).trim();
-        const region = interaction.options.getString('region') ?? Constants.Regions.EU_WEST;
-        const meta = regionMeta[region] ?? { matchRegionPrefix: 'EUW1', regionGroup: 'EUROPE' };
+        const region =
+            interaction.options.getString('region') ??
+            Constants.Regions.EU_WEST;
+        const meta = regionMeta[region] ?? {
+            matchRegionPrefix: 'EUW1',
+            regionGroup: 'EUROPE',
+        };
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             // Resolve account via Riot API
-            const account = await lolService.getAccountByRiotId(name, tag, meta.regionGroup as any);
+            const account = await lolService.getAccountByRiotId(
+                name,
+                tag,
+                meta.regionGroup as any
+            );
 
             // Check if already tracked in this guild
-            const alreadyTracked = await isSummonerInGuild(guildId, account.puuid);
+            const alreadyTracked = await isSummonerInGuild(
+                guildId,
+                account.puuid
+            );
             if (alreadyTracked) {
                 await interaction.editReply(
                     `**${account.gameName}#${account.tagLine}** is already being tracked in this server.`
@@ -103,9 +147,12 @@ export const addSummonerCommand: SlashCommand = {
 
             // Upsert summoner in global summoners table
             const existing = await getSummonerByPuuid(account.puuid);
-            const isNew = !existing || (existing as any).msg;
+            const isNew = !existing;
             if (isNew) {
-                const deepLolLink = buildDeepLolLink(account.gameName, account.tagLine);
+                const deepLolLink = buildDeepLolLink(
+                    account.gameName,
+                    account.tagLine
+                );
                 await createSummoner({
                     puuid: account.puuid,
                     gameName: account.gameName,
@@ -122,7 +169,11 @@ export const addSummonerCommand: SlashCommand = {
             }
 
             // Link to this guild
-            await addSummonerToGuild(guildId, account.puuid, interaction.user.id);
+            await addSummonerToGuild(
+                guildId,
+                account.puuid,
+                interaction.user.id
+            );
 
             await interaction.editReply(
                 `Now tracking **${account.gameName}#${account.tagLine}** (${region}) in this server.`

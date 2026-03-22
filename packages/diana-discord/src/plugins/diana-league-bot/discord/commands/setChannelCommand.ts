@@ -2,6 +2,7 @@ import {
     SlashCommandBuilder,
     PermissionFlagsBits,
     ChannelType,
+    MessageFlags,
 } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import { setGuildChannel } from 'diana-core';
@@ -9,7 +10,9 @@ import { setGuildChannel } from 'diana-core';
 export const setChannelCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('setchannel')
-        .setDescription('Set the channel where match notifications will be posted.')
+        .setDescription(
+            'Set the channel where match notifications will be posted.'
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addChannelOption((option) =>
             option
@@ -23,18 +26,19 @@ export const setChannelCommand: SlashCommand = {
         if (!guildId) {
             await interaction.reply({
                 content: 'This command can only be used in a server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
+
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const channel = interaction.options.getChannel('channel', true);
 
         await setGuildChannel(guildId, channel.id);
 
-        await interaction.reply({
+        await interaction.editReply({
             content: `Match notifications will now be posted in <#${channel.id}>.`,
-            ephemeral: true,
         });
     },
 };

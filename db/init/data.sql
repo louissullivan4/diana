@@ -38,48 +38,6 @@ CREATE TABLE "summoners" (
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO "summoners" (
-    "puuid",
-    "gameName",
-    "tagLine",
-    "region",
-    "matchRegionPrefix",
-    "deepLolLink",
-    "discordChannelId",
-    "regionGroup"
-) VALUES
-(
-    '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ',
-    'FM Stew',
-    'RATS',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/euw/FM%20Stew-RATS',
-    '1424782745300893879',
-    'EUROPE'
-),
-(
-    '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g',
-    'FM Pruhaps',
-    'BAUSS',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/EUW/FM%20Pruhaps-BAUSS',
-    '1424782745300893879',
-    'EUROPE'
-),
-(
-    'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A',
-    'Melon',
-    'FM Fishy',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy',
-    '1424782745300893879',
-    'EUROPE'
-)
-ON CONFLICT ("puuid") DO NOTHING;
-
 -- ====================================
 -- 2. Create Guild Config Table
 -- ====================================
@@ -102,17 +60,6 @@ CREATE TABLE "guild_summoners" (
     FOREIGN KEY ("puuid") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
--- Seed: link hardcoded summoners to the dev guild
-INSERT INTO "guild_config" ("guild_id", "channel_id", "live_posting")
-VALUES ('1424782745300893876', '1424782745300893879', TRUE)
-ON CONFLICT ("guild_id") DO NOTHING;
-
-INSERT INTO "guild_summoners" ("guild_id", "puuid") VALUES
-('1424782745300893876', '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ'),
-('1424782745300893876', '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g'),
-('1424782745300893876', 'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A')
-ON CONFLICT DO NOTHING;
-
 -- ====================================
 -- 5. Create Match_Details Table
 -- ====================================
@@ -133,7 +80,7 @@ CREATE TABLE "match_details" (
     "participants" JSONB,
     "teams" JSONB,
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryPlayerPuuid")
+    CONSTRAINT unique_match_details_participant UNIQUE ("matchId", "entryPlayerPuuid"),
     FOREIGN KEY ("entryPlayerPuuid") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 
@@ -149,7 +96,7 @@ CREATE TABLE "match_timeline" (
     "participantFrames" JSONB,
     "events" JSONB,
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_participant UNIQUE ("mid", "entryParticipantId")
+    CONSTRAINT unique_match_timeline_participant UNIQUE ("mid", "entryParticipantId"),
     FOREIGN KEY ("mid") REFERENCES "match_details" ("mid") ON DELETE CASCADE,
     FOREIGN KEY ("entryParticipantId") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
@@ -166,7 +113,7 @@ CREATE TABLE "rank_tracking" (
     "lp" INT DEFAULT 0,
     "queueType" VARCHAR(50),
     "lastUpdated" TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT unique_match_participant UNIQUE ("matchId", "entryParticipantId"),
+    CONSTRAINT unique_rank_tracking_participant UNIQUE ("matchId", "entryParticipantId"),
     FOREIGN KEY ("entryParticipantId") REFERENCES "summoners" ("puuid") ON DELETE CASCADE
 );
 

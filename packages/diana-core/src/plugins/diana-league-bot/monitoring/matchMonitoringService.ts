@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { trackedSummoners as legacyTrackedSummoners } from '../config/trackedSummoners';
 import {
     getQueueNameById,
     getRoleNameTranslation,
@@ -28,7 +27,7 @@ import {
     notifyMatchEnd,
     notifyRankChange,
 } from '../notifications/leagueNotifications';
-import { Summoner, LeagueBotConfig, TrackedSummonerConfig } from '../types';
+import { Summoner, LeagueBotConfig } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
 import { Constants } from 'twisted';
 import type { MessageAdapter } from '../../../core/pluginTypes';
@@ -40,24 +39,8 @@ const shouldForceDevelopmentTimers = Boolean(
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 let lastSummonerMetadataSync = 0;
 
-/**
- * Get tracked summoner PUUIDs from the guild_summoners DB table.
- * Falls back to config or legacy hardcoded list if DB returns nothing.
- */
-async function getTrackedSummonerPuuids(config: LeagueBotConfig): Promise<string[]> {
-    try {
-        const puuids = await getAllTrackedPuuids();
-        if (puuids.length > 0) {
-            return puuids;
-        }
-    } catch (error) {
-        console.warn('[Warn] Failed to fetch tracked puuids from DB, falling back to config:', error);
-    }
-    // Fallback to config or legacy hardcoded summoners
-    const fromConfig = config.trackedSummoners && config.trackedSummoners.length > 0
-        ? config.trackedSummoners
-        : legacyTrackedSummoners;
-    return fromConfig.map((s) => s.puuid);
+async function getTrackedSummonerPuuids(): Promise<string[]> {
+    return getAllTrackedPuuids();
 }
 
 const buildDeepLolLink = (gameName: string, tagLine: string) => {
@@ -69,7 +52,7 @@ const buildDeepLolLink = (gameName: string, tagLine: string) => {
 const syncTrackedSummonerMetadata = async (puuid: string) => {
     const summoner = await getSummonerByPuuid(puuid);
 
-    if (!summoner || (summoner as any).msg) {
+    if (!summoner) {
         console.warn(
             `[Warn] Tracked PUUID ${puuid} not found in database, skipping metadata sync.`
         );
@@ -112,18 +95,16 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
     }
 };
 
-const syncTrackedSummonersWithDatabase = async (
-    summoners: TrackedSummonerConfig[]
-) => {
+const syncTrackedSummonersWithDatabase = async (puuids: string[]) => {
     console.log(
         `[Info] [${new Date().toISOString()}] Starting tracked summoner metadata sync...`
     );
-    for (const player of summoners) {
+    for (const puuid of puuids) {
         try {
-            await syncTrackedSummonerMetadata(player.puuid);
+            await syncTrackedSummonerMetadata(puuid);
         } catch (error) {
             console.error(
-                `[Error] Failed to sync metadata for tracked PUUID ${player.puuid}:`,
+                `[Error] Failed to sync metadata for tracked PUUID ${puuid}:`,
                 error
             );
         }
@@ -373,14 +354,18 @@ const handleNewMatchCompleted = async (
         const guildTargets = await getGuildsTrackingSummoner(puuid);
         for (const target of guildTargets) {
             if (!target.live_posting) continue;
-            const matchSummary = { ...baseMatchSummary, discordChannelId: target.channel_id };
+            const matchSummary = {
+                ...baseMatchSummary,
+                discordChannelId: target.channel_id,
+            };
             const sent = await notifyMatchEnd(messageAdapter, matchSummary);
             if (sent) anyMessageSent = true;
 
             if (checkForRankUp !== 'no_change') {
                 const rankChangeInfo = {
                     summonerName,
-                    direction: checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
+                    direction:
+                        checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
                     newRankMsg,
                     lpChangeMsg,
                     discordChannelId: target.channel_id,
@@ -393,14 +378,18 @@ const handleNewMatchCompleted = async (
         // Dev fallback: if no guild targets, use env var channel
         if (guildTargets.length === 0 && process.env.DISCORD_CHANNEL_ID) {
             const fallbackChannelId = process.env.DISCORD_CHANNEL_ID;
-            const matchSummary = { ...baseMatchSummary, discordChannelId: fallbackChannelId };
+            const matchSummary = {
+                ...baseMatchSummary,
+                discordChannelId: fallbackChannelId,
+            };
             const sent = await notifyMatchEnd(messageAdapter, matchSummary);
             if (sent) anyMessageSent = true;
 
             if (checkForRankUp !== 'no_change') {
                 const rankChangeInfo = {
                     summonerName,
-                    direction: checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
+                    direction:
+                        checkForRankUp === 'promoted' ? 'promoted' : 'demoted',
                     newRankMsg,
                     lpChangeMsg,
                     discordChannelId: fallbackChannelId,
@@ -410,12 +399,13 @@ const handleNewMatchCompleted = async (
             }
         }
     } catch (error) {
-        console.error(`[Error] Failed to fan out match notifications for ${summonerName}:`, error);
+        console.error(
+            `[Error] Failed to fan out match notifications for ${summonerName}:`,
+            error
+        );
     }
 
-    if (anyMessageSent) {
-        await setSummonerCurrentMatchIdByPuuid(puuid, newMatchId);
-    }
+    await setSummonerCurrentMatchIdByPuuid(puuid, newMatchId);
 };
 
 /**
@@ -435,15 +425,14 @@ export function createMatchMonitoringTick(
         }
         const apiValid = await lolService.checkConnection();
         if (apiValid) {
-            const trackedPuuids = await getTrackedSummonerPuuids(config);
+            const trackedPuuids = await getTrackedSummonerPuuids();
 
             const now = Date.now();
             if (
                 shouldForceDevelopmentTimers ||
                 now - lastSummonerMetadataSync >= TWENTY_FOUR_HOURS_MS
             ) {
-                const summonerConfigs: TrackedSummonerConfig[] = trackedPuuids.map((puuid) => ({ puuid }));
-                await syncTrackedSummonersWithDatabase(summonerConfigs);
+                await syncTrackedSummonersWithDatabase(trackedPuuids);
                 lastSummonerMetadataSync = now;
             }
 
@@ -472,12 +461,11 @@ export function createMatchMonitoringTick(
 }
 
 /**
- * Single tick of match monitoring using legacy hardcoded config.
+ * Single tick of match monitoring using default config.
  * @deprecated Use createMatchMonitoringTick with config instead.
  */
 export async function runMatchMonitoringTick(): Promise<void> {
     const defaultConfig: LeagueBotConfig = {
-        trackedSummoners: [],
         matchCheckCron: '*/20 * * * * *',
     };
     const tick = createMatchMonitoringTick(defaultConfig, null);

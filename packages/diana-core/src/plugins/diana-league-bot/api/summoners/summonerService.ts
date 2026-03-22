@@ -18,7 +18,7 @@ export const getSummonerByAccountName = async (
             console.info(
                 `Summoner ${accountName}#${tagLine} (${region}) not found.`
             );
-            return { msg: 'No summoner found' };
+            return null;
         }
         return summoner;
     } catch (error) {
@@ -53,7 +53,9 @@ export async function searchSummonerGameNames(
                     ORDER BY s."gameName" ASC
                     LIMIT $2
                 `;
-            const params = trimmedSearch ? [guildId, `${trimmedSearch}%`, limit] : [guildId, limit];
+            const params = trimmedSearch
+                ? [guildId, `${trimmedSearch}%`, limit]
+                : [guildId, limit];
             const result = await db.query(query, params);
             return result.rows.map((row: { gameName: string }) => row.gameName);
         }
@@ -99,7 +101,10 @@ export async function searchSummonerTags(
         const trimmedName = gameName ? gameName.trim() : null;
 
         if (guildId) {
-            const conditions: string[] = ['gs.guild_id = $1', 's."tagLine" IS NOT NULL'];
+            const conditions: string[] = [
+                'gs.guild_id = $1',
+                's."tagLine" IS NOT NULL',
+            ];
             const params: Array<string | number> = [guildId];
 
             if (trimmedName) {
@@ -122,7 +127,10 @@ export async function searchSummonerTags(
             `;
             const result = await db.query(query, params);
             return result.rows.map(
-                (row: { tagLine: string; matchRegionPrefix: string | null }) => ({
+                (row: {
+                    tagLine: string;
+                    matchRegionPrefix: string | null;
+                }) => ({
                     tagLine: row.tagLine,
                     matchRegionPrefix: row.matchRegionPrefix,
                 })
@@ -178,7 +186,7 @@ export const getSummonerByPuuid = async (puuid: string) => {
         const summoner = result.rows[0];
         if (!summoner) {
             console.info(`Summoner with PUUID ${puuid} not found.`);
-            return { msg: 'No summoner found' };
+            return null;
         }
         return summoner;
     } catch (error) {
@@ -265,7 +273,7 @@ export const updateSummonerIdentityByPuuid = async (
         const updatedSummoner = result.rows[0];
         if (!updatedSummoner) {
             console.info(`Summoner with PUUID ${puuid} not found for update.`);
-            return { msg: 'No summoner found' };
+            return null;
         }
         return updatedSummoner;
     } catch (error) {
@@ -298,7 +306,7 @@ export const updateSummonerRegionDataByPuuid = async (
             console.info(
                 `Summoner with PUUID ${puuid} not found for region update.`
             );
-            return { msg: 'No summoner found' };
+            return null;
         }
         return updatedSummoner;
     } catch (error) {
@@ -318,7 +326,7 @@ export const deleteSummoner = async (puuid: string) => {
         const result = await db.query(query, params);
         const deletedSummoner = result.rows[0];
         if (!deletedSummoner) {
-            return { msg: 'No summoner found' };
+            return null;
         }
         return deletedSummoner;
     } catch (error) {
@@ -344,7 +352,7 @@ export const setSummonerCurrentMatchIdByPuuid = async (
         const result = await db.query(query, params);
         const updatedSummoner = result.rows[0];
         if (!updatedSummoner) {
-            return { msg: 'No summoner found' };
+            return null;
         }
         return updatedSummoner;
     } catch (error) {
@@ -469,6 +477,7 @@ export const createRankHistory = async (
                 "lp",
                 "queueType"
             ) VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT ON CONSTRAINT unique_rank_tracking_participant DO NOTHING
             RETURNING *;
         `;
         const params = [matchId, entryParticipantId, tier, rank, lp, queueType];
@@ -504,7 +513,7 @@ export const updateRankHistory = async (
         const updatedRankHistory = result.rows[0];
         if (!updatedRankHistory) {
             console.info(`Rank history with RID ${rid} not found.`);
-            return { msg: 'No rank history found' };
+            return null;
         }
         return updatedRankHistory;
     } catch (error) {
@@ -524,7 +533,7 @@ export const deleteRankHistory = async (rid: number) => {
         const result = await db.query(query, params);
         const deletedRankHistory = result.rows[0];
         if (!deletedRankHistory) {
-            return { msg: 'No rank history found' };
+            return null;
         }
         return deletedRankHistory;
     } catch (error) {

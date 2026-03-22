@@ -4,19 +4,38 @@ export {};
 
 class MockChannelOption {
     public config: Record<string, unknown> = {};
-    setName(n: string) { this.config.name = n; return this; }
-    setDescription(d: string) { this.config.description = d; return this; }
-    setRequired(r: boolean) { this.config.required = r; return this; }
-    addChannelTypes(..._types: unknown[]) { return this; }
+    setName(n: string) {
+        this.config.name = n;
+        return this;
+    }
+    setDescription(d: string) {
+        this.config.description = d;
+        return this;
+    }
+    setRequired(r: boolean) {
+        this.config.required = r;
+        return this;
+    }
+    addChannelTypes(..._types: unknown[]) {
+        return this;
+    }
 }
 
 class MockSlashCommandBuilder {
     public name?: string;
     public description?: string;
     public options: MockChannelOption[] = [];
-    setName(n: string) { this.name = n; return this; }
-    setDescription(d: string) { this.description = d; return this; }
-    setDefaultMemberPermissions(_p: unknown) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(d: string) {
+        this.description = d;
+        return this;
+    }
+    setDefaultMemberPermissions(_p: unknown) {
+        return this;
+    }
     addChannelOption(cb: (o: MockChannelOption) => unknown) {
         const o = new MockChannelOption();
         cb(o);
@@ -39,7 +58,9 @@ jest.mock('diana-core', () => ({
     setGuildChannel: setGuildChannelMock,
 }));
 
-const { setChannelCommand } = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/setChannelCommand');
+const {
+    setChannelCommand,
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/setChannelCommand');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,9 +103,14 @@ describe('setChannelCommand', () => {
 
             await setChannelCommand.execute(interaction as any);
 
-            expect(setGuildChannelMock).toHaveBeenCalledWith('guild-123', 'channel-456');
+            expect(setGuildChannelMock).toHaveBeenCalledWith(
+                'guild-123',
+                'channel-456'
+            );
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('<#channel-456>') })
+                expect.objectContaining({
+                    content: expect.stringContaining('<#channel-456>'),
+                })
             );
         });
 

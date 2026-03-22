@@ -4,16 +4,29 @@ export {};
 
 class MockBooleanOption {
     public config: Record<string, unknown> = {};
-    setName(n: string) { this.config.name = n; return this; }
-    setDescription(_d: string) { return this; }
-    setRequired(r: boolean) { this.config.required = r; return this; }
+    setName(n: string) {
+        this.config.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
+    setRequired(r: boolean) {
+        this.config.required = r;
+        return this;
+    }
 }
 
 class MockSubcommand {
     public name?: string;
     public options: MockBooleanOption[] = [];
-    setName(n: string) { this.name = n; return this; }
-    setDescription(_d: string) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
     addBooleanOption(cb: (o: MockBooleanOption) => unknown) {
         const o = new MockBooleanOption();
         cb(o);
@@ -25,9 +38,16 @@ class MockSubcommand {
 class MockSlashCommandBuilder {
     public name?: string;
     public subcommands: MockSubcommand[] = [];
-    setName(n: string) { this.name = n; return this; }
-    setDescription(_d: string) { return this; }
-    setDefaultMemberPermissions(_p: unknown) { return this; }
+    setName(n: string) {
+        this.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
+    setDefaultMemberPermissions(_p: unknown) {
+        return this;
+    }
     addSubcommand(cb: (s: MockSubcommand) => unknown) {
         const s = new MockSubcommand();
         cb(s);
@@ -38,9 +58,17 @@ class MockSlashCommandBuilder {
 
 class MockEmbedBuilder {
     public data: Record<string, any> = { fields: [] };
-    setTitle(t: string) { this.data.title = t; return this; }
-    setColor(c: number) { this.data.color = c; return this; }
-    setTimestamp() { return this; }
+    setTitle(t: string) {
+        this.data.title = t;
+        return this;
+    }
+    setColor(c: number) {
+        this.data.color = c;
+        return this;
+    }
+    setTimestamp() {
+        return this;
+    }
     addFields(...fields: any[]) {
         const normalized = Array.isArray(fields[0]) ? fields[0] : fields;
         this.data.fields = [...this.data.fields, ...normalized];
@@ -64,16 +92,24 @@ jest.mock('diana-core', () => ({
     setGuildLivePosting: setGuildLivePostingMock,
 }));
 
-const { configCommand } = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/configCommand');
+const {
+    configCommand,
+} = require('../packages/diana-discord/src/plugins/diana-league-bot/discord/commands/configCommand');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeInteraction(opts: {
-    subcommand?: string;
-    enabled?: boolean;
-    guildId?: string | null;
-} = {}) {
-    const { subcommand = 'live-posting', enabled = true, guildId = 'guild-7' } = opts;
+function makeInteraction(
+    opts: {
+        subcommand?: string;
+        enabled?: boolean;
+        guildId?: string | null;
+    } = {}
+) {
+    const {
+        subcommand = 'live-posting',
+        enabled = true,
+        guildId = 'guild-7',
+    } = opts;
     return {
         guildId,
         options: {
@@ -97,7 +133,9 @@ describe('configCommand', () => {
         });
 
         it('has live-posting and view subcommands', () => {
-            const names = configCommand.data.subcommands.map((s: any) => s.name);
+            const names = configCommand.data.subcommands.map(
+                (s: any) => s.name
+            );
             expect(names).toContain('live-posting');
             expect(names).toContain('view');
         });
@@ -106,25 +144,41 @@ describe('configCommand', () => {
     describe('execute — live-posting subcommand', () => {
         it('disables live posting and confirms', async () => {
             setGuildLivePostingMock.mockResolvedValue(undefined);
-            const interaction = makeInteraction({ subcommand: 'live-posting', enabled: false });
+            const interaction = makeInteraction({
+                subcommand: 'live-posting',
+                enabled: false,
+            });
 
             await configCommand.execute(interaction as any);
 
-            expect(setGuildLivePostingMock).toHaveBeenCalledWith('guild-7', false);
+            expect(setGuildLivePostingMock).toHaveBeenCalledWith(
+                'guild-7',
+                false
+            );
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('disabled') })
+                expect.objectContaining({
+                    content: expect.stringContaining('disabled'),
+                })
             );
         });
 
         it('enables live posting and confirms', async () => {
             setGuildLivePostingMock.mockResolvedValue(undefined);
-            const interaction = makeInteraction({ subcommand: 'live-posting', enabled: true });
+            const interaction = makeInteraction({
+                subcommand: 'live-posting',
+                enabled: true,
+            });
 
             await configCommand.execute(interaction as any);
 
-            expect(setGuildLivePostingMock).toHaveBeenCalledWith('guild-7', true);
+            expect(setGuildLivePostingMock).toHaveBeenCalledWith(
+                'guild-7',
+                true
+            );
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('enabled') })
+                expect.objectContaining({
+                    content: expect.stringContaining('enabled'),
+                })
             );
         });
 
@@ -163,19 +217,26 @@ describe('configCommand', () => {
 
             const reply = interaction.reply.mock.calls[0][0];
             const embed: MockEmbedBuilder = reply.embeds[0];
-            const channelField = embed.data.fields.find((f: any) => f.name === 'Notification Channel');
+            const channelField = embed.data.fields.find(
+                (f: any) => f.name === 'Notification Channel'
+            );
             expect(channelField.value).toContain('Not set');
         });
 
         it('shows live posting as Disabled when false', async () => {
-            getGuildConfigMock.mockResolvedValue({ channel_id: 'c-1', live_posting: false });
+            getGuildConfigMock.mockResolvedValue({
+                channel_id: 'c-1',
+                live_posting: false,
+            });
             const interaction = makeInteraction({ subcommand: 'view' });
 
             await configCommand.execute(interaction as any);
 
             const reply = interaction.reply.mock.calls[0][0];
             const embed: MockEmbedBuilder = reply.embeds[0];
-            const liveField = embed.data.fields.find((f: any) => f.name === 'Live Match Posting');
+            const liveField = embed.data.fields.find(
+                (f: any) => f.name === 'Live Match Posting'
+            );
             expect(liveField.value).toContain('Disabled');
         });
     });
@@ -188,7 +249,11 @@ describe('configCommand', () => {
 
             expect(setGuildLivePostingMock).not.toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
-                expect.objectContaining({ content: expect.stringContaining('only be used in a server') })
+                expect.objectContaining({
+                    content: expect.stringContaining(
+                        'only be used in a server'
+                    ),
+                })
             );
         });
     });

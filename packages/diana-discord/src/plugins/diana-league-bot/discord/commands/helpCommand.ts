@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 
 export const helpCommand: SlashCommand = {
@@ -32,7 +32,7 @@ export const helpCommand: SlashCommand = {
                 {
                     name: '📊 Stats',
                     value: [
-                        '`/summoner <name> [tag] [region]` — View a tracked summoner\'s profile and recent stats.',
+                        "`/summoner <name> [tag] [region]` — View a tracked summoner's profile and recent stats.",
                         '`/champion-stats` — View champion statistics.',
                         '`/inter-of-the-week` — View the Inter of the Week rankings.',
                     ].join('\n'),
@@ -47,6 +47,9 @@ export const helpCommand: SlashCommand = {
             .setFooter({ text: 'Diana — League of Legends match tracking bot' })
             .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({
+            embeds: [embed],
+            flags: MessageFlags.Ephemeral,
+        });
     },
 };

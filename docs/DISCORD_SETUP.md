@@ -19,15 +19,15 @@ Diana is a League of Legends match tracking bot. This guide covers how to invite
 
 Copy `.env.example` to `.env` and fill in the following:
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `RIOT_API_KEY` | Yes | Riot Games API key |
-| `DISCORD_BOT_TOKEN` | Yes | Discord bot token |
-| `DISCORD_CLIENT_ID` | Yes | Discord application/client ID |
-| `DISCORD_GUILD_ID` | No | Restrict slash command registration to one guild (faster for dev) |
-| `DISCORD_CHANNEL_ID` | No | Dev fallback channel if no guilds have configured a channel |
-| `DISABLE_DISCORD_POSTS` | No | Set to `true` to suppress all Discord notifications |
+| Variable                | Required | Description                                                       |
+| ----------------------- | -------- | ----------------------------------------------------------------- |
+| `DATABASE_URL`          | Yes      | PostgreSQL connection string                                      |
+| `RIOT_API_KEY`          | Yes      | Riot Games API key                                                |
+| `DISCORD_BOT_TOKEN`     | Yes      | Discord bot token                                                 |
+| `DISCORD_CLIENT_ID`     | Yes      | Discord application/client ID                                     |
+| `DISCORD_GUILD_ID`      | No       | Restrict slash command registration to one guild (faster for dev) |
+| `DISCORD_CHANNEL_ID`    | No       | Dev fallback channel if no guilds have configured a channel       |
+| `DISABLE_DISCORD_POSTS` | No       | Set to `true` to suppress all Discord notifications               |
 
 ---
 
@@ -50,33 +50,36 @@ Once the bot is in your server, run these commands in Discord:
 ```
 /setchannel #your-channel
 ```
+
 Sets the channel where match notifications will be posted. Requires **Manage Channels** permission.
 
 ```
 /add name:FM Stew tag:RATS region:EU_WEST
 ```
+
 Adds a summoner to track. The bot looks up the Riot account and starts monitoring matches.
 
 ```
 /help
 ```
+
 Lists all available commands.
 
 ---
 
 ## Available Commands
 
-| Command | Description | Permission |
-|---|---|---|
-| `/setchannel #channel` | Set the notification channel | Manage Channels |
-| `/add <name> <tag> [region]` | Track a summoner in this server | Anyone |
-| `/remove <name> [tag]` | Stop tracking a summoner | Anyone |
-| `/config live-posting true/false` | Enable or disable live match posts | Manage Server |
-| `/config view` | View current bot settings for this server | Manage Server |
-| `/summoner <name> [tag] [region]` | View a summoner's ranked profile and recent stats | Anyone |
-| `/champion-stats` | View champion statistics | Anyone |
-| `/inter-of-the-week` | View the Inter of the Week rankings | Anyone |
-| `/help` | Show command reference | Anyone |
+| Command                           | Description                                       | Permission      |
+| --------------------------------- | ------------------------------------------------- | --------------- |
+| `/setchannel #channel`            | Set the notification channel                      | Manage Channels |
+| `/add <name> <tag> [region]`      | Track a summoner in this server                   | Anyone          |
+| `/remove <name> [tag]`            | Stop tracking a summoner                          | Anyone          |
+| `/config live-posting true/false` | Enable or disable live match posts                | Manage Server   |
+| `/config view`                    | View current bot settings for this server         | Manage Server   |
+| `/summoner <name> [tag] [region]` | View a summoner's ranked profile and recent stats | Anyone          |
+| `/champion-stats`                 | View champion statistics                          | Anyone          |
+| `/inter-of-the-week`              | View the Inter of the Week rankings               | Anyone          |
+| `/help`                           | Show command reference                            | Anyone          |
 
 ---
 
@@ -126,15 +129,15 @@ npm run test:coverage
 
 Tests live in `/test`. Each file mirrors the module it tests:
 
-| Test file | What it covers |
-|---|---|
-| `guildService.test.ts` | All guild DB operations — `guild_config` and `guild_summoners` CRUD |
-| `setChannelCommand.test.ts` | `/setchannel` — sets notification channel, guild guard |
-| `addSummonerCommand.test.ts` | `/add` — Riot API lookup, new vs existing summoner, duplicate handling, error cases |
-| `removeSummonerCommand.test.ts` | `/remove` — single/multiple match resolution, autocomplete, error handling |
-| `configCommand.test.ts` | `/config live-posting` and `/config view` — enable/disable notifications, view embed |
-| `helpCommand.test.ts` | `/help` — embed structure, ephemeral reply |
-| `summonerService.test.ts` | Summoner DB operations including guild-scoped autocomplete |
+| Test file                       | What it covers                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `guildService.test.ts`          | All guild DB operations — `guild_config` and `guild_summoners` CRUD                  |
+| `setChannelCommand.test.ts`     | `/setchannel` — sets notification channel, guild guard                               |
+| `addSummonerCommand.test.ts`    | `/add` — Riot API lookup, new vs existing summoner, duplicate handling, error cases  |
+| `removeSummonerCommand.test.ts` | `/remove` — single/multiple match resolution, autocomplete, error handling           |
+| `configCommand.test.ts`         | `/config live-posting` and `/config view` — enable/disable notifications, view embed |
+| `helpCommand.test.ts`           | `/help` — embed structure, ephemeral reply                                           |
+| `summonerService.test.ts`       | Summoner DB operations including guild-scoped autocomplete                           |
 
 ### Test patterns
 

@@ -284,7 +284,7 @@ export const summonerInfoCommand: SlashCommand = {
 
             const summonerRecord = resolution.record;
 
-            if (!summonerRecord || (summonerRecord as any).msg) {
+            if (!summonerRecord) {
                 const missingTarget = tag ? `${name}#${tag}` : name;
                 await interaction.editReply(
                     `Could not find **${missingTarget}** in region ${region}.`
