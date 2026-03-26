@@ -26,6 +26,7 @@
         "db:seed": "psql $DATABASE_URL -f db/seed.sql",
         "backfill:matches": "npm run backfill:matches --workspace diana-core",
         "user": "npm run user --workspace apps/server",
+        "announce": "npm run announce --workspace apps/server",
         "precommit": "npm run lint && npm run format && npm run build && npm run test",
         "prepare": "husky"
     },
