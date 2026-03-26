@@ -5,3 +5,4 @@ export * from './discord/setupDiscord';
 export * from './discord/client';
 export * from './discord/messageAdapter';
 export * from './plugins/diana-league-bot/discord/commands';
+export * from './plugins/diana-apex-bot/discord/commands';

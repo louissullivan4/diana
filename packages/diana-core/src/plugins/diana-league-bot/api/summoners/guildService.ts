@@ -108,6 +108,7 @@ export const getSummonersForGuild = async (
          FROM guild_summoners gs
          JOIN summoners s ON s.puuid = gs.puuid
          WHERE gs.guild_id = $1
+           AND s.game_id = 'league_of_legends'
          ORDER BY s."gameName" ASC`,
         [guildId]
     );
@@ -147,7 +148,10 @@ export const getGuildsTrackingSummoner = async (
 
 export const getAllTrackedPuuids = async (): Promise<string[]> => {
     const result = await db.query(
-        `SELECT DISTINCT puuid FROM guild_summoners`,
+        `SELECT DISTINCT gs.puuid
+         FROM guild_summoners gs
+         JOIN summoners s ON s.puuid = gs.puuid
+         WHERE s.game_id = 'league_of_legends'`,
         []
     );
     return result.rows.map((row: { puuid: string }) => row.puuid);

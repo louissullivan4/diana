@@ -307,7 +307,7 @@ describe('guildService', () => {
 
             expect(result).toEqual(['p1', 'p2', 'p3']);
             expect(queryMock).toHaveBeenCalledWith(
-                expect.stringContaining('DISTINCT puuid'),
+                expect.stringContaining('gs.puuid'),
                 []
             );
         });

@@ -13,12 +13,14 @@ import {
     requireAuth,
     setMessageAdapter,
     leagueBotPlugin,
+    apexBotPlugin,
 } from 'diana-core';
 import {
     registerSlashCommands,
     pingCommand,
     setupAndStartDiscord,
     leagueDiscordCommands,
+    apexDiscordCommands,
 } from 'diana-discord';
 import { createMessageAdapter } from './messageAdapter';
 
@@ -77,10 +79,13 @@ async function main() {
     setExpressApp(app);
     setMessageAdapter(createMessageAdapter());
 
-    registerSlashCommands([pingCommand, ...leagueDiscordCommands]);
+    registerSlashCommands([pingCommand, ...leagueDiscordCommands, ...apexDiscordCommands]);
 
     registerPlugin(leagueBotPlugin);
     await loadPlugin(leagueBotPlugin.id);
+
+    registerPlugin(apexBotPlugin);
+    await loadPlugin(apexBotPlugin.id);
 
     const repoRoot = path.resolve(__dirname, '..', '..', '..');
     const dashboardDir = path.join(repoRoot, 'dashboard', 'dist');

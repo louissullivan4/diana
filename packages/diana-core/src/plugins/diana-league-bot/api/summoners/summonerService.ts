@@ -10,6 +10,7 @@ export const getSummonerByAccountName = async (
         const query = `
             SELECT * FROM summoners
             WHERE "gameName" = $1 AND "tagLine" = $2 AND "matchRegionPrefix" = $3
+              AND game_id = 'league_of_legends'
         `;
         const params = [accountName, tagLine, region];
         const result = await db.query(query, params);
@@ -42,6 +43,7 @@ export async function searchSummonerGameNames(
                     FROM summoners s
                     JOIN guild_summoners gs ON gs.puuid = s.puuid
                     WHERE gs.guild_id = $1 AND s."gameName" ILIKE $2
+                      AND s.game_id = 'league_of_legends'
                     ORDER BY s."gameName" ASC
                     LIMIT $3
                 `
@@ -50,6 +52,7 @@ export async function searchSummonerGameNames(
                     FROM summoners s
                     JOIN guild_summoners gs ON gs.puuid = s.puuid
                     WHERE gs.guild_id = $1
+                      AND s.game_id = 'league_of_legends'
                     ORDER BY s."gameName" ASC
                     LIMIT $2
                 `;
@@ -65,12 +68,14 @@ export async function searchSummonerGameNames(
                 SELECT DISTINCT "gameName"
                 FROM summoners
                 WHERE "gameName" ILIKE $1
+                  AND game_id = 'league_of_legends'
                 ORDER BY "gameName" ASC
                 LIMIT $2
             `
             : `
                 SELECT DISTINCT "gameName"
                 FROM summoners
+                WHERE game_id = 'league_of_legends'
                 ORDER BY "gameName" ASC
                 LIMIT $1
             `;
@@ -104,6 +109,7 @@ export async function searchSummonerTags(
             const conditions: string[] = [
                 'gs.guild_id = $1',
                 's."tagLine" IS NOT NULL',
+                "s.game_id = 'league_of_legends'",
             ];
             const params: Array<string | number> = [guildId];
 
@@ -137,7 +143,7 @@ export async function searchSummonerTags(
             );
         }
 
-        const conditions: string[] = ['"tagLine" IS NOT NULL'];
+        const conditions: string[] = ['"tagLine" IS NOT NULL', "game_id = 'league_of_legends'"];
         const params: Array<string | number> = [];
 
         if (trimmedName) {
@@ -180,7 +186,7 @@ export async function searchSummonerTags(
 
 export const getSummonerByPuuid = async (puuid: string) => {
     try {
-        const query = `SELECT * FROM summoners WHERE "puuid" = $1`;
+        const query = `SELECT * FROM summoners WHERE "puuid" = $1 AND game_id = 'league_of_legends'`;
         const params = [puuid];
         const result = await db.query(query, params);
         const summoner = result.rows[0];
@@ -218,8 +224,8 @@ export const getSummonerCurrentGame = async (puuid: string) => {
 export const createSummoner = async (summonerData: Partial<Summoner>) => {
     try {
         const query = `
-            INSERT INTO summoners ("puuid", "gameName", "tagLine", "region", "matchRegionPrefix", "deepLolLink", "tier", "rank", "lp", "discordChannelId", "regionGroup")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO summoners ("puuid", "gameName", "tagLine", "region", "matchRegionPrefix", "deepLolLink", "tier", "rank", "lp", "discordChannelId", "regionGroup", "game_id")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'league_of_legends')
             RETURNING *;
         `;
         const params = [
