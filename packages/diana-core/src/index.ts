@@ -1,4 +1,4 @@
-export * from './core/pluginRegistry';
+export * from './core/pluginRegistry'; // includes setPluginMessageAdapter
 export * from './core/pluginTypes';
 export * from './core/api/authApi';
 export * from './core/api/pluginsApi';
@@ -6,6 +6,14 @@ export * from './core/auth/authMiddleware';
 export * from './core/auth/authService';
 export * from './plugins/diana-league-bot';
 export * from './plugins/diana-league-bot/types';
+export * from './plugins/diana-apex-bot';
+export * from './plugins/diana-apex-bot/types';
+export * from './plugins/diana-apex-bot/api/utils/apexServiceFactory';
+export * from './plugins/diana-apex-bot/api/utils/rankService';
+export * from './plugins/diana-apex-bot/api/players/playerService';
+export * from './plugins/diana-apex-bot/api/matches/apexMatchService';
+export * from './plugins/diana-apex-bot/presentation/apexPresentation';
+export * from './plugins/diana-apex-bot/notifications/apexNotifications';
 export * from './plugins/diana-league-bot/presentation/leaguePresentation';
 export * from './plugins/diana-league-bot/api/utils/db';
 export * from './plugins/diana-league-bot/api/utils/dataDragonService';

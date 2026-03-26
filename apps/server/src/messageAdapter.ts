@@ -1,16 +1,11 @@
 import type { MessageAdapter, MessagePayload, MessageTarget } from 'diana-core';
-import { createServerDiscordMessageAdapter } from './discordAdapter';
+import {
+    createDianaDiscordAdapter,
+    createPathfinderDiscordAdapter,
+} from './discordAdapter';
 import { createMeepsMessageAdapter } from './meepsAdapter';
 
-/**
- * Creates the app MessageAdapter that fans out to platform adapters.
- */
-export function createMessageAdapter(): MessageAdapter {
-    const adapters: MessageAdapter[] = [
-        createServerDiscordMessageAdapter(),
-        createMeepsMessageAdapter(),
-    ];
-
+function fanOut(...adapters: MessageAdapter[]): MessageAdapter {
     return {
         async sendMessage(target: MessageTarget, payload: MessagePayload) {
             for (const adapter of adapters) {
@@ -18,4 +13,17 @@ export function createMessageAdapter(): MessageAdapter {
             }
         },
     };
+}
+
+/** Message adapter for the League of Legends plugin (Diana bot). */
+export function createDianaPluginAdapter(): MessageAdapter {
+    return fanOut(createDianaDiscordAdapter(), createMeepsMessageAdapter());
+}
+
+/** Message adapter for the Apex Legends plugin (Pathfinder bot). */
+export function createPathfinderPluginAdapter(): MessageAdapter {
+    return fanOut(
+        createPathfinderDiscordAdapter(),
+        createMeepsMessageAdapter()
+    );
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 /**
- * Announce Script — posts a server announcement-style embed to Discord.
+ * Announce Script - posts a server announcement-style embed to Discord.
  *
  * Usage:
  *   npm run announce -- "Title" "Body text here"
@@ -24,7 +24,7 @@ function parseArgs(argv: string[]) {
 
     let channelId: string | undefined;
     let mention: 'everyone' | 'here' | undefined;
-    let color = 0x5865f2; // Discord blurple — classic announcement color
+    let color = 0x5865f2; // Discord blurple - classic announcement color
     let footer: string | undefined;
 
     for (let i = 2; i < args.length; i++) {

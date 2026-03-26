@@ -157,6 +157,7 @@ export const listMatchFilterOptions = async () => {
         const playersResult = await db.query(
             `SELECT "puuid", "gameName", "tagLine"
              FROM summoners
+             WHERE game_id = 'league_of_legends'
              ORDER BY "gameName" ASC`,
             []
         );

@@ -1,6 +1,6 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, type Client } from 'discord.js';
 import type { MessageAdapter, MessagePayload, MessageTarget } from 'diana-core';
-import { getDiscordClient } from './client';
+import { getDianaClient } from './client';
 
 function buildEmbed(payload: MessagePayload): EmbedBuilder | null {
     const hasEmbedContent =
@@ -37,7 +37,13 @@ function buildEmbed(payload: MessagePayload): EmbedBuilder | null {
     return embed;
 }
 
-export function createDiscordMessageAdapter(): MessageAdapter {
+/**
+ * Create a Discord MessageAdapter backed by the given client.
+ * Defaults to the Diana (LoL) client for backwards compatibility.
+ */
+export function createDiscordMessageAdapter(
+    client: Client = getDianaClient()
+): MessageAdapter {
     return {
         async sendMessage(target: MessageTarget, payload: MessagePayload) {
             const channelId =
@@ -45,7 +51,7 @@ export function createDiscordMessageAdapter(): MessageAdapter {
             if (!channelId) {
                 throw new Error('Channel ID not provided.');
             }
-            const channel = await getDiscordClient().channels.fetch(channelId);
+            const channel = await client.channels.fetch(channelId);
             if (!channel) {
                 throw new Error(`Channel with ID ${channelId} not found.`);
             }
