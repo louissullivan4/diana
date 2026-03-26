@@ -57,7 +57,10 @@ export const apexPlayerInfoCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            const data = await apexService.getPlayerByName(name, platform);
+            // Two-step: resolve exact UID first, then fetch full data by UID.
+            // getPlayerByName does fuzzy matching and can return the wrong player.
+            const uid = await apexService.getUidByName(name, platform);
+            const data = await apexService.getPlayerByUid(uid, platform);
             const embed = buildApexPlayerEmbed(data);
 
             const discordEmbed = new EmbedBuilder()

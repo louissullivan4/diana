@@ -34,7 +34,15 @@ export const apexAddPlayerCommand: SlashCommand = {
                     opt.addChoices({ name: c.name, value: c.value });
                 }
                 return opt;
-            });
+            })
+            .addStringOption((opt) =>
+                opt
+                    .setName('uid')
+                    .setDescription(
+                        'Apex UID (optional). Use if name lookup fails — find yours at mozambiquehe.re.'
+                    )
+                    .setRequired(false)
+            );
         return builder;
     })(),
 
@@ -52,16 +60,27 @@ export const apexAddPlayerCommand: SlashCommand = {
         const platform = (
             interaction.options.getString('platform') ?? 'PC'
         ).toUpperCase();
+        const manualUid = interaction.options.getString('uid')?.trim() ?? null;
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            const bridgeData = await apexService.getPlayerByName(
-                name,
+            let uidStr: string;
+
+            if (manualUid) {
+                // UID provided directly — skip name lookup
+                uidStr = manualUid;
+            } else {
+                // Two-step: resolve exact UID first, then fetch full data by UID.
+                // getPlayerByName does fuzzy matching and can return the wrong player.
+                uidStr = await apexService.getUidByName(name, platform);
+            }
+
+            const bridgeData = await apexService.getPlayerByUid(
+                uidStr,
                 platform
             );
-            const { uid, name: resolvedName, rank } = bridgeData.global;
-            const uidStr = String(uid);
+            const { name: resolvedName, rank } = bridgeData.global;
 
             const alreadyTracked = await isApexPlayerInGuild(guildId, uidStr);
             if (alreadyTracked) {
@@ -97,9 +116,10 @@ export const apexAddPlayerCommand: SlashCommand = {
         } catch (err: any) {
             const status = err?.status ?? err?.statusCode;
             if (status === 404) {
-                await interaction.editReply(
-                    `Could not find player **${name}** on **${platform}**. Check the name and platform.`
-                );
+                const hint = manualUid
+                    ? `Could not find player with UID **${manualUid}** on **${platform}**. Check the UID and platform.`
+                    : `Could not find player **${name}** on **${platform}**. Try passing your UID directly with the \`uid\` option.`;
+                await interaction.editReply(hint);
             } else {
                 console.error('[/apex-add] Error:', err);
                 await interaction.editReply(

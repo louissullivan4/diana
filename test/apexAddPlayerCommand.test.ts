@@ -40,9 +40,11 @@ class MockSlashCommandBuilder {
 
 // ─── diana-core mocks ─────────────────────────────────────────────────────────
 
-const getPlayerByNameMock = jest.fn();
+const getUidByNameMock = jest.fn();
+const getPlayerByUidMock = jest.fn();
 const createApexServiceMock = jest.fn(() => ({
-    getPlayerByName: getPlayerByNameMock,
+    getUidByName: getUidByNameMock,
+    getPlayerByUid: getPlayerByUidMock,
 }));
 const getApexPlayerByUidMock = jest.fn();
 const createApexPlayerMock = jest.fn();
@@ -90,10 +92,16 @@ function makeInteraction(
     opts: {
         name?: string;
         platform?: string | null;
+        uid?: string | null;
         guildId?: string | null;
     } = {}
 ) {
-    const { name = 'ProPlayer', platform = null, guildId = 'guild-1' } = opts;
+    const {
+        name = 'ProPlayer',
+        platform = null,
+        uid = null,
+        guildId = 'guild-1',
+    } = opts;
     return {
         guildId,
         user: { id: 'user-42' },
@@ -101,6 +109,7 @@ function makeInteraction(
             getString: jest.fn((key: string, _req?: boolean) => {
                 if (key === 'name') return name;
                 if (key === 'platform') return platform;
+                if (key === 'uid') return uid;
                 return null;
             }),
         },
@@ -142,7 +151,7 @@ describe('apexAddPlayerCommand', () => {
             const interaction = makeInteraction({ guildId: null });
             await apexAddPlayerCommand.execute(interaction as any);
 
-            expect(getPlayerByNameMock).not.toHaveBeenCalled();
+            expect(getUidByNameMock).not.toHaveBeenCalled();
             expect(interaction.reply).toHaveBeenCalledWith(
                 expect.objectContaining({
                     content: expect.stringContaining(
@@ -153,7 +162,8 @@ describe('apexAddPlayerCommand', () => {
         });
 
         it('adds a new player and links to guild', async () => {
-            getPlayerByNameMock.mockResolvedValue(makeBridgeData());
+            getUidByNameMock.mockResolvedValue('111222333');
+            getPlayerByUidMock.mockResolvedValue(makeBridgeData());
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue(null);
             createApexPlayerMock.mockResolvedValue({});
@@ -162,6 +172,8 @@ describe('apexAddPlayerCommand', () => {
             const interaction = makeInteraction();
             await apexAddPlayerCommand.execute(interaction as any);
 
+            expect(getUidByNameMock).toHaveBeenCalledWith('ProPlayer', 'PC');
+            expect(getPlayerByUidMock).toHaveBeenCalledWith('111222333', 'PC');
             expect(createApexPlayerMock).toHaveBeenCalledWith(
                 expect.objectContaining({
                     uid: '111222333',
@@ -179,7 +191,8 @@ describe('apexAddPlayerCommand', () => {
         });
 
         it('skips createApexPlayer when player already exists globally', async () => {
-            getPlayerByNameMock.mockResolvedValue(makeBridgeData());
+            getUidByNameMock.mockResolvedValue('111222333');
+            getPlayerByUidMock.mockResolvedValue(makeBridgeData());
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue({ uid: '111222333' });
             addSummonerToGuildMock.mockResolvedValue(undefined);
@@ -192,7 +205,8 @@ describe('apexAddPlayerCommand', () => {
         });
 
         it('replies already-tracked when player is in guild', async () => {
-            getPlayerByNameMock.mockResolvedValue(makeBridgeData());
+            getUidByNameMock.mockResolvedValue('111222333');
+            getPlayerByUidMock.mockResolvedValue(makeBridgeData());
             isApexPlayerInGuildMock.mockResolvedValue(true);
 
             const interaction = makeInteraction();
@@ -205,21 +219,22 @@ describe('apexAddPlayerCommand', () => {
             );
         });
 
-        it('replies not-found on 404 error', async () => {
+        it('replies not-found on 404 from nametouid', async () => {
             const err = new Error('Not found') as any;
             err.status = 404;
-            getPlayerByNameMock.mockRejectedValue(err);
+            getUidByNameMock.mockRejectedValue(err);
 
             const interaction = makeInteraction({ name: 'GhostPlayer' });
             await apexAddPlayerCommand.execute(interaction as any);
 
+            expect(getPlayerByUidMock).not.toHaveBeenCalled();
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.stringContaining('Could not find player')
             );
         });
 
         it('replies generic error on non-404 failure', async () => {
-            getPlayerByNameMock.mockRejectedValue(new Error('Network timeout'));
+            getUidByNameMock.mockRejectedValue(new Error('Network timeout'));
 
             const interaction = makeInteraction();
             await apexAddPlayerCommand.execute(interaction as any);
@@ -229,8 +244,53 @@ describe('apexAddPlayerCommand', () => {
             );
         });
 
+        it('skips name lookup when uid is provided directly', async () => {
+            getPlayerByUidMock.mockResolvedValue(
+                makeBridgeData('FM_Stew', 999888777)
+            );
+            isApexPlayerInGuildMock.mockResolvedValue(false);
+            getApexPlayerByUidMock.mockResolvedValue(null);
+            createApexPlayerMock.mockResolvedValue({});
+            addSummonerToGuildMock.mockResolvedValue(undefined);
+
+            const interaction = makeInteraction({
+                name: 'FM_Stew',
+                uid: '999888777',
+            });
+            await apexAddPlayerCommand.execute(interaction as any);
+
+            expect(getUidByNameMock).not.toHaveBeenCalled();
+            expect(getPlayerByUidMock).toHaveBeenCalledWith('999888777', 'PC');
+            expect(createApexPlayerMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    uid: '999888777',
+                    gameName: 'FM_Stew',
+                })
+            );
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.stringContaining('FM_Stew')
+            );
+        });
+
+        it('shows uid-specific error message on 404 when uid was provided', async () => {
+            const err = new Error('Not found') as any;
+            err.status = 404;
+            getPlayerByUidMock.mockRejectedValue(err);
+
+            const interaction = makeInteraction({
+                name: 'FM_Stew',
+                uid: '000000000',
+            });
+            await apexAddPlayerCommand.execute(interaction as any);
+
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.stringContaining('UID **000000000**')
+            );
+        });
+
         it('defaults to PC platform when none provided', async () => {
-            getPlayerByNameMock.mockResolvedValue(makeBridgeData());
+            getUidByNameMock.mockResolvedValue('111222333');
+            getPlayerByUidMock.mockResolvedValue(makeBridgeData());
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue(null);
             createApexPlayerMock.mockResolvedValue({});
@@ -239,7 +299,7 @@ describe('apexAddPlayerCommand', () => {
             const interaction = makeInteraction({ platform: null });
             await apexAddPlayerCommand.execute(interaction as any);
 
-            expect(getPlayerByNameMock).toHaveBeenCalledWith('ProPlayer', 'PC');
+            expect(getUidByNameMock).toHaveBeenCalledWith('ProPlayer', 'PC');
         });
     });
 });

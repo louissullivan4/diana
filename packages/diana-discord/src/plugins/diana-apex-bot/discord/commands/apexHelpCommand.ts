@@ -19,8 +19,8 @@ export const apexHelpCommand: SlashCommand = {
                     value: "Look up a player's stats and rank.",
                 },
                 {
-                    name: '/apex-add <name> [platform]',
-                    value: 'Start tracking a player in this server.',
+                    name: '/apex-add <name> [platform] [uid]',
+                    value: 'Start tracking a player. If name lookup fails, pass your UID directly (find it at mozambiquehe.re).',
                 },
                 {
                     name: '/apex-remove <name>',
