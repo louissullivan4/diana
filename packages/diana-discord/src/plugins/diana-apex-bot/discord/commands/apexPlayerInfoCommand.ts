@@ -26,7 +26,9 @@ export const apexPlayerInfoCommand: SlashCommand = {
         )
         .addStringOption((opt) => {
             opt.setName('platform')
-                .setDescription('Platform (default: PC). Only needed for untracked players.')
+                .setDescription(
+                    'Platform (default: PC). Only needed for untracked players.'
+                )
                 .setRequired(false);
             for (const c of platformChoices) {
                 opt.addChoices({ name: c.name, value: c.value });
@@ -54,7 +56,8 @@ export const apexPlayerInfoCommand: SlashCommand = {
 
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true).trim();
-        const platformOption = interaction.options.getString('platform') ?? 'PC';
+        const platformOption =
+            interaction.options.getString('platform') ?? 'PC';
 
         await interaction.deferReply();
 
@@ -71,10 +74,16 @@ export const apexPlayerInfoCommand: SlashCommand = {
                 resolvedPlatform = dbPlayer?.platform ?? platformOption;
             } else {
                 // Player not tracked — fall back to API name → UID lookup.
-                resolvedUid = await apexService.getUidByName(name, platformOption);
+                resolvedUid = await apexService.getUidByName(
+                    name,
+                    platformOption
+                );
             }
 
-            const data = await apexService.getPlayerByUid(resolvedUid, resolvedPlatform);
+            const data = await apexService.getPlayerByUid(
+                resolvedUid,
+                resolvedPlatform
+            );
             const embed = buildApexPlayerEmbed(data);
 
             const discordEmbed = new EmbedBuilder()
