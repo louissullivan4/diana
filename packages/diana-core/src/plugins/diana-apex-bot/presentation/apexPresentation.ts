@@ -9,8 +9,10 @@ export interface ApexPlayerEmbed {
     playerName: string;
     platform: string;
     level: number;
+    levelProgress: number;
     rankDisplay: string;
-    selectedLegend: string | null;
+    /** "🟢 Online" | "🎮 In Game" | "🔴 Offline" */
+    status: string;
     topStats: Array<{ name: string; value: string }>;
     colorHex: number;
 }
@@ -29,8 +31,8 @@ const apexRankColors = new Map<string, number>([
 export function buildApexPlayerEmbed(
     data: ApexBridgeResponse
 ): ApexPlayerEmbed {
-    const { global, legends } = data;
-    const { name, platform, level, rank } = global;
+    const { global, legends, realtime } = data;
+    const { name, platform, level, toNextLevelPercent, rank } = global;
 
     const rankDisplay = formatApexRank(
         rank.rankName,
@@ -39,7 +41,17 @@ export function buildApexPlayerEmbed(
     );
     const colorHex = apexRankColors.get(rank.rankName) ?? 0x3498db;
 
-    // Selected legend stats
+    // Online status
+    let status: string;
+    if (realtime?.isInGame === 1) {
+        status = '🎮 In Game';
+    } else if (realtime?.isOnline === 1) {
+        status = '🟢 Online';
+    } else {
+        status = '🔴 Offline';
+    }
+
+    // Top tracker stats from selected legend
     const selectedLegendName = Object.keys(legends.selected)[0] ?? null;
     const selectedLegendData: ApexLegendData | null = selectedLegendName
         ? (legends.selected[selectedLegendName] ?? null)
@@ -59,8 +71,9 @@ export function buildApexPlayerEmbed(
         playerName: name,
         platform,
         level,
+        levelProgress: toNextLevelPercent,
         rankDisplay,
-        selectedLegend: selectedLegendName,
+        status,
         topStats,
         colorHex,
     };

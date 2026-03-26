@@ -2,6 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
     searchApexPlayerNames,
+    getApexPlayerUidByName,
     getRecentApexMatches,
     formatMatchHistory,
 } from 'diana-core';
@@ -43,13 +44,7 @@ export const apexMatchesCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            // Look up UID from name
-            const { db } = await import('diana-core');
-            const row = await db.query(
-                `SELECT puuid FROM summoners WHERE "gameName" = $1 AND game_id = 'apex_legends' LIMIT 1`,
-                [name]
-            );
-            const uid: string | undefined = row.rows[0]?.puuid;
+            const uid = await getApexPlayerUidByName(name);
             if (!uid) {
                 await interaction.editReply(
                     `Player **${name}** is not being tracked.`

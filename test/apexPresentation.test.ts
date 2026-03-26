@@ -78,9 +78,10 @@ describe('apexPresentation', () => {
             expect(embed.platform).toBe('PC');
         });
 
-        it('returns correct level', () => {
+        it('returns correct level and progress', () => {
             const embed = buildApexPlayerEmbed(makeApexBridgeResponse());
             expect(embed.level).toBe(500);
+            expect(embed.levelProgress).toBe(60);
         });
 
         it('formats rank display correctly', () => {
@@ -100,23 +101,38 @@ describe('apexPresentation', () => {
             expect(embed.colorHex).toBe(0x3498db);
         });
 
-        it('includes selected legend name', () => {
-            const embed = buildApexPlayerEmbed(makeApexBridgeResponse());
-            expect(embed.selectedLegend).toBe('Wraith');
-        });
-
         it('populates top stats from selected legend', () => {
             const embed = buildApexPlayerEmbed(makeApexBridgeResponse());
             expect(embed.topStats).toHaveLength(3);
             expect(embed.topStats[0].name).toBe('Kills');
         });
 
-        it('returns null selectedLegend when no legends selected', () => {
+        it('returns empty topStats when no legends selected', () => {
             const response = makeApexBridgeResponse();
             response.legends.selected = {};
             const embed = buildApexPlayerEmbed(response);
-            expect(embed.selectedLegend).toBeNull();
             expect(embed.topStats).toHaveLength(0);
+        });
+
+        it('returns Offline status when no realtime data', () => {
+            const embed = buildApexPlayerEmbed(makeApexBridgeResponse());
+            expect(embed.status).toBe('🔴 Offline');
+        });
+
+        it('returns Online status when isOnline is 1', () => {
+            const response = makeApexBridgeResponse({
+                realtime: { isOnline: 1, isInGame: 0 },
+            });
+            const embed = buildApexPlayerEmbed(response);
+            expect(embed.status).toBe('🟢 Online');
+        });
+
+        it('returns In Game status when isInGame is 1', () => {
+            const response = makeApexBridgeResponse({
+                realtime: { isOnline: 1, isInGame: 1 },
+            });
+            const embed = buildApexPlayerEmbed(response);
+            expect(embed.status).toBe('🎮 In Game');
         });
 
         it('caps top stats at 3 entries', () => {
