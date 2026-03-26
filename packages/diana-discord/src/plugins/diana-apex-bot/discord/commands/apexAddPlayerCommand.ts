@@ -4,7 +4,7 @@ import {
     createApexService,
     getApexPlayerByUid,
     createApexPlayer,
-    addSummonerToGuild,
+    addApexPlayerToGuild,
     isApexPlayerInGuild,
     createApexRankHistory,
     APEX_PLATFORMS,
@@ -109,7 +109,7 @@ export const apexAddPlayerCommand: SlashCommand = {
                 ).catch(() => {});
             }
 
-            await addSummonerToGuild(guildId, uidStr, interaction.user.id);
+            await addApexPlayerToGuild(guildId, uidStr, interaction.user.id);
             await interaction.editReply(
                 `Now tracking **${resolvedName}** (${platform}) in this server.`
             );

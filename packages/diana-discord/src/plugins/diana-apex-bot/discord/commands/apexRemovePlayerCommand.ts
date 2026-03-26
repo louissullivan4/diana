@@ -2,8 +2,8 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
     searchApexPlayerNames,
-    getApexPlayerByName,
-    removeSummonerFromGuild,
+    getApexPlayerUidByName,
+    removeApexPlayerFromGuild,
     deleteApexPlayer,
     getGuildsTrackingApexPlayer,
 } from 'diana-core';
@@ -52,20 +52,13 @@ export const apexRemovePlayerCommand: SlashCommand = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            // Find player by name across all platforms
-            const result = await import('diana-core').then((m) =>
-                m.db.query(
-                    `SELECT puuid FROM summoners WHERE "gameName" = $1 AND game_id = 'apex_legends' LIMIT 1`,
-                    [name]
-                )
-            );
-            const uid: string | undefined = result.rows[0]?.puuid;
+            const uid = await getApexPlayerUidByName(name);
             if (!uid) {
                 await interaction.editReply(`Player **${name}** not found.`);
                 return;
             }
 
-            const removed = await removeSummonerFromGuild(guildId, uid);
+            const removed = await removeApexPlayerFromGuild(guildId, uid);
             if (!removed) {
                 await interaction.editReply(
                     `**${name}** is not tracked in this server.`

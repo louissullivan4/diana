@@ -5,6 +5,7 @@ import { apexSetChannelCommand } from './apexSetChannelCommand';
 import { apexPredatorCommand } from './apexPredatorCommand';
 import { apexMatchesCommand } from './apexMatchesCommand';
 import { apexHelpCommand } from './apexHelpCommand';
+import { apexUidCommand } from './apexUidCommand';
 
 export const apexDiscordCommands = [
     apexPlayerInfoCommand,
@@ -14,6 +15,7 @@ export const apexDiscordCommands = [
     apexPredatorCommand,
     apexMatchesCommand,
     apexHelpCommand,
+    apexUidCommand,
 ];
 
 export {
@@ -24,4 +26,5 @@ export {
     apexPredatorCommand,
     apexMatchesCommand,
     apexHelpCommand,
+    apexUidCommand,
 };

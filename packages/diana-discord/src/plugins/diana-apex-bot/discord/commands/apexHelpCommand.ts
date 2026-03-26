@@ -37,6 +37,10 @@ export const apexHelpCommand: SlashCommand = {
                 {
                     name: '/apex-matches <name>',
                     value: 'Show recent match history for a tracked player.',
+                },
+                {
+                    name: '/apex-uid <name> [platform]',
+                    value: "Look up a player's Apex UID by name. Use when /apex-add can't find you.",
                 }
             )
             .setFooter({ text: 'Powered by apexlegendsapi.com' });

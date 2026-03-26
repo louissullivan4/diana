@@ -1,12 +1,13 @@
 export interface ApexPlayer {
-    /** Apex UID stored as string (stored in summoners.puuid column) */
+    /** Apex UID — primary key in apex_players table */
     uid: string;
     gameName: string;
-    /** Platform: PC, PS4, X1, SWITCH (stored in summoners.region column) */
+    /** Platform: PC, PS4, X1, SWITCH */
     platform: string;
     tier: string;
-    rank: string;
-    /** Ranked Points (stored in summoners.lp column) */
+    /** Division number: 4 = I, 3 = II, 2 = III, 1 = IV; 0 for Master/Predator */
+    division: number;
+    /** Ranked Points */
     rp: number;
     /** Set to APEX_IN_GAME_PREFIX + matchRecordId when in a match */
     currentMatchId: string | null;

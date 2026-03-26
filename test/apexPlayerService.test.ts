@@ -9,6 +9,7 @@ import { db } from '../packages/diana-core/src/plugins/diana-league-bot/api/util
 import {
     getApexPlayerByUid,
     getApexPlayerByName,
+    getApexPlayerUidByName,
     createApexPlayer,
     updateApexPlayerRank,
     deleteApexPlayer,
@@ -18,10 +19,29 @@ import {
     extractLegendStats,
     isInActiveMatch,
     extractMatchRecordId,
+    addApexPlayerToGuild,
+    removeApexPlayerFromGuild,
+    isApexPlayerInGuild,
 } from '../packages/diana-core/src/plugins/diana-apex-bot/api/players/playerService';
 import { APEX_IN_GAME_PREFIX } from '../packages/diana-core/src/plugins/diana-apex-bot/types';
 
 const queryMock = db.query as unknown as jest.Mock;
+
+// Helper: a minimal apex_players row
+function makeRow(overrides: Record<string, unknown> = {}) {
+    return {
+        uid: 'uid-1',
+        gameName: 'TestPlayer',
+        platform: 'PC',
+        tier: 'Gold',
+        division: 2,
+        rp: 900,
+        currentMatchId: null,
+        discordChannelId: null,
+        lastUpdated: '2025-01-01',
+        ...overrides,
+    };
+}
 
 describe('apexPlayerService', () => {
     beforeEach(() => {
@@ -123,23 +143,17 @@ describe('apexPlayerService', () => {
 
     describe('getApexPlayerByUid', () => {
         it('returns player when found', async () => {
-            const row = {
-                puuid: 'uid-1',
-                gameName: 'TestPlayer',
-                region: 'PC',
-                tier: 'Gold',
-                rank: '2',
-                lp: 900,
-                currentMatchId: null,
-                discordChannelId: null,
-                lastUpdated: '2025-01-01',
-            };
-            queryMock.mockResolvedValue({ rows: [row] });
+            queryMock.mockResolvedValue({ rows: [makeRow()] });
 
             const result = await getApexPlayerByUid('uid-1');
             expect(result).not.toBeNull();
             expect(result?.uid).toBe('uid-1');
             expect(result?.gameName).toBe('TestPlayer');
+            expect(result?.division).toBe(2);
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('apex_players'),
+                expect.arrayContaining(['uid-1'])
+            );
         });
 
         it('returns null when not found', async () => {
@@ -151,22 +165,23 @@ describe('apexPlayerService', () => {
 
     describe('getApexPlayerByName', () => {
         it('returns player when found', async () => {
-            const row = {
-                puuid: 'uid-2',
-                gameName: 'AlphaPlayer',
-                region: 'PS4',
-                tier: 'Platinum',
-                rank: '3',
-                lp: 1400,
-                currentMatchId: null,
-                discordChannelId: null,
-                lastUpdated: '2025-01-01',
-            };
-            queryMock.mockResolvedValue({ rows: [row] });
+            queryMock.mockResolvedValue({
+                rows: [
+                    makeRow({
+                        uid: 'uid-2',
+                        gameName: 'AlphaPlayer',
+                        platform: 'PS4',
+                    }),
+                ],
+            });
 
             const result = await getApexPlayerByName('AlphaPlayer', 'PS4');
             expect(result?.gameName).toBe('AlphaPlayer');
             expect(result?.platform).toBe('PS4');
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('apex_players'),
+                expect.arrayContaining(['AlphaPlayer', 'PS4'])
+            );
         });
 
         it('returns null when not found', async () => {
@@ -176,20 +191,33 @@ describe('apexPlayerService', () => {
         });
     });
 
+    describe('getApexPlayerUidByName', () => {
+        it('returns uid when found', async () => {
+            queryMock.mockResolvedValue({ rows: [{ uid: 'uid-99' }] });
+            const result = await getApexPlayerUidByName('SomePlayer');
+            expect(result).toBe('uid-99');
+        });
+
+        it('returns null when not found', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+            const result = await getApexPlayerUidByName('Ghost');
+            expect(result).toBeNull();
+        });
+    });
+
     describe('createApexPlayer', () => {
         it('inserts and returns a new player', async () => {
-            const row = {
-                puuid: 'uid-3',
-                gameName: 'NewPlayer',
-                region: 'PC',
-                tier: 'Bronze',
-                rank: '4',
-                lp: 200,
-                currentMatchId: null,
-                discordChannelId: null,
-                lastUpdated: '2025-01-01',
-            };
-            queryMock.mockResolvedValue({ rows: [row] });
+            queryMock.mockResolvedValue({
+                rows: [
+                    makeRow({
+                        uid: 'uid-3',
+                        gameName: 'NewPlayer',
+                        tier: 'Bronze',
+                        division: 4,
+                        rp: 200,
+                    }),
+                ],
+            });
 
             const result = await createApexPlayer({
                 uid: 'uid-3',
@@ -201,10 +229,11 @@ describe('apexPlayerService', () => {
             });
 
             expect(queryMock).toHaveBeenCalledWith(
-                expect.stringContaining('INSERT INTO summoners'),
+                expect.stringContaining('INSERT INTO apex_players'),
                 expect.arrayContaining(['uid-3', 'NewPlayer', 'PC'])
             );
             expect(result.uid).toBe('uid-3');
+            expect(result.division).toBe(4);
         });
     });
 
@@ -215,29 +244,24 @@ describe('apexPlayerService', () => {
             await updateApexPlayerRank('uid-4', 'Diamond', 1, 5000);
 
             expect(queryMock).toHaveBeenCalledWith(
-                expect.stringContaining('UPDATE summoners'),
-                expect.arrayContaining(['Diamond', '1', 5000, 'uid-4'])
+                expect.stringContaining('UPDATE apex_players'),
+                expect.arrayContaining(['Diamond', 1, 5000, 'uid-4'])
             );
         });
     });
 
     describe('deleteApexPlayer', () => {
         it('returns deleted player when found', async () => {
-            const row = {
-                puuid: 'uid-5',
-                gameName: 'OldPlayer',
-                region: 'PC',
-                tier: 'Silver',
-                rank: '3',
-                lp: 350,
-                currentMatchId: null,
-                discordChannelId: null,
-                lastUpdated: '2025-01-01',
-            };
-            queryMock.mockResolvedValue({ rows: [row] });
+            queryMock.mockResolvedValue({
+                rows: [makeRow({ uid: 'uid-5', gameName: 'OldPlayer' })],
+            });
 
             const result = await deleteApexPlayer('uid-5');
             expect(result?.uid).toBe('uid-5');
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('DELETE FROM apex_players'),
+                expect.arrayContaining(['uid-5'])
+            );
         });
 
         it('returns null when not found', async () => {
@@ -250,28 +274,22 @@ describe('apexPlayerService', () => {
     describe('getAllTrackedApexPlayers', () => {
         it('returns all apex players from joined query', async () => {
             const rows = [
-                {
-                    puuid: 'uid-a',
+                makeRow({
+                    uid: 'uid-a',
                     gameName: 'PlayerA',
-                    region: 'PC',
+                    platform: 'PC',
                     tier: 'Gold',
-                    rank: '2',
-                    lp: 850,
-                    currentMatchId: null,
-                    discordChannelId: null,
-                    lastUpdated: '2025-01-01',
-                },
-                {
-                    puuid: 'uid-b',
+                    division: 2,
+                    rp: 850,
+                }),
+                makeRow({
+                    uid: 'uid-b',
                     gameName: 'PlayerB',
-                    region: 'PS4',
+                    platform: 'PS4',
                     tier: 'Platinum',
-                    rank: '4',
-                    lp: 1050,
-                    currentMatchId: null,
-                    discordChannelId: null,
-                    lastUpdated: '2025-01-01',
-                },
+                    division: 4,
+                    rp: 1050,
+                }),
             ];
             queryMock.mockResolvedValue({ rows });
 
@@ -279,6 +297,10 @@ describe('apexPlayerService', () => {
             expect(result).toHaveLength(2);
             expect(result[0].gameName).toBe('PlayerA');
             expect(result[1].gameName).toBe('PlayerB');
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('apex_players'),
+                []
+            );
         });
     });
 
@@ -320,6 +342,62 @@ describe('apexPlayerService', () => {
             queryMock.mockResolvedValue({ rows: [] });
             const result = await getApexPlayerCurrentMatchId('uid-missing');
             expect(result).toBeNull();
+        });
+    });
+
+    describe('addApexPlayerToGuild', () => {
+        it('inserts into guild_apex_players', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            await addApexPlayerToGuild('guild-1', 'uid-8', 'user-42');
+
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('guild_apex_players'),
+                expect.arrayContaining(['guild-1', 'uid-8', 'user-42'])
+            );
+        });
+    });
+
+    describe('removeApexPlayerFromGuild', () => {
+        it('returns true when a row was deleted', async () => {
+            queryMock.mockResolvedValue({ rowCount: 1, rows: [] });
+
+            const result = await removeApexPlayerFromGuild('guild-1', 'uid-9');
+            expect(result).toBe(true);
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('DELETE FROM guild_apex_players'),
+                expect.arrayContaining(['guild-1', 'uid-9'])
+            );
+        });
+
+        it('returns false when no row was deleted', async () => {
+            queryMock.mockResolvedValue({ rowCount: 0, rows: [] });
+
+            const result = await removeApexPlayerFromGuild(
+                'guild-1',
+                'uid-missing'
+            );
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('isApexPlayerInGuild', () => {
+        it('returns true when player is in guild', async () => {
+            queryMock.mockResolvedValue({ rowCount: 1, rows: [{}] });
+
+            const result = await isApexPlayerInGuild('guild-1', 'uid-10');
+            expect(result).toBe(true);
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('guild_apex_players'),
+                expect.arrayContaining(['guild-1', 'uid-10'])
+            );
+        });
+
+        it('returns false when player is not in guild', async () => {
+            queryMock.mockResolvedValue({ rowCount: 0, rows: [] });
+
+            const result = await isApexPlayerInGuild('guild-1', 'uid-missing');
+            expect(result).toBe(false);
         });
     });
 });

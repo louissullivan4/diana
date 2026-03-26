@@ -166,7 +166,7 @@ async function handleMatchEnd(
 
     // Update stored rank
     const oldTier = player.tier;
-    const oldDiv = parseInt(player.rank, 10) || 0;
+    const oldDiv = player.division;
     const oldRp = player.rp;
     const newTier = apiRank.rankName;
     const newDiv = apiRank.rankDiv;
@@ -253,7 +253,7 @@ async function syncRankIfChanged(
     const { rankName: newTier, rankDiv: newDiv, rankScore: newRp } = apiRank;
     if (
         player.tier === newTier &&
-        parseInt(player.rank, 10) === newDiv &&
+        player.division === newDiv &&
         player.rp === newRp
     ) {
         return;

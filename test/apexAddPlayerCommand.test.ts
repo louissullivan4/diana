@@ -48,7 +48,7 @@ const createApexServiceMock = jest.fn(() => ({
 }));
 const getApexPlayerByUidMock = jest.fn();
 const createApexPlayerMock = jest.fn();
-const addSummonerToGuildMock = jest.fn();
+const addApexPlayerToGuildMock = jest.fn();
 const isApexPlayerInGuildMock = jest.fn();
 const createApexRankHistoryMock = jest.fn().mockResolvedValue(undefined);
 
@@ -61,7 +61,7 @@ jest.mock('diana-core', () => ({
     createApexService: createApexServiceMock,
     getApexPlayerByUid: getApexPlayerByUidMock,
     createApexPlayer: createApexPlayerMock,
-    addSummonerToGuild: addSummonerToGuildMock,
+    addApexPlayerToGuild: addApexPlayerToGuildMock,
     isApexPlayerInGuild: isApexPlayerInGuildMock,
     createApexRankHistory: createApexRankHistoryMock,
     APEX_PLATFORMS: ['PC', 'PS4', 'X1', 'SWITCH'],
@@ -167,7 +167,7 @@ describe('apexAddPlayerCommand', () => {
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue(null);
             createApexPlayerMock.mockResolvedValue({});
-            addSummonerToGuildMock.mockResolvedValue(undefined);
+            addApexPlayerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction();
             await apexAddPlayerCommand.execute(interaction as any);
@@ -180,7 +180,7 @@ describe('apexAddPlayerCommand', () => {
                     gameName: 'ProPlayer',
                 })
             );
-            expect(addSummonerToGuildMock).toHaveBeenCalledWith(
+            expect(addApexPlayerToGuildMock).toHaveBeenCalledWith(
                 'guild-1',
                 '111222333',
                 'user-42'
@@ -195,13 +195,13 @@ describe('apexAddPlayerCommand', () => {
             getPlayerByUidMock.mockResolvedValue(makeBridgeData());
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue({ uid: '111222333' });
-            addSummonerToGuildMock.mockResolvedValue(undefined);
+            addApexPlayerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction();
             await apexAddPlayerCommand.execute(interaction as any);
 
             expect(createApexPlayerMock).not.toHaveBeenCalled();
-            expect(addSummonerToGuildMock).toHaveBeenCalled();
+            expect(addApexPlayerToGuildMock).toHaveBeenCalled();
         });
 
         it('replies already-tracked when player is in guild', async () => {
@@ -213,7 +213,7 @@ describe('apexAddPlayerCommand', () => {
             await apexAddPlayerCommand.execute(interaction as any);
 
             expect(createApexPlayerMock).not.toHaveBeenCalled();
-            expect(addSummonerToGuildMock).not.toHaveBeenCalled();
+            expect(addApexPlayerToGuildMock).not.toHaveBeenCalled();
             expect(interaction.editReply).toHaveBeenCalledWith(
                 expect.stringContaining('already being tracked')
             );
@@ -251,7 +251,7 @@ describe('apexAddPlayerCommand', () => {
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue(null);
             createApexPlayerMock.mockResolvedValue({});
-            addSummonerToGuildMock.mockResolvedValue(undefined);
+            addApexPlayerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction({
                 name: 'FM_Stew',
@@ -294,7 +294,7 @@ describe('apexAddPlayerCommand', () => {
             isApexPlayerInGuildMock.mockResolvedValue(false);
             getApexPlayerByUidMock.mockResolvedValue(null);
             createApexPlayerMock.mockResolvedValue({});
-            addSummonerToGuildMock.mockResolvedValue(undefined);
+            addApexPlayerToGuildMock.mockResolvedValue(undefined);
 
             const interaction = makeInteraction({ platform: null });
             await apexAddPlayerCommand.execute(interaction as any);
