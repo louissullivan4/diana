@@ -1,4 +1,8 @@
-import type { IApexService, ApexBridgeResponse, ApexPredatorResponse } from '../../types.js';
+import type {
+    IApexService,
+    ApexBridgeResponse,
+    ApexPredatorResponse,
+} from '../../types.js';
 import { ApexService } from './apexService.js';
 
 class MockApexService implements IApexService {
@@ -6,11 +10,17 @@ class MockApexService implements IApexService {
         return true;
     }
 
-    async getPlayerByName(name: string, platform: string): Promise<ApexBridgeResponse> {
+    async getPlayerByName(
+        name: string,
+        platform: string
+    ): Promise<ApexBridgeResponse> {
         return buildMockBridgeResponse(name, platform);
     }
 
-    async getPlayerByUid(uid: string, platform: string): Promise<ApexBridgeResponse> {
+    async getPlayerByUid(
+        uid: string,
+        platform: string
+    ): Promise<ApexBridgeResponse> {
         return buildMockBridgeResponse(`Player_${uid}`, platform);
     }
 
@@ -27,7 +37,10 @@ class MockApexService implements IApexService {
     }
 }
 
-function buildMockBridgeResponse(name: string, platform: string): ApexBridgeResponse {
+function buildMockBridgeResponse(
+    name: string,
+    platform: string
+): ApexBridgeResponse {
     return {
         global: {
             name,
@@ -65,7 +78,9 @@ export function createApexService(): IApexService {
     }
     const apiKey = process.env.APEX_API_KEY;
     if (!apiKey) {
-        console.warn('[Apex] APEX_API_KEY not set - falling back to mock service');
+        console.warn(
+            '[Apex] APEX_API_KEY not set - falling back to mock service'
+        );
         return new MockApexService();
     }
     return new ApexService(apiKey);

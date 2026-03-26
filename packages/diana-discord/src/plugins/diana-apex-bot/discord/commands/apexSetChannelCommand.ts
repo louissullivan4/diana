@@ -1,11 +1,17 @@
-import { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import {
+    SlashCommandBuilder,
+    MessageFlags,
+    PermissionFlagsBits,
+} from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import { setGuildChannel } from 'diana-core';
 
 export const apexSetChannelCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('apex-channel')
-        .setDescription('Set the channel for Apex Legends rank change notifications.')
+        .setDescription(
+            'Set the channel for Apex Legends rank change notifications.'
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addChannelOption((opt) =>
             opt
@@ -34,7 +40,9 @@ export const apexSetChannelCommand: SlashCommand = {
             );
         } catch (err) {
             console.error('[/apex-channel] Error:', err);
-            await interaction.editReply('Failed to set channel. Please try again.');
+            await interaction.editReply(
+                'Failed to set channel. Please try again.'
+            );
         }
     },
 };

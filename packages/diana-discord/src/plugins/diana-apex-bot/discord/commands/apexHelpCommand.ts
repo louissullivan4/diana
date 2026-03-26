@@ -8,13 +8,15 @@ export const apexHelpCommand: SlashCommand = {
 
     execute: async (interaction) => {
         const embed = new EmbedBuilder()
-            .setTitle('🔫 Pathfinder - Apex Legends Bot Help')
+            .setTitle('Pathfinder - Apex Legends Bot Help')
             .setColor(0xe74c3c)
-            .setDescription('Track Apex Legends players and get rank change notifications.')
+            .setDescription(
+                'Track Apex Legends players and get rank change notifications.'
+            )
             .addFields(
                 {
                     name: '/apex-player <name> [platform]',
-                    value: 'Look up a player\'s stats and rank.',
+                    value: "Look up a player's stats and rank.",
                 },
                 {
                     name: '/apex-add <name> [platform]',
@@ -31,6 +33,10 @@ export const apexHelpCommand: SlashCommand = {
                 {
                     name: '/apex-predator',
                     value: 'Show current Predator RP cut-off for each platform.',
+                },
+                {
+                    name: '/apex-matches <name>',
+                    value: 'Show recent match history for a tracked player.',
                 }
             )
             .setFooter({ text: 'Powered by apexlegendsapi.com' });

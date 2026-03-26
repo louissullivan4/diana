@@ -143,7 +143,10 @@ export async function searchSummonerTags(
             );
         }
 
-        const conditions: string[] = ['"tagLine" IS NOT NULL', "game_id = 'league_of_legends'"];
+        const conditions: string[] = [
+            '"tagLine" IS NOT NULL',
+            "game_id = 'league_of_legends'",
+        ];
         const params: Array<string | number> = [];
 
         if (trimmedName) {

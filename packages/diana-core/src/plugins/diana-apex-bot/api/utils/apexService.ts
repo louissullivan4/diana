@@ -14,7 +14,10 @@ export class ApexService implements IApexService {
         this.apiKey = apiKey;
     }
 
-    private async fetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+    private async fetch<T>(
+        path: string,
+        params: Record<string, string> = {}
+    ): Promise<T> {
         const url = new URL(`${BASE_URL}${path}`);
         url.searchParams.set('auth', this.apiKey);
         for (const [key, value] of Object.entries(params)) {
@@ -27,9 +30,12 @@ export class ApexService implements IApexService {
 
         if (!response.ok) {
             const body = await response.text().catch(() => '');
-            throw Object.assign(new Error(`Apex API error ${response.status}: ${body}`), {
-                status: response.status,
-            });
+            throw Object.assign(
+                new Error(`Apex API error ${response.status}: ${body}`),
+                {
+                    status: response.status,
+                }
+            );
         }
 
         return response.json() as Promise<T>;
@@ -44,16 +50,28 @@ export class ApexService implements IApexService {
         }
     }
 
-    async getPlayerByName(name: string, platform: string): Promise<ApexBridgeResponse> {
-        return this.fetch<ApexBridgeResponse>('/bridge', { player: name, platform });
+    async getPlayerByName(
+        name: string,
+        platform: string
+    ): Promise<ApexBridgeResponse> {
+        return this.fetch<ApexBridgeResponse>('/bridge', {
+            player: name,
+            platform,
+        });
     }
 
-    async getPlayerByUid(uid: string, platform: string): Promise<ApexBridgeResponse> {
+    async getPlayerByUid(
+        uid: string,
+        platform: string
+    ): Promise<ApexBridgeResponse> {
         return this.fetch<ApexBridgeResponse>('/bridge', { uid, platform });
     }
 
     async getUidByName(name: string, platform: string): Promise<string> {
-        const result = await this.fetch<ApexUidResponse>('/nametouid', { player: name, platform });
+        const result = await this.fetch<ApexUidResponse>('/nametouid', {
+            player: name,
+            platform,
+        });
         return String(result.uid);
     }
 

@@ -17,11 +17,13 @@ export const apexAddPlayerCommand: SlashCommand = {
     data: (() => {
         const builder = new SlashCommandBuilder()
             .setName('apex-add')
-            .setDescription('Add an Apex Legends player to track in this server.')
+            .setDescription(
+                'Add an Apex Legends player to track in this server.'
+            )
             .addStringOption((opt) =>
                 opt
                     .setName('name')
-                    .setDescription('Player\'s in-game name.')
+                    .setDescription("Player's in-game name.")
                     .setRequired(true)
             )
             .addStringOption((opt) => {
@@ -47,12 +49,17 @@ export const apexAddPlayerCommand: SlashCommand = {
         }
 
         const name = interaction.options.getString('name', true).trim();
-        const platform = (interaction.options.getString('platform') ?? 'PC').toUpperCase();
+        const platform = (
+            interaction.options.getString('platform') ?? 'PC'
+        ).toUpperCase();
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            const bridgeData = await apexService.getPlayerByName(name, platform);
+            const bridgeData = await apexService.getPlayerByName(
+                name,
+                platform
+            );
             const { uid, name: resolvedName, rank } = bridgeData.global;
             const uidStr = String(uid);
 
@@ -95,7 +102,9 @@ export const apexAddPlayerCommand: SlashCommand = {
                 );
             } else {
                 console.error('[/apex-add] Error:', err);
-                await interaction.editReply('Something went wrong. Please try again later.');
+                await interaction.editReply(
+                    'Something went wrong. Please try again later.'
+                );
             }
         }
     },

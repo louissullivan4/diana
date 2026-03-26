@@ -26,6 +26,7 @@ interface LoadedPlugin {
 const loadedPlugins = new Map<string, LoadedPlugin>();
 let expressApp: Application | null = null;
 let messageAdapter: MessageAdapter | null = null;
+const pluginAdapters = new Map<string, MessageAdapter>();
 const pendingMounts: { pluginId: string; path: string; router: Router }[] = [];
 
 /** Formatted timestamp for logs */
@@ -66,6 +67,13 @@ export function setExpressApp(app: Application): void {
 
 export function setMessageAdapter(adapter: MessageAdapter | null): void {
     messageAdapter = adapter;
+}
+
+export function setPluginMessageAdapter(
+    pluginId: string,
+    adapter: MessageAdapter
+): void {
+    pluginAdapters.set(pluginId, adapter);
 }
 
 function createContext(pluginId: string): PluginContext {
@@ -115,7 +123,7 @@ function createContext(pluginId: string): PluginContext {
             return getPluginConfigData(pluginId) as T;
         },
         getMessageAdapter(): MessageAdapter | null {
-            return messageAdapter;
+            return pluginAdapters.get(pluginId) ?? messageAdapter;
         },
     };
 }

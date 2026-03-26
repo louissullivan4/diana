@@ -7,7 +7,9 @@ const apexService = createApexService();
 export const apexPredatorCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('apex-predator')
-        .setDescription('Show the current Apex Predator RP cut-off for each platform.'),
+        .setDescription(
+            'Show the current Apex Predator RP cut-off for each platform.'
+        ),
 
     execute: async (interaction) => {
         await interaction.deferReply();
@@ -35,7 +37,9 @@ export const apexPredatorCommand: SlashCommand = {
             await interaction.editReply({ embeds: [embed] });
         } catch (err) {
             console.error('[/apex-predator] Error:', err);
-            await interaction.editReply('Failed to fetch predator data. Please try again later.');
+            await interaction.editReply(
+                'Failed to fetch predator data. Please try again later.'
+            );
         }
     },
 };

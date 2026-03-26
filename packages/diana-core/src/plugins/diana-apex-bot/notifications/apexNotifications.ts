@@ -1,4 +1,7 @@
-import type { MessageAdapter, MessagePayload } from '../../../core/pluginTypes.js';
+import type {
+    MessageAdapter,
+    MessagePayload,
+} from '../../../core/pluginTypes.js';
 
 const apexRankColors = new Map<string, number>([
     ['Rookie', 0x8b5a2b],
@@ -59,7 +62,9 @@ async function sendWithAdapter(
     label: string
 ): Promise<boolean> {
     if (!adapter) {
-        console.warn(`[Apex Notification] No message adapter; skipping ${label}.`);
+        console.warn(
+            `[Apex Notification] No message adapter; skipping ${label}.`
+        );
         return true;
     }
     try {
@@ -78,4 +83,91 @@ export async function notifyApexRankChange(
     const { discordChannelId, ...payload } = input;
     const message = buildApexRankChangeMessage(payload);
     return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
+}
+
+interface MatchEndInput {
+    playerName: string;
+    legend: string;
+    result: 'WIN' | 'LOSS' | 'UNKNOWN';
+    durationSecs: number;
+    killsGained: number;
+    damageGained: number;
+    rpChange: number;
+    newRankMsg: string;
+    discordChannelId: string;
+}
+
+export function buildApexMatchEndMessage({
+    playerName,
+    legend,
+    result,
+    durationSecs,
+    killsGained,
+    damageGained,
+    rpChange,
+    newRankMsg,
+}: Omit<MatchEndInput, 'discordChannelId'>): MessagePayload {
+    const resultColors: Record<string, number> = {
+        WIN: 0x28a745,
+        LOSS: 0xe74c3c,
+        UNKNOWN: 0x95a5a6,
+    };
+    const colorHex = resultColors[result] ?? 0x95a5a6;
+
+    const minutes = Math.floor(durationSecs / 60);
+    const seconds = durationSecs % 60;
+    const durationDisplay = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+    const resultEmoji =
+        result === 'WIN' ? '🏆' : result === 'LOSS' ? '💀' : '🎮';
+    const rpSign = rpChange > 0 ? '+' : '';
+
+    return {
+        title: '🎮 **Match Summary**',
+        description: `${playerName} has finished a game!`,
+        colorHex,
+        fields: [
+            {
+                name: `${resultEmoji} **Result**`,
+                value: `**${result}**`,
+                inline: true,
+            },
+            {
+                name: '🦸 **Legend**',
+                value: `**${legend}**`,
+                inline: true,
+            },
+            {
+                name: '⚔️ **Kills**',
+                value: `**${killsGained}**`,
+                inline: true,
+            },
+            {
+                name: '💥 **Damage**',
+                value: `**${damageGained.toLocaleString()}**`,
+                inline: true,
+            },
+            {
+                name: '🔄 **RP Change**',
+                value: `**${rpSign}${rpChange} RP**`,
+                inline: true,
+            },
+            {
+                name: '🏅 **Current Rank**',
+                value: `**${newRankMsg}**`,
+                inline: true,
+            },
+        ],
+        footer: `Match Summary • Length ${durationDisplay}`,
+        timestamp: new Date().toISOString(),
+    };
+}
+
+export async function notifyApexMatchEnd(
+    adapter: MessageAdapter | null | undefined,
+    input: MatchEndInput
+): Promise<boolean> {
+    const { discordChannelId, ...payload } = input;
+    const message = buildApexMatchEndMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'match end');
 }

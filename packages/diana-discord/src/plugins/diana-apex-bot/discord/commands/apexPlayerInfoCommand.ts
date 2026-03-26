@@ -1,9 +1,10 @@
-import {
-    EmbedBuilder,
-    SlashCommandBuilder,
-} from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
-import { createApexService, buildApexPlayerEmbed, APEX_PLATFORMS } from 'diana-core';
+import {
+    createApexService,
+    buildApexPlayerEmbed,
+    APEX_PLATFORMS,
+} from 'diana-core';
 
 const apexService = createApexService();
 
@@ -12,7 +13,7 @@ const platformChoices = APEX_PLATFORMS.map((p) => ({ name: p, value: p }));
 export const apexPlayerInfoCommand: SlashCommand = {
     data: new SlashCommandBuilder()
         .setName('apex-player')
-        .setDescription('Look up an Apex Legends player\'s stats and rank.')
+        .setDescription("Look up an Apex Legends player's stats and rank.")
         .addStringOption((opt) =>
             opt
                 .setName('name')
@@ -36,8 +37,14 @@ export const apexPlayerInfoCommand: SlashCommand = {
         try {
             const { searchApexPlayerNames } = await import('diana-core');
             const guildId = interaction.guildId ?? undefined;
-            const names = await searchApexPlayerNames(focused.value, 25, guildId);
-            await interaction.respond(names.map((n) => ({ name: n, value: n })));
+            const names = await searchApexPlayerNames(
+                focused.value,
+                25,
+                guildId
+            );
+            await interaction.respond(
+                names.map((n) => ({ name: n, value: n }))
+            );
         } catch {
             await interaction.respond([]);
         }
@@ -54,11 +61,19 @@ export const apexPlayerInfoCommand: SlashCommand = {
             const embed = buildApexPlayerEmbed(data);
 
             const discordEmbed = new EmbedBuilder()
-                .setTitle(`🔫 ${embed.playerName} - Apex Legends`)
+                .setTitle(`${embed.playerName} - Apex Legends`)
                 .setColor(embed.colorHex)
                 .addFields(
-                    { name: '🎮 Platform', value: embed.platform, inline: true },
-                    { name: '🌟 Level', value: String(embed.level), inline: true },
+                    {
+                        name: '🎮 Platform',
+                        value: embed.platform,
+                        inline: true,
+                    },
+                    {
+                        name: '🌟 Level',
+                        value: String(embed.level),
+                        inline: true,
+                    },
                     { name: '🏆 Rank', value: embed.rankDisplay, inline: true }
                 )
                 .setTimestamp();
@@ -79,7 +94,9 @@ export const apexPlayerInfoCommand: SlashCommand = {
                 });
             }
 
-            discordEmbed.setFooter({ text: 'Apex Legends Stats via apexlegendsapi.com' });
+            discordEmbed.setFooter({
+                text: 'Apex Legends Stats via apexlegendsapi.com',
+            });
 
             await interaction.editReply({ embeds: [discordEmbed] });
         } catch (err: any) {
@@ -90,7 +107,9 @@ export const apexPlayerInfoCommand: SlashCommand = {
                 );
             } else {
                 console.error('[/apex-player] Error:', err);
-                await interaction.editReply('Failed to fetch player data. Please try again later.');
+                await interaction.editReply(
+                    'Failed to fetch player data. Please try again later.'
+                );
             }
         }
     },

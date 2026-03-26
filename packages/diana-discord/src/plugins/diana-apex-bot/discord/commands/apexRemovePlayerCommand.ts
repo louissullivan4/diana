@@ -25,8 +25,14 @@ export const apexRemovePlayerCommand: SlashCommand = {
         if (focused.name !== 'name') return;
         try {
             const guildId = interaction.guildId ?? undefined;
-            const names = await searchApexPlayerNames(focused.value, 25, guildId);
-            await interaction.respond(names.map((n) => ({ name: n, value: n })));
+            const names = await searchApexPlayerNames(
+                focused.value,
+                25,
+                guildId
+            );
+            await interaction.respond(
+                names.map((n) => ({ name: n, value: n }))
+            );
         } catch {
             await interaction.respond([]);
         }
@@ -61,7 +67,9 @@ export const apexRemovePlayerCommand: SlashCommand = {
 
             const removed = await removeSummonerFromGuild(guildId, uid);
             if (!removed) {
-                await interaction.editReply(`**${name}** is not tracked in this server.`);
+                await interaction.editReply(
+                    `**${name}** is not tracked in this server.`
+                );
                 return;
             }
 
@@ -74,7 +82,9 @@ export const apexRemovePlayerCommand: SlashCommand = {
             await interaction.editReply(`Stopped tracking **${name}**.`);
         } catch (err) {
             console.error('[/apex-remove] Error:', err);
-            await interaction.editReply('Something went wrong. Please try again later.');
+            await interaction.editReply(
+                'Something went wrong. Please try again later.'
+            );
         }
     },
 };

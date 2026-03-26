@@ -1,7 +1,15 @@
 import { db } from '../../../diana-league-bot/api/utils/db.js';
-import { APEX_GAME_ID, type ApexPlayer } from '../../types.js';
+import {
+    APEX_GAME_ID,
+    APEX_IN_GAME_PREFIX,
+    type ApexPlayer,
+    type ApexStatSnapshot,
+    type ApexLegendData,
+} from '../../types.js';
 
-export const getApexPlayerByUid = async (uid: string): Promise<ApexPlayer | null> => {
+export const getApexPlayerByUid = async (
+    uid: string
+): Promise<ApexPlayer | null> => {
     const result = await db.query(
         `SELECT * FROM summoners WHERE "puuid" = $1 AND game_id = $2`,
         [uid, APEX_GAME_ID]
@@ -62,7 +70,9 @@ export const updateApexPlayerRank = async (
     );
 };
 
-export const deleteApexPlayer = async (uid: string): Promise<ApexPlayer | null> => {
+export const deleteApexPlayer = async (
+    uid: string
+): Promise<ApexPlayer | null> => {
     const result = await db.query(
         `DELETE FROM summoners WHERE "puuid" = $1 AND game_id = $2 RETURNING *`,
         [uid, APEX_GAME_ID]
@@ -102,7 +112,9 @@ export const searchApexPlayerNames = async (
         : `SELECT DISTINCT "gameName" FROM summoners
            WHERE game_id = $1
            ORDER BY "gameName" ASC LIMIT $2`;
-    const params = trimmed ? [`${trimmed}%`, APEX_GAME_ID, limit] : [APEX_GAME_ID, limit];
+    const params = trimmed
+        ? [`${trimmed}%`, APEX_GAME_ID, limit]
+        : [APEX_GAME_ID, limit];
     const result = await db.query(query, params);
     return result.rows.map((r: { gameName: string }) => r.gameName);
 };
@@ -120,7 +132,9 @@ export const getAllTrackedApexPlayers = async (): Promise<ApexPlayer[]> => {
 
 export const getGuildsTrackingApexPlayer = async (
     uid: string
-): Promise<Array<{ guild_id: string; channel_id: string; live_posting: boolean }>> => {
+): Promise<
+    Array<{ guild_id: string; channel_id: string; live_posting: boolean }>
+> => {
     const result = await db.query(
         `SELECT gc.guild_id, gc.channel_id, gc.live_posting
          FROM guild_summoners gs
@@ -154,7 +168,7 @@ export const createApexRankHistory = async (
     await db.query(
         `INSERT INTO rank_tracking
             ("matchId", "entryParticipantId", "tier", "rank", "lp", "queueType", "game_id")
-         VALUES ($1, $2, $3, $4, $5, 'RANKED_LEAGUE', $6)
+         VALUES ($1, $2, $3, $4, $5, 'RANKED_BATTLE_ROYALE', $6)
          ON CONFLICT ON CONSTRAINT unique_rank_tracking_participant DO NOTHING`,
         [matchId, uid, tier, String(div), rp, APEX_GAME_ID]
     );
@@ -172,6 +186,62 @@ export const getMostRecentApexRank = async (
     return result.rows[0] ?? null;
 };
 
+export const setApexPlayerMatchId = async (
+    uid: string,
+    matchId: string | null
+): Promise<void> => {
+    await db.query(
+        `UPDATE summoners SET "currentMatchId" = $1, "lastUpdated" = NOW()
+         WHERE "puuid" = $2 AND game_id = $3`,
+        [matchId, uid, APEX_GAME_ID]
+    );
+};
+
+export const getApexPlayerCurrentMatchId = async (
+    uid: string
+): Promise<string | null> => {
+    const result = await db.query(
+        `SELECT "currentMatchId" FROM summoners WHERE "puuid" = $1 AND game_id = $2`,
+        [uid, APEX_GAME_ID]
+    );
+    return result.rows[0]?.currentMatchId ?? null;
+};
+
+/** Extract kills, damage, and wins from a legend's data array */
+export function extractLegendStats(
+    legendData: ApexLegendData | undefined | null
+): ApexStatSnapshot {
+    const stats: ApexStatSnapshot = { kills: 0, damage: 0, wins: 0 };
+    if (!legendData?.data) return stats;
+    for (const entry of legendData.data) {
+        const key = (entry.key ?? '').toLowerCase();
+        const name = (entry.name ?? '').toLowerCase();
+        if (key === 'kills' || name === 'kills') {
+            stats.kills = entry.value;
+        } else if (key === 'damage' || name.includes('damage')) {
+            stats.damage = entry.value;
+        } else if (key === 'wins' || name === 'wins') {
+            stats.wins = entry.value;
+        }
+    }
+    return stats;
+}
+
+/** True when currentMatchId indicates player is in an active (tracked) match */
+export function isInActiveMatch(
+    currentMatchId: string | null | undefined
+): boolean {
+    return (
+        typeof currentMatchId === 'string' &&
+        currentMatchId.startsWith(APEX_IN_GAME_PREFIX)
+    );
+}
+
+/** Extract the apex_match_details.id from the stored currentMatchId */
+export function extractMatchRecordId(currentMatchId: string): number {
+    return parseInt(currentMatchId.replace(APEX_IN_GAME_PREFIX, ''), 10);
+}
+
 function rowToApexPlayer(row: any): ApexPlayer | null {
     if (!row) return null;
     return {
@@ -181,6 +251,7 @@ function rowToApexPlayer(row: any): ApexPlayer | null {
         tier: row.tier ?? 'Unranked',
         rank: row.rank ?? '0',
         rp: row.lp ?? 0,
+        currentMatchId: row.currentMatchId ?? null,
         discordChannelId: row.discordChannelId ?? null,
         lastUpdated: row.lastUpdated,
     };

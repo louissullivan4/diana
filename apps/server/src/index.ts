@@ -11,7 +11,7 @@ import {
     pluginsApiRouter,
     authApiRouter,
     requireAuth,
-    setMessageAdapter,
+    setPluginMessageAdapter,
     leagueBotPlugin,
     apexBotPlugin,
 } from 'diana-core';
@@ -22,7 +22,10 @@ import {
     leagueDiscordCommands,
     apexDiscordCommands,
 } from 'diana-discord';
-import { createMessageAdapter } from './messageAdapter';
+import {
+    createDianaPluginAdapter,
+    createPathfinderPluginAdapter,
+} from './messageAdapter';
 
 // Rate limiter for dashboard routes (100 requests per minute per IP)
 const dashboardLimiter = rateLimit({
@@ -77,9 +80,11 @@ async function main() {
     app.use('/api/plugins', requireAuth, pluginsApiRouter);
 
     setExpressApp(app);
-    setMessageAdapter(createMessageAdapter());
+    setPluginMessageAdapter(leagueBotPlugin.id, createDianaPluginAdapter());
+    setPluginMessageAdapter(apexBotPlugin.id, createPathfinderPluginAdapter());
 
-    registerSlashCommands([pingCommand, ...leagueDiscordCommands, ...apexDiscordCommands]);
+    registerSlashCommands([pingCommand, ...leagueDiscordCommands], 'diana');
+    registerSlashCommands([...apexDiscordCommands], 'pathfinder');
 
     registerPlugin(leagueBotPlugin);
     await loadPlugin(leagueBotPlugin.id);
