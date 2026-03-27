@@ -1,8 +1,8 @@
 import {
     buildApexRankChangeMessage,
-    buildApexMatchEndMessage,
+    buildApexSessionMessage,
     notifyApexRankChange,
-    notifyApexMatchEnd,
+    notifyApexSession,
 } from '../packages/diana-core/src/plugins/diana-apex-bot/notifications/apexNotifications';
 
 describe('apexNotifications', () => {
@@ -78,80 +78,131 @@ describe('apexNotifications', () => {
             });
             expect(msg.colorHex).toBe(0x3498db);
         });
+
+        it('sets thumbnailUrl when rankIconUrl is provided', () => {
+            const msg = buildApexRankChangeMessage({
+                playerName: 'Player',
+                direction: 'promoted',
+                newRankMsg: 'Diamond I (5000 RP)',
+                rpChange: 300,
+                rankIconUrl: 'https://example.com/diamond.png',
+            });
+            expect(msg.thumbnailUrl).toBe('https://example.com/diamond.png');
+        });
+
+        it('leaves thumbnailUrl undefined when rankIconUrl is null', () => {
+            const msg = buildApexRankChangeMessage({
+                playerName: 'Player',
+                direction: 'promoted',
+                newRankMsg: 'Rookie IV (0 RP)',
+                rpChange: 10,
+                rankIconUrl: null,
+            });
+            expect(msg.thumbnailUrl).toBeUndefined();
+        });
     });
 
-    describe('buildApexMatchEndMessage', () => {
+    describe('buildApexSessionMessage', () => {
         const baseInput = {
             playerName: 'ProPlayer',
             legend: 'Wraith',
-            result: 'WIN' as const,
-            durationSecs: 1865,
-            killsGained: 5,
-            damageGained: 2800,
             rpChange: 150,
             newRankMsg: 'Platinum II (1500 RP)',
+            killsGained: 5,
+            damageGained: 2800,
+            winsGained: 1,
         };
 
-        it('returns a WIN payload with green color', () => {
-            const msg = buildApexMatchEndMessage(baseInput);
-            expect(msg.colorHex).toBe(0x28a745);
+        it('returns a session update payload with correct title', () => {
+            const msg = buildApexSessionMessage(baseInput);
+            expect(msg.title).toContain('Session Update');
             expect(msg.description).toContain('ProPlayer');
         });
 
-        it('returns a LOSS payload with red color', () => {
-            const msg = buildApexMatchEndMessage({
-                ...baseInput,
-                result: 'LOSS',
-                rpChange: -30,
-            });
-            expect(msg.colorHex).toBe(0xe74c3c);
+        it('uses the rank color for the embed', () => {
+            const msg = buildApexSessionMessage(baseInput);
+            // Platinum color
+            expect(msg.colorHex).toBe(0x00cfff);
         });
 
-        it('returns an UNKNOWN payload with grey color', () => {
-            const msg = buildApexMatchEndMessage({
-                ...baseInput,
-                result: 'UNKNOWN',
-                rpChange: 0,
-            });
-            expect(msg.colorHex).toBe(0x95a5a6);
-        });
-
-        it('formats duration correctly in footer', () => {
-            // 1865 seconds = 31 minutes, 5 seconds
-            const msg = buildApexMatchEndMessage(baseInput);
-            expect(msg.footer).toContain('31:05');
-        });
-
-        it('includes all expected fields', () => {
-            const msg = buildApexMatchEndMessage(baseInput);
+        it('includes RP change, current rank, and legend fields', () => {
+            const msg = buildApexSessionMessage(baseInput);
             const fieldNames = msg.fields?.map((f) => f.name) ?? [];
-            expect(fieldNames.some((n) => n.includes('Result'))).toBe(true);
-            expect(fieldNames.some((n) => n.includes('Legend'))).toBe(true);
-            expect(fieldNames.some((n) => n.includes('Kills'))).toBe(true);
-            expect(fieldNames.some((n) => n.includes('Damage'))).toBe(true);
             expect(fieldNames.some((n) => n.includes('RP Change'))).toBe(true);
             expect(fieldNames.some((n) => n.includes('Current Rank'))).toBe(
                 true
             );
+            expect(fieldNames.some((n) => n.includes('Legend'))).toBe(true);
         });
 
-        it('shows WIN emoji in result field', () => {
-            const msg = buildApexMatchEndMessage(baseInput);
-            const resultField = msg.fields?.find((f) =>
-                f.name.includes('Result')
+        it('shows + prefix for positive RP change', () => {
+            const msg = buildApexSessionMessage(baseInput);
+            const rpField = msg.fields?.find((f) =>
+                f.name.includes('RP Change')
             );
-            expect(resultField?.name).toContain('🏆');
+            expect(rpField?.value).toContain('+150 RP');
         });
 
-        it('shows LOSS emoji in result field', () => {
-            const msg = buildApexMatchEndMessage({
+        it('shows kills, damage, and wins when non-zero', () => {
+            const msg = buildApexSessionMessage(baseInput);
+            const fieldNames = msg.fields?.map((f) => f.name) ?? [];
+            expect(fieldNames.some((n) => n.includes('Kills'))).toBe(true);
+            expect(fieldNames.some((n) => n.includes('Damage'))).toBe(true);
+            expect(fieldNames.some((n) => n.includes('Win'))).toBe(true);
+        });
+
+        it('shows stats note when snapshots are present but all zero', () => {
+            const msg = buildApexSessionMessage({
                 ...baseInput,
-                result: 'LOSS',
+                killsGained: 0,
+                damageGained: 0,
+                winsGained: 0,
             });
-            const resultField = msg.fields?.find((f) =>
-                f.name.includes('Result')
-            );
-            expect(resultField?.name).toContain('💀');
+            const fieldNames = msg.fields?.map((f) => f.name) ?? [];
+            expect(fieldNames.some((n) => n.includes('Kills'))).toBe(false);
+            expect(fieldNames.some((n) => n.includes('Damage'))).toBe(false);
+            expect(fieldNames.some((n) => n.includes('Stats'))).toBe(true);
+        });
+
+        it('omits stats section entirely when snapshots are null (first session)', () => {
+            const msg = buildApexSessionMessage({
+                ...baseInput,
+                killsGained: null,
+                damageGained: null,
+                winsGained: null,
+            });
+            const fieldNames = msg.fields?.map((f) => f.name) ?? [];
+            expect(fieldNames.some((n) => n.includes('Kills'))).toBe(false);
+            expect(fieldNames.some((n) => n.includes('Damage'))).toBe(false);
+            expect(fieldNames.some((n) => n.includes('Stats'))).toBe(false);
+        });
+
+        it('shows kills when only kills is non-zero', () => {
+            const msg = buildApexSessionMessage({
+                ...baseInput,
+                killsGained: 3,
+                damageGained: 0,
+                winsGained: 0,
+            });
+            const fieldNames = msg.fields?.map((f) => f.name) ?? [];
+            expect(fieldNames.some((n) => n.includes('Kills'))).toBe(true);
+            expect(fieldNames.some((n) => n.includes('Damage'))).toBe(false);
+        });
+
+        it('sets thumbnailUrl when legendIconUrl is provided', () => {
+            const msg = buildApexSessionMessage({
+                ...baseInput,
+                legendIconUrl: 'https://example.com/wraith.png',
+            });
+            expect(msg.thumbnailUrl).toBe('https://example.com/wraith.png');
+        });
+
+        it('uses default color for unknown rank tier', () => {
+            const msg = buildApexSessionMessage({
+                ...baseInput,
+                newRankMsg: 'UnknownTier I (100 RP)',
+            });
+            expect(msg.colorHex).toBe(0x95a5a6);
         });
     });
 
@@ -213,30 +264,48 @@ describe('apexNotifications', () => {
         });
     });
 
-    describe('notifyApexMatchEnd', () => {
-        it('calls adapter.sendMessage with match end payload', async () => {
+    describe('notifyApexSession', () => {
+        it('calls adapter.sendMessage with session payload', async () => {
             const sendMessage = jest.fn().mockResolvedValue(undefined);
             const adapter = { sendMessage };
 
-            const result = await notifyApexMatchEnd(adapter as any, {
+            const result = await notifyApexSession(adapter as any, {
                 playerName: 'Player',
                 legend: 'Bloodhound',
-                result: 'WIN',
-                durationSecs: 600,
-                killsGained: 3,
-                damageGained: 1500,
                 rpChange: 125,
                 newRankMsg: 'Gold II (1000 RP)',
+                killsGained: 3,
+                damageGained: 1500,
+                winsGained: 0,
                 discordChannelId: 'chan-999',
             });
 
             expect(sendMessage).toHaveBeenCalledWith(
                 { channelId: 'chan-999' },
                 expect.objectContaining({
-                    title: expect.stringContaining('Match Summary'),
+                    title: expect.stringContaining('Session Update'),
                 })
             );
             expect(result).toBe(true);
+        });
+
+        it('returns true and logs warning when adapter is null', async () => {
+            const warnSpy = jest
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const result = await notifyApexSession(null, {
+                playerName: 'Player',
+                legend: 'Wraith',
+                rpChange: 50,
+                newRankMsg: 'Silver I (500 RP)',
+                killsGained: null,
+                damageGained: null,
+                winsGained: null,
+                discordChannelId: 'chan-abc',
+            });
+            expect(result).toBe(true);
+            expect(warnSpy).toHaveBeenCalled();
+            warnSpy.mockRestore();
         });
     });
 });

@@ -12,6 +12,7 @@ import {
     getApexPlayerUidByName,
     createApexPlayer,
     updateApexPlayerRank,
+    updateApexPlayerRankAndSnapshot,
     deleteApexPlayer,
     getAllTrackedApexPlayers,
     setApexPlayerMatchId,
@@ -39,6 +40,9 @@ function makeRow(overrides: Record<string, unknown> = {}) {
         currentMatchId: null,
         discordChannelId: null,
         lastUpdated: '2025-01-01',
+        kills_snapshot: null,
+        damage_snapshot: null,
+        wins_snapshot: null,
         ...overrides,
     };
 }
@@ -246,6 +250,35 @@ describe('apexPlayerService', () => {
             expect(queryMock).toHaveBeenCalledWith(
                 expect.stringContaining('UPDATE apex_players'),
                 expect.arrayContaining(['Diamond', 1, 5000, 'uid-4'])
+            );
+        });
+    });
+
+    describe('updateApexPlayerRankAndSnapshot', () => {
+        it('calls UPDATE with rank and snapshot params', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            await updateApexPlayerRankAndSnapshot(
+                'uid-4',
+                'Platinum',
+                3,
+                1200,
+                500,
+                400000,
+                10
+            );
+
+            expect(queryMock).toHaveBeenCalledWith(
+                expect.stringContaining('UPDATE apex_players'),
+                expect.arrayContaining([
+                    'Platinum',
+                    3,
+                    1200,
+                    500,
+                    400000,
+                    10,
+                    'uid-4',
+                ])
             );
         });
     });

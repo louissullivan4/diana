@@ -79,6 +79,26 @@ export const updateApexPlayerRank = async (
     );
 };
 
+/** Update rank and store the current stat snapshot for session diffing. */
+export const updateApexPlayerRankAndSnapshot = async (
+    uid: string,
+    tier: string,
+    rankDiv: number,
+    rp: number,
+    killsSnapshot: number,
+    damageSnapshot: number,
+    winsSnapshot: number
+): Promise<void> => {
+    await db.query(
+        `UPDATE apex_players
+         SET tier = $1, division = $2, rp = $3,
+             kills_snapshot = $4, damage_snapshot = $5, wins_snapshot = $6,
+             "lastUpdated" = NOW()
+         WHERE uid = $7`,
+        [tier, rankDiv, rp, killsSnapshot, damageSnapshot, winsSnapshot, uid]
+    );
+};
+
 export const deleteApexPlayer = async (
     uid: string
 ): Promise<ApexPlayer | null> => {
@@ -281,5 +301,8 @@ function rowToApexPlayer(row: any): ApexPlayer | null {
         currentMatchId: row.currentMatchId ?? null,
         discordChannelId: row.discordChannelId ?? null,
         lastUpdated: row.lastUpdated,
+        killsSnapshot: row.kills_snapshot ?? null,
+        damageSnapshot: row.damage_snapshot ?? null,
+        winsSnapshot: row.wins_snapshot ?? null,
     };
 }

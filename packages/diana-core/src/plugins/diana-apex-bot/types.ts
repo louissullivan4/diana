@@ -9,10 +9,15 @@ export interface ApexPlayer {
     division: number;
     /** Ranked Points */
     rp: number;
-    /** Set to APEX_IN_GAME_PREFIX + matchRecordId when in a match */
     currentMatchId: string | null;
     discordChannelId: string | null;
     lastUpdated: string;
+    /** Lifetime kills from the player's banner tracker (null = not yet captured) */
+    killsSnapshot: number | null;
+    /** Lifetime damage from the player's banner tracker (null = not yet captured) */
+    damageSnapshot: number | null;
+    /** Lifetime wins from the player's banner tracker (null = not yet captured) */
+    winsSnapshot: number | null;
 }
 
 export interface ApexRank {

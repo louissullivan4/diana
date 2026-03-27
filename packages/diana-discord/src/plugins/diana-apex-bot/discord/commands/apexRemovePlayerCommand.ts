@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
     searchApexPlayerNames,
@@ -66,13 +66,21 @@ export const apexRemovePlayerCommand: SlashCommand = {
                 return;
             }
 
-            // Clean up global record if no other guilds track them
             const remainingGuilds = await getGuildsTrackingApexPlayer(uid);
             if (remainingGuilds.length === 0) {
                 await deleteApexPlayer(uid);
             }
 
-            await interaction.editReply(`Stopped tracking **${name}**.`);
+            const embed = new EmbedBuilder()
+                .setTitle(`🗑️ Stopped tracking ${name}`)
+                .setColor(0x95a5a6)
+                .setDescription(
+                    `**${name}** will no longer receive rank notifications in this server.`
+                )
+                .setFooter({ text: 'Apex Legends' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [embed] });
         } catch (err) {
             console.error('[/apex-remove] Error:', err);
             await interaction.editReply(

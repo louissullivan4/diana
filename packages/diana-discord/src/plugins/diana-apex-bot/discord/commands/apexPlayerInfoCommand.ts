@@ -6,6 +6,7 @@ import {
     searchApexPlayerNames,
     getApexPlayerUidByName,
     getApexPlayerByUid as getDbPlayer,
+    getApexRankEmblem,
     APEX_PLATFORMS,
 } from 'diana-core';
 
@@ -62,8 +63,6 @@ export const apexPlayerInfoCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            // Prefer the stored UID + platform so players added via UID bypass
-            // are found correctly without relying on API name lookup.
             let resolvedUid: string;
             let resolvedPlatform: string = platformOption;
 
@@ -73,7 +72,6 @@ export const apexPlayerInfoCommand: SlashCommand = {
                 resolvedUid = dbUid;
                 resolvedPlatform = dbPlayer?.platform ?? platformOption;
             } else {
-                // Player not tracked — fall back to API name → UID lookup.
                 resolvedUid = await apexService.getUidByName(
                     name,
                     platformOption
@@ -86,43 +84,50 @@ export const apexPlayerInfoCommand: SlashCommand = {
             );
             const embed = buildApexPlayerEmbed(data);
 
+            const rankEmblem = getApexRankEmblem(data.global.rank.rankName);
+
             const discordEmbed = new EmbedBuilder()
-                .setTitle(`${embed.playerName} - Apex Legends`)
+                .setTitle(`${embed.playerName}`)
                 .setColor(embed.colorHex)
-                .addFields(
-                    {
-                        name: '🎮 Platform',
-                        value: embed.platform,
-                        inline: true,
-                    },
-                    {
-                        name: '🌟 Level',
-                        value: `${embed.level} (${embed.levelProgress}% to next)`,
-                        inline: true,
-                    },
-                    { name: '🏆 Rank', value: embed.rankDisplay, inline: true },
-                    { name: '📡 Status', value: embed.status, inline: true }
-                )
-                .setTimestamp();
+                .setTimestamp()
+                .setFooter({ text: 'Apex Legends Stats' });
+
+            if (rankEmblem) {
+                discordEmbed.setThumbnail(rankEmblem);
+            }
+
+            discordEmbed.addFields(
+                {
+                    name: '🏆 **Rank**',
+                    value: `**${embed.rankDisplay}**`,
+                    inline: true,
+                },
+                {
+                    name: '🌟 **Level**',
+                    value: `**${embed.level}** (${embed.levelProgress}% to next)`,
+                    inline: true,
+                },
+                {
+                    name: '📡 **Status**',
+                    value: embed.status,
+                    inline: true,
+                }
+            );
 
             if (embed.topStats.length > 0) {
                 discordEmbed.addFields({
-                    name: '📊 Tracker Stats',
+                    name: '📊 **Tracker Stats**',
                     value: '\u200b',
                     inline: false,
                 });
                 for (const stat of embed.topStats) {
                     discordEmbed.addFields({
-                        name: stat.name,
-                        value: stat.value,
+                        name: `**${stat.name}**`,
+                        value: `**${stat.value}**`,
                         inline: true,
                     });
                 }
             }
-
-            discordEmbed.setFooter({
-                text: 'Apex Legends Stats via apexlegendsapi.com',
-            });
 
             await interaction.editReply({ embeds: [discordEmbed] });
         } catch (err: any) {

@@ -14,11 +14,14 @@ const apexRankColors = new Map<string, number>([
     ['Apex Predator', 0xe74c3c],
 ]);
 
+// ─── Rank Change ──────────────────────────────────────────────────────────────
+
 interface RankChangeInput {
     playerName: string;
     direction: 'promoted' | 'demoted';
     newRankMsg: string;
     rpChange: number;
+    rankIconUrl?: string | null;
     discordChannelId: string;
 }
 
@@ -27,10 +30,12 @@ export function buildApexRankChangeMessage({
     direction,
     newRankMsg,
     rpChange,
+    rankIconUrl,
 }: Omit<RankChangeInput, 'discordChannelId'>): MessagePayload {
     const isPromotion = direction === 'promoted';
     const tier = newRankMsg.split(' ')[0] ?? '';
     const colorHex = apexRankColors.get(tier) ?? 0x3498db;
+    const rpSign = rpChange > 0 ? '+' : '';
 
     return {
         title: isPromotion ? '📈 **Rank Up!**' : '📉 **Rank Down...**',
@@ -38,6 +43,7 @@ export function buildApexRankChangeMessage({
             ? `${playerName} has ranked up in Apex Legends!`
             : `${playerName} has been demoted in Apex Legends.`,
         colorHex,
+        thumbnailUrl: rankIconUrl ?? undefined,
         fields: [
             {
                 name: '🏆 **New Rank**',
@@ -46,7 +52,7 @@ export function buildApexRankChangeMessage({
             },
             {
                 name: '🔄 **RP Change**',
-                value: `**${rpChange > 0 ? '+' : ''}${rpChange} RP**`,
+                value: `**${rpSign}${rpChange} RP**`,
                 inline: true,
             },
         ],
@@ -54,6 +60,127 @@ export function buildApexRankChangeMessage({
         timestamp: new Date().toISOString(),
     };
 }
+
+export async function notifyApexRankChange(
+    adapter: MessageAdapter | null | undefined,
+    input: RankChangeInput
+): Promise<boolean> {
+    const { discordChannelId, ...payload } = input;
+    const message = buildApexRankChangeMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
+}
+
+// ─── Session Summary ──────────────────────────────────────────────────────────
+
+interface SessionInput {
+    playerName: string;
+    /** Currently selected legend name, e.g. "Wraith" */
+    legend: string;
+    /** Legend icon URL (from ImgAssets.icon or apexlegendsstatus CDN) */
+    legendIconUrl?: string | null;
+    rpChange: number;
+    newRankMsg: string;
+    /** Kills gained this session — null if snapshot not available */
+    killsGained: number | null;
+    /** Damage dealt this session — null if snapshot not available */
+    damageGained: number | null;
+    /** Wins gained this session — null if snapshot not available */
+    winsGained: number | null;
+    discordChannelId: string;
+}
+
+export function buildApexSessionMessage({
+    playerName,
+    legend,
+    legendIconUrl,
+    rpChange,
+    newRankMsg,
+    killsGained,
+    damageGained,
+    winsGained,
+}: Omit<SessionInput, 'discordChannelId'>): MessagePayload {
+    const tier = newRankMsg.split(' ')[0] ?? '';
+    const colorHex = apexRankColors.get(tier) ?? 0x95a5a6;
+    const rpSign = rpChange > 0 ? '+' : '';
+
+    const fields: MessagePayload['fields'] = [
+        {
+            name: '🔄 **RP Change**',
+            value: `**${rpSign}${rpChange} RP**`,
+            inline: true,
+        },
+        {
+            name: '🏅 **Current Rank**',
+            value: `**${newRankMsg}**`,
+            inline: true,
+        },
+        {
+            name: '🦸 **Legend**',
+            value: `**${legend}**`,
+            inline: true,
+        },
+    ];
+
+    // Stat diffs — shown only when snapshot data is available
+    const hasStats =
+        killsGained !== null || damageGained !== null || winsGained !== null;
+    const anyNonZero =
+        (killsGained ?? 0) > 0 ||
+        (damageGained ?? 0) > 0 ||
+        (winsGained ?? 0) > 0;
+
+    if (hasStats && anyNonZero) {
+        if ((killsGained ?? 0) > 0) {
+            fields.push({
+                name: '⚔️ **Kills**',
+                value: `**+${killsGained}**`,
+                inline: true,
+            });
+        }
+        if ((damageGained ?? 0) > 0) {
+            fields.push({
+                name: '💥 **Damage**',
+                value: `**+${(damageGained ?? 0).toLocaleString()}**`,
+                inline: true,
+            });
+        }
+        if ((winsGained ?? 0) > 0) {
+            fields.push({
+                name: '🏆 **Win!**',
+                value: `**+${winsGained}**`,
+                inline: true,
+            });
+        }
+    } else if (hasStats && !anyNonZero) {
+        fields.push({
+            name: '📊 **Stats**',
+            value: '*Not tracked on banner*',
+            inline: true,
+        });
+    }
+    // null snapshot → omit stats section entirely (first time we've seen this player)
+
+    return {
+        title: '🎮 **Session Update**',
+        description: `${playerName} played a session in Apex Legends!`,
+        colorHex,
+        thumbnailUrl: legendIconUrl ?? undefined,
+        fields,
+        footer: 'Apex Legends Session',
+        timestamp: new Date().toISOString(),
+    };
+}
+
+export async function notifyApexSession(
+    adapter: MessageAdapter | null | undefined,
+    input: SessionInput
+): Promise<boolean> {
+    const { discordChannelId, ...payload } = input;
+    const message = buildApexSessionMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'session');
+}
+
+// ─── Shared sender ────────────────────────────────────────────────────────────
 
 async function sendWithAdapter(
     adapter: MessageAdapter | null | undefined,
@@ -74,100 +201,4 @@ async function sendWithAdapter(
         console.error(`[Apex Notification] Failed to send ${label}:`, err);
         return false;
     }
-}
-
-export async function notifyApexRankChange(
-    adapter: MessageAdapter | null | undefined,
-    input: RankChangeInput
-): Promise<boolean> {
-    const { discordChannelId, ...payload } = input;
-    const message = buildApexRankChangeMessage(payload);
-    return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
-}
-
-interface MatchEndInput {
-    playerName: string;
-    legend: string;
-    result: 'WIN' | 'LOSS' | 'UNKNOWN';
-    durationSecs: number;
-    killsGained: number;
-    damageGained: number;
-    rpChange: number;
-    newRankMsg: string;
-    discordChannelId: string;
-}
-
-export function buildApexMatchEndMessage({
-    playerName,
-    legend,
-    result,
-    durationSecs,
-    killsGained,
-    damageGained,
-    rpChange,
-    newRankMsg,
-}: Omit<MatchEndInput, 'discordChannelId'>): MessagePayload {
-    const resultColors: Record<string, number> = {
-        WIN: 0x28a745,
-        LOSS: 0xe74c3c,
-        UNKNOWN: 0x95a5a6,
-    };
-    const colorHex = resultColors[result] ?? 0x95a5a6;
-
-    const minutes = Math.floor(durationSecs / 60);
-    const seconds = durationSecs % 60;
-    const durationDisplay = `${minutes}:${String(seconds).padStart(2, '0')}`;
-
-    const resultEmoji =
-        result === 'WIN' ? '🏆' : result === 'LOSS' ? '💀' : '🎮';
-    const rpSign = rpChange > 0 ? '+' : '';
-
-    return {
-        title: '🎮 **Match Summary**',
-        description: `${playerName} has finished a game!`,
-        colorHex,
-        fields: [
-            {
-                name: `${resultEmoji} **Result**`,
-                value: `**${result}**`,
-                inline: true,
-            },
-            {
-                name: '🦸 **Legend**',
-                value: `**${legend}**`,
-                inline: true,
-            },
-            {
-                name: '⚔️ **Kills**',
-                value: `**${killsGained}**`,
-                inline: true,
-            },
-            {
-                name: '💥 **Damage**',
-                value: `**${damageGained.toLocaleString()}**`,
-                inline: true,
-            },
-            {
-                name: '🔄 **RP Change**',
-                value: `**${rpSign}${rpChange} RP**`,
-                inline: true,
-            },
-            {
-                name: '🏅 **Current Rank**',
-                value: `**${newRankMsg}**`,
-                inline: true,
-            },
-        ],
-        footer: `Match Summary • Length ${durationDisplay}`,
-        timestamp: new Date().toISOString(),
-    };
-}
-
-export async function notifyApexMatchEnd(
-    adapter: MessageAdapter | null | undefined,
-    input: MatchEndInput
-): Promise<boolean> {
-    const { discordChannelId, ...payload } = input;
-    const message = buildApexMatchEndMessage(payload);
-    return sendWithAdapter(adapter, discordChannelId, message, 'match end');
 }

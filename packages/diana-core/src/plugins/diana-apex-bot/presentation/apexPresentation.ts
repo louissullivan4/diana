@@ -5,6 +5,36 @@ import type {
 } from '../types.js';
 import { formatApexRank } from '../api/utils/rankService.js';
 
+// wiki.gg hosts all rank tiers except Rookie (added S17, not yet on CDN).
+// Legend icons come from the same CDN as the API's ImgAssets.icon field.
+const apexRankEmblemUrls = new Map<string, string>([
+    ['Bronze', 'https://apexlegends.wiki.gg/images/Ranked_Tier1_Bronze.png'],
+    ['Silver', 'https://apexlegends.wiki.gg/images/Ranked_Tier2_Silver.png'],
+    ['Gold', 'https://apexlegends.wiki.gg/images/Ranked_Tier3_Gold.png'],
+    [
+        'Platinum',
+        'https://apexlegends.wiki.gg/images/Ranked_Tier4_Platinum.png',
+    ],
+    ['Diamond', 'https://apexlegends.wiki.gg/images/Ranked_Tier5_Diamond.png'],
+    ['Master', 'https://apexlegends.wiki.gg/images/Ranked_Tier6_Master.png'],
+    [
+        'Apex Predator',
+        'https://apexlegends.wiki.gg/images/Ranked_Tier7_Apex_Predator.png',
+    ],
+]);
+
+/** Returns the wiki.gg rank emblem URL for a given tier name, or null for Rookie/unknown. */
+export function getApexRankEmblem(tier: string): string | null {
+    return apexRankEmblemUrls.get(tier) ?? null;
+}
+
+/** Returns the legend icon URL from the apexlegendsstatus CDN (same source as ImgAssets.icon). */
+export function getApexLegendIcon(legendName: string): string | null {
+    if (!legendName || legendName === 'Unknown') return null;
+    const sanitized = legendName.toLowerCase().replace(/\s+/g, '');
+    return `https://api.apexlegendsstatus.com/assets/icons/${sanitized}.png`;
+}
+
 export interface ApexPlayerEmbed {
     playerName: string;
     platform: string;

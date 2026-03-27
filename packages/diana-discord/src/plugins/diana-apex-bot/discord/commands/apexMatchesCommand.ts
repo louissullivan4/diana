@@ -55,7 +55,7 @@ export const apexMatchesCommand: SlashCommand = {
             const matches = await getRecentApexMatches(uid, 10);
             if (matches.length === 0) {
                 await interaction.editReply(
-                    `No completed matches recorded yet for **${name}**. Matches are detected when the bot observes a game in progress.`
+                    `No match history recorded yet for **${name}**.`
                 );
                 return;
             }
@@ -63,16 +63,16 @@ export const apexMatchesCommand: SlashCommand = {
             const lines = formatMatchHistory(matches);
 
             const embed = new EmbedBuilder()
-                .setTitle(`🔫 ${name} — Recent Matches`)
+                .setTitle(`🔫 **${name} — Recent Matches**`)
                 .setColor(0xe74c3c)
                 .setTimestamp()
-                .setFooter({ text: 'Apex Legends match history' });
+                .setFooter({ text: 'Apex Legends' });
 
             for (const line of lines) {
                 const rpSign = line.rpChange > 0 ? '+' : '';
                 embed.addFields({
-                    name: `${line.result}  •  ${line.legend}  •  ${line.dateDisplay}`,
-                    value: `⚔️ ${line.kills} kills  •  💥 ${line.damage.toLocaleString()} dmg  •  🔄 ${rpSign}${line.rpChange} RP  •  ⏱️ ${line.durationDisplay}`,
+                    name: `${line.result}  •  **${line.legend}**  •  ${line.dateDisplay}`,
+                    value: `⚔️ **${line.kills}** kills  •  💥 **${line.damage.toLocaleString()}** dmg  •  🔄 **${rpSign}${line.rpChange} RP**  •  ⏱️ ${line.durationDisplay}`,
                     inline: false,
                 });
             }

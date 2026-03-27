@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import type { SlashCommand } from '../../../../discord/commandTypes';
 import {
     createApexService,
@@ -7,11 +7,24 @@ import {
     addApexPlayerToGuild,
     isApexPlayerInGuild,
     createApexRankHistory,
+    getApexRankEmblem,
+    formatApexRank,
     APEX_PLATFORMS,
 } from 'diana-core';
 
 const apexService = createApexService();
 const platformChoices = APEX_PLATFORMS.map((p) => ({ name: p, value: p }));
+
+const apexRankColors = new Map<string, number>([
+    ['Rookie', 0x8b5a2b],
+    ['Bronze', 0xcd7f32],
+    ['Silver', 0xc0c0c0],
+    ['Gold', 0xffd700],
+    ['Platinum', 0x00cfff],
+    ['Diamond', 0x00bfff],
+    ['Master', 0x9b59b6],
+    ['Apex Predator', 0xe74c3c],
+]);
 
 export const apexAddPlayerCommand: SlashCommand = {
     data: (() => {
@@ -68,11 +81,8 @@ export const apexAddPlayerCommand: SlashCommand = {
             let uidStr: string;
 
             if (manualUid) {
-                // UID provided directly — skip name lookup
                 uidStr = manualUid;
             } else {
-                // Two-step: resolve exact UID first, then fetch full data by UID.
-                // getPlayerByName does fuzzy matching and can return the wrong player.
                 uidStr = await apexService.getUidByName(name, platform);
             }
 
@@ -110,9 +120,38 @@ export const apexAddPlayerCommand: SlashCommand = {
             }
 
             await addApexPlayerToGuild(guildId, uidStr, interaction.user.id);
-            await interaction.editReply(
-                `Now tracking **${resolvedName}** (${platform}) in this server.`
+
+            const rankMsg = formatApexRank(
+                rank.rankName,
+                rank.rankDiv,
+                rank.rankScore
             );
+            const colorHex = apexRankColors.get(rank.rankName) ?? 0x3498db;
+            const rankEmblem = getApexRankEmblem(rank.rankName);
+
+            const embed = new EmbedBuilder()
+                .setTitle(`✅ Now tracking ${resolvedName}`)
+                .setColor(colorHex)
+                .addFields(
+                    {
+                        name: '🏆 **Rank**',
+                        value: `**${rankMsg}**`,
+                        inline: true,
+                    },
+                    {
+                        name: '🖥️ **Platform**',
+                        value: `**${platform}**`,
+                        inline: true,
+                    }
+                )
+                .setFooter({ text: 'Apex Legends' })
+                .setTimestamp();
+
+            if (rankEmblem) {
+                embed.setThumbnail(rankEmblem);
+            }
+
+            await interaction.editReply({ embeds: [embed] });
         } catch (err: any) {
             const status = err?.status ?? err?.statusCode;
             if (status === 404) {

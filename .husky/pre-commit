@@ -1,5 +1,14 @@
 node scripts/bump-changed-packages.js
-npm run lint:check
+
+# Lint: fix, re-stage, then check
+npm run lint
+git add -u
+npm run lint:check || { echo "Lint errors remain after auto-fix. Commit aborted."; exit 1; }
+
+# Format: fix, re-stage, then check
+npm run format
+git add -u
+npm run format:check || { echo "Format errors remain after auto-fix. Commit aborted."; exit 1; }
+
 npm run build:check
-npm run format:check
 npm run test

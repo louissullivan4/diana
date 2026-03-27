@@ -52,8 +52,42 @@ const addApexPlayerToGuildMock = jest.fn();
 const isApexPlayerInGuildMock = jest.fn();
 const createApexRankHistoryMock = jest.fn().mockResolvedValue(undefined);
 
+class MockEmbedBuilder {
+    private _data: Record<string, unknown> = {};
+    setTitle(t: string) {
+        this._data.title = t;
+        return this;
+    }
+    setColor(c: number) {
+        this._data.color = c;
+        return this;
+    }
+    setDescription(d: string) {
+        this._data.description = d;
+        return this;
+    }
+    setThumbnail(u: string) {
+        this._data.thumbnail = u;
+        return this;
+    }
+    setFooter(f: unknown) {
+        this._data.footer = f;
+        return this;
+    }
+    setTimestamp() {
+        return this;
+    }
+    addFields(..._fields: unknown[]) {
+        return this;
+    }
+    getData() {
+        return this._data;
+    }
+}
+
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
+    EmbedBuilder: MockEmbedBuilder,
     MessageFlags: { Ephemeral: 64 },
 }));
 
@@ -64,6 +98,8 @@ jest.mock('diana-core', () => ({
     addApexPlayerToGuild: addApexPlayerToGuildMock,
     isApexPlayerInGuild: isApexPlayerInGuildMock,
     createApexRankHistory: createApexRankHistoryMock,
+    getApexRankEmblem: jest.fn().mockReturnValue(null),
+    formatApexRank: jest.fn().mockReturnValue('Gold II (900 RP)'),
     APEX_PLATFORMS: ['PC', 'PS4', 'X1', 'SWITCH'],
 }));
 
@@ -186,7 +222,7 @@ describe('apexAddPlayerCommand', () => {
                 'user-42'
             );
             expect(interaction.editReply).toHaveBeenCalledWith(
-                expect.stringContaining('ProPlayer')
+                expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
 
@@ -268,7 +304,7 @@ describe('apexAddPlayerCommand', () => {
                 })
             );
             expect(interaction.editReply).toHaveBeenCalledWith(
-                expect.stringContaining('FM_Stew')
+                expect.objectContaining({ embeds: expect.any(Array) })
             );
         });
 
