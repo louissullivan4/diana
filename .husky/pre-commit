@@ -1,5 +1,5 @@
 node scripts/bump-changed-packages.js
-npm run lint
+npm run lint:check
 npm run build:check
-npm run format
+npm run format:check
 npm run test
