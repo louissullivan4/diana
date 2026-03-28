@@ -19,7 +19,7 @@
         "express": "^5.2.1",
         "express-rate-limit": "^8.2.1",
         "diana-core": "2.0.0",
-        "diana-discord": "1.0.18",
+        "diana-discord": "2.0.0",
         "dotenv": "^17.3.1"
     },
     "devDependencies": {
