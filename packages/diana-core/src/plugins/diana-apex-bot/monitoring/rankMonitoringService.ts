@@ -12,15 +12,10 @@ import {
 import {
     determineApexRankMovement,
     formatApexRank,
+    getRpToNextRank,
 } from '../api/utils/rankService.js';
-import {
-    notifyApexSession,
-    notifyApexRankChange,
-} from '../notifications/apexNotifications.js';
-import {
-    getApexRankEmblem,
-    getApexLegendIcon,
-} from '../presentation/apexPresentation.js';
+import { notifyApexRankChange } from '../notifications/apexNotifications.js';
+import { getApexRankEmblem } from '../presentation/apexPresentation.js';
 
 const apexService = createApexService();
 
@@ -82,47 +77,22 @@ async function postSessionIfChanged(
         return;
     }
 
+    // Rank (tier/division) unchanged — update DB silently, skip notification
+    const rankChanged = player.tier !== newTier || player.division !== newDiv;
+
     const rpChange = newRp - player.rp;
 
-    // Resolve current legend + stats from the API response
-    const selectedLegendName =
-        data.realtime?.selectedLegend ??
-        Object.keys(data.legends.selected)[0] ??
-        null;
-
-    const legendData = selectedLegendName
-        ? (data.legends.all[selectedLegendName] ??
-          data.legends.selected[selectedLegendName] ??
-          null)
-        : null;
-    const currentStats = extractLegendStats(legendData);
-
-    // Legend icon: prefer the URL from the API response, fall back to CDN pattern
-    const legendIconFromApi = selectedLegendName
-        ? (data.legends.selected[selectedLegendName]?.ImgAssets?.icon ??
-          data.legends.all[selectedLegendName]?.ImgAssets?.icon ??
-          null)
-        : null;
-    const legendIconUrl = legendIconFromApi
-        ? legendIconFromApi.replace('http://', 'https://')
-        : getApexLegendIcon(selectedLegendName ?? '');
+    // Current stats for DB snapshot update
+    const currentStats = extractLegendStats(
+        data.legends.selected[
+            data.realtime?.selectedLegend ??
+                Object.keys(data.legends.selected)[0] ??
+                ''
+        ] ?? null
+    );
 
     // Rank icon from wiki.gg CDN
     const rankIconUrl = getApexRankEmblem(newTier);
-
-    // Stat diffs — null means no snapshot yet (first session for this player)
-    const killsGained =
-        player.killsSnapshot !== null
-            ? Math.max(0, currentStats.kills - player.killsSnapshot)
-            : null;
-    const damageGained =
-        player.damageSnapshot !== null
-            ? Math.max(0, currentStats.damage - player.damageSnapshot)
-            : null;
-    const winsGained =
-        player.winsSnapshot !== null
-            ? Math.max(0, currentStats.wins - player.winsSnapshot)
-            : null;
 
     // Rank movement for promotion/demotion embed
     const rankMovement = determineApexRankMovement(
@@ -134,6 +104,7 @@ async function postSessionIfChanged(
         newRp
     );
     const newRankMsg = formatApexRank(newTier, newDiv, newRp);
+    const rpToNextRank = getRpToNextRank(newTier, newDiv, newRp);
 
     console.log(
         `[Apex] Session for ${data.global.name}: ${rpChange > 0 ? '+' : ''}${rpChange} RP → ${newRankMsg}`
@@ -157,24 +128,14 @@ async function postSessionIfChanged(
         newRp
     ).catch(() => {});
 
-    // Notify all guilds tracking this player
+    // Only notify if tier/division changed
+    if (!rankChanged) return;
+
     const guilds = await getGuildsTrackingApexPlayer(uid);
     for (const guild of guilds) {
         const channelId =
             guild.channel_id ?? process.env.DISCORD_CHANNEL_ID ?? null;
         if (!channelId) continue;
-
-        await notifyApexSession(adapter, {
-            playerName: data.global.name,
-            legend: selectedLegendName ?? 'Unknown',
-            legendIconUrl,
-            rpChange,
-            newRankMsg,
-            killsGained,
-            damageGained,
-            winsGained,
-            discordChannelId: channelId,
-        });
 
         if (rankMovement !== 'no_change') {
             await notifyApexRankChange(adapter, {
@@ -183,6 +144,7 @@ async function postSessionIfChanged(
                 newRankMsg,
                 rankIconUrl,
                 rpChange,
+                rpToNextRank,
                 discordChannelId: channelId,
             });
         }

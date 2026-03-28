@@ -15,9 +15,9 @@ export const apexBotPlugin: DianaPlugin = {
             key: 'rankCheckCron',
             label: 'Rank Check Cron',
             type: 'string',
-            default: '*/5 * * * *',
+            default: '0 * * * *',
             description:
-                'Cron schedule for polling player ranks (default: every 5 minutes).',
+                'Cron schedule for polling player ranks (default: every hour).',
         },
         {
             key: 'defaultDiscordChannelId',
@@ -36,7 +36,7 @@ export const apexBotPlugin: DianaPlugin = {
     async onEnable(context) {
         const config = context.getConfig<ApexBotConfig>();
         const adapter = context.getMessageAdapter();
-        const schedule = config?.rankCheckCron ?? '*/5 * * * *';
+        const schedule = config?.rankCheckCron ?? '0 * * * *';
 
         context.registerCron(schedule, async () => {
             await runApexTick(adapter);

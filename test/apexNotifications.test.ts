@@ -13,6 +13,7 @@ describe('apexNotifications', () => {
                 direction: 'promoted',
                 newRankMsg: 'Platinum IV (1000 RP)',
                 rpChange: 150,
+                rpToNextRank: null,
             });
 
             expect(msg.title).toContain('Rank Up');
@@ -28,6 +29,7 @@ describe('apexNotifications', () => {
                 direction: 'demoted',
                 newRankMsg: 'Gold I (900 RP)',
                 rpChange: -50,
+                rpToNextRank: null,
             });
 
             expect(msg.title).toContain('Rank Down');
@@ -41,6 +43,7 @@ describe('apexNotifications', () => {
                 direction: 'promoted',
                 newRankMsg: 'Diamond II (4000 RP)',
                 rpChange: 200,
+                rpToNextRank: null,
             });
 
             const rankField = msg.fields?.find((f) =>
@@ -60,6 +63,7 @@ describe('apexNotifications', () => {
                 direction: 'demoted',
                 newRankMsg: 'Silver III (300 RP)',
                 rpChange: -75,
+                rpToNextRank: null,
             });
 
             const rpField = msg.fields?.find((f) =>
@@ -75,6 +79,7 @@ describe('apexNotifications', () => {
                 direction: 'promoted',
                 newRankMsg: 'UnknownTier I (100 RP)',
                 rpChange: 50,
+                rpToNextRank: null,
             });
             expect(msg.colorHex).toBe(0x3498db);
         });
@@ -86,6 +91,7 @@ describe('apexNotifications', () => {
                 newRankMsg: 'Diamond I (5000 RP)',
                 rpChange: 300,
                 rankIconUrl: 'https://example.com/diamond.png',
+                rpToNextRank: null,
             });
             expect(msg.thumbnailUrl).toBe('https://example.com/diamond.png');
         });
@@ -97,6 +103,7 @@ describe('apexNotifications', () => {
                 newRankMsg: 'Rookie IV (0 RP)',
                 rpChange: 10,
                 rankIconUrl: null,
+                rpToNextRank: null,
             });
             expect(msg.thumbnailUrl).toBeUndefined();
         });
@@ -216,6 +223,7 @@ describe('apexNotifications', () => {
                 direction: 'promoted',
                 newRankMsg: 'Diamond I (5000 RP)',
                 rpChange: 300,
+                rpToNextRank: null,
                 discordChannelId: 'chan-123',
             });
 
@@ -237,6 +245,7 @@ describe('apexNotifications', () => {
                 direction: 'promoted',
                 newRankMsg: 'Master (11000 RP)',
                 rpChange: 100,
+                rpToNextRank: null,
                 discordChannelId: 'chan-abc',
             });
             expect(result).toBe(true);
@@ -256,6 +265,7 @@ describe('apexNotifications', () => {
                 direction: 'demoted',
                 newRankMsg: 'Gold IV (800 RP)',
                 rpChange: -100,
+                rpToNextRank: null,
                 discordChannelId: 'chan-xyz',
             });
             expect(result).toBe(false);

@@ -22,6 +22,7 @@ interface RankChangeInput {
     newRankMsg: string;
     rpChange: number;
     rankIconUrl?: string | null;
+    rpToNextRank: { rpNeeded: number; nextRankName: string } | null;
     discordChannelId: string;
 }
 
@@ -31,11 +32,33 @@ export function buildApexRankChangeMessage({
     newRankMsg,
     rpChange,
     rankIconUrl,
+    rpToNextRank,
 }: Omit<RankChangeInput, 'discordChannelId'>): MessagePayload {
     const isPromotion = direction === 'promoted';
     const tier = newRankMsg.split(' ')[0] ?? '';
     const colorHex = apexRankColors.get(tier) ?? 0x3498db;
     const rpSign = rpChange > 0 ? '+' : '';
+
+    const fields: MessagePayload['fields'] = [
+        {
+            name: '🏆 **New Rank**',
+            value: `**${newRankMsg}**`,
+            inline: true,
+        },
+        {
+            name: '🔄 **RP Change**',
+            value: `**${rpSign}${rpChange} RP**`,
+            inline: true,
+        },
+    ];
+
+    if (rpToNextRank !== null) {
+        fields.push({
+            name: '🎯 **Next Rank**',
+            value: `**${rpToNextRank.rpNeeded} RP** to ${rpToNextRank.nextRankName}`,
+            inline: true,
+        });
+    }
 
     return {
         title: isPromotion ? '📈 **Rank Up!**' : '📉 **Rank Down...**',
@@ -44,18 +67,7 @@ export function buildApexRankChangeMessage({
             : `${playerName} has been demoted in Apex Legends.`,
         colorHex,
         thumbnailUrl: rankIconUrl ?? undefined,
-        fields: [
-            {
-                name: '🏆 **New Rank**',
-                value: `**${newRankMsg}**`,
-                inline: true,
-            },
-            {
-                name: '🔄 **RP Change**',
-                value: `**${rpSign}${rpChange} RP**`,
-                inline: true,
-            },
-        ],
+        fields,
         footer: 'Apex Legends Rank Notification',
         timestamp: new Date().toISOString(),
     };
