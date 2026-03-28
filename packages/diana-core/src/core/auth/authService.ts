@@ -7,7 +7,10 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'diana-default-secret-change-me';
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required but not set.');
+}
+const JWT_SECRET: string = process.env.JWT_SECRET;
 const JWT_EXPIRY = '30d'; // 1 month session duration
 const SALT_ROUNDS = 12;
 

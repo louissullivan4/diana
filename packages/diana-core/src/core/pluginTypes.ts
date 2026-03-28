@@ -16,6 +16,7 @@ export interface MessagePayload {
     footer?: string;
     timestamp?: string | number | Date;
     text?: string;
+    supportUrl?: string;
 }
 
 export interface MessageTarget {

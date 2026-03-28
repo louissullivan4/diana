@@ -1,6 +1,7 @@
 -- ====================================
 -- Dev seed data
 -- Run manually: psql $DATABASE_URL -f db/seed.sql
+-- Replace placeholder values with real summoner data from your server
 -- ====================================
 
 INSERT INTO "summoners" (
@@ -13,30 +14,21 @@ INSERT INTO "summoners" (
     "regionGroup"
 ) VALUES
 (
-    '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ',
-    'FM Stew',
-    'RATS',
+    'PUUID_PLACEHOLDER_1',
+    'Player One',
+    'TAG1',
     'EU_WEST',
     'EUW1',
-    'https://www.deeplol.gg/summoner/euw/FM%20Stew-RATS',
+    'https://www.deeplol.gg/summoner/euw/Player%20One-TAG1',
     'EUROPE'
 ),
 (
-    '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g',
-    'FM Pruhaps',
-    'BAUSS',
+    'PUUID_PLACEHOLDER_2',
+    'Player Two',
+    'TAG2',
     'EU_WEST',
     'EUW1',
-    'https://www.deeplol.gg/summoner/EUW/FM%20Pruhaps-BAUSS',
-    'EUROPE'
-),
-(
-    'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A',
-    'Melon',
-    'FM Fishy',
-    'EU_WEST',
-    'EUW1',
-    'https://www.deeplol.gg/summoner/euw/FishyMelon-Fishy',
+    'https://www.deeplol.gg/summoner/euw/Player%20Two-TAG2',
     'EUROPE'
 )
 ON CONFLICT ("puuid") DO NOTHING;
@@ -47,7 +39,6 @@ ON CONFLICT ("puuid") DO NOTHING;
 -- ON CONFLICT ("guild_id") DO NOTHING;
 
 -- INSERT INTO "guild_summoners" ("guild_id", "puuid") VALUES
--- ('<YOUR_GUILD_ID>', '0QapQDpnDB9zPfyzYpJBUXWlU6C6fKBtWfvAEq8KV2SxD2UgWUwKseHZu6_pbxCiV4XN10F54olDKQ'),
--- ('<YOUR_GUILD_ID>', '3orFsnrwPN2WGnOJ_ncaM6x3iGzE4Fd_IDQ8kezKZJt8jIsMKHFdI4NLBAQwEyRcSoJ1RroVw74A-g'),
--- ('<YOUR_GUILD_ID>', 'Peff-LARgAbk6xCJO0cLm_f_gCeAF3p3RNQlfJBFGcfWMd6yqCC-zfeFkmEMWtnAbfCnRS_Ocy-H6A')
+-- ('<YOUR_GUILD_ID>', 'PUUID_PLACEHOLDER_1'),
+-- ('<YOUR_GUILD_ID>', 'PUUID_PLACEHOLDER_2')
 -- ON CONFLICT DO NOTHING;

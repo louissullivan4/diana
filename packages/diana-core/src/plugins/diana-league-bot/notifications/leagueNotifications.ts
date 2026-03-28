@@ -128,6 +128,8 @@ export function buildMatchEndMessage({
             }
         );
     }
+    const supportUrl =
+        process.env.SUPPORT_URL || 'https://buymeacoffee.com/yngstew';
     return {
         title: '🎮 **Match Summary**',
         description: `${summonerName} has completed a match!`,
@@ -137,6 +139,7 @@ export function buildMatchEndMessage({
         fields,
         footer: `Match Summary • Length ${formatGameLength(gameLengthSeconds)}`,
         timestamp: new Date().toISOString(),
+        supportUrl,
     };
 }
 

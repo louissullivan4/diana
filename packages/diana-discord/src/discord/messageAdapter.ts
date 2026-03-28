@@ -27,6 +27,13 @@ function buildEmbed(payload: MessagePayload): EmbedBuilder | null {
     if (payload.footer) {
         embed.setFooter({ text: payload.footer });
     }
+    if (payload.supportUrl) {
+        embed.addFields({
+            name: '\u200b',
+            value: `[To Keep Diana running!](${payload.supportUrl})`,
+            inline: false,
+        });
+    }
     if (payload.timestamp) {
         const ts =
             payload.timestamp instanceof Date
