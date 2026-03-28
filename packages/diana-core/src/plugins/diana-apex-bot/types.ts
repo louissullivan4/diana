@@ -1,5 +1,5 @@
 export interface ApexPlayer {
-    /** Apex UID — primary key in apex_players table */
+    /** Apex UID - primary key in apex_players table */
     uid: string;
     gameName: string;
     /** Platform: PC, PS4, X1, SWITCH */

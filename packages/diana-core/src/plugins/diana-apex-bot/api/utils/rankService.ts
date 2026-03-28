@@ -1,8 +1,8 @@
 import { APEX_TIER_ORDER } from '../../types.js';
 
-// Verified thresholds for Season 28 (Breach) — source: apexlegends.wiki.gg / gametree.me
+// Verified thresholds for Season 28 (Breach) - source: apexlegends.wiki.gg / gametree.me
 // Format: [tier, div, minRp] ordered lowest → highest. div=0 means no divisions (Master).
-// Divisions are NOT uniform — width grows from 250 (Rookie) up to 900 (Diamond).
+// Divisions are NOT uniform - width grows from 250 (Rookie) up to 900 (Diamond).
 const RANK_LADDER: {
     tier: string;
     div: number;

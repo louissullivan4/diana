@@ -29,8 +29,17 @@ import {
 
 // Rate limiter for dashboard routes (100 requests per minute per IP)
 const dashboardLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+});
+
+// Rate limiter for all API routes (200 requests per minute per IP)
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 200,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' },
@@ -53,9 +62,28 @@ async function main() {
         });
         next();
     });
+    const allowedOrigins = new Set([
+        'https://diana-bot-production.up.railway.app',
+        'http://localhost:5173',
+        'http://localhost:3000',
+    ]);
+    // Also allow whatever Railway assigns at runtime
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+        allowedOrigins.add(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+    }
     app.use(
         cors({
-            origin: true,
+            origin: (
+                origin: string | undefined,
+                callback: (err: Error | null, allow?: boolean) => void
+            ) => {
+                // Allow server-to-server requests (no Origin header)
+                if (!origin || allowedOrigins.has(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'));
+                }
+            },
             credentials: true,
         })
     );
@@ -72,6 +100,9 @@ async function main() {
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok', service: 'diana' });
     });
+
+    // Rate limit all API routes
+    app.use('/api/', apiLimiter);
 
     // Auth routes (login/logout don't require auth)
     app.use('/api/auth', authApiRouter);

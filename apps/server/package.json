@@ -1,6 +1,6 @@
 {
     "name": "diana-server",
-    "version": "1.0.4",
+    "version": "2.0.0",
     "private": true,
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
         "cookie-parser": "^1.4.7",
         "express": "^5.2.1",
         "express-rate-limit": "^8.2.1",
-        "diana-core": "1.0.16",
+        "diana-core": "2.0.0",
         "diana-discord": "1.0.18",
         "dotenv": "^17.3.1"
     },

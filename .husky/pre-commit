@@ -1,4 +1,4 @@
-node scripts/bump-changed-packages.js
+# node scripts/bump-changed-packages.js
 
 # Lint: fix, re-stage, then check
 npm run lint

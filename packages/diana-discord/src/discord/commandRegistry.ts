@@ -15,6 +15,10 @@ const CHANNEL_EXEMPT_COMMANDS: Record<BotKey, Set<string>> = {
     pathfinder: new Set(['apex-help', 'apex-channel']),
 };
 
+// Per-user cooldown tracking: key = `botKey:userId:commandName`, value = last-used ms
+const cooldownMap = new Map<string, number>();
+const COOLDOWN_MS = 3000;
+
 const handlers = {
     diana: new Map<string, SlashCommand['execute']>(),
     pathfinder: new Map<string, SlashCommand['execute']>(),
@@ -140,6 +144,18 @@ export async function handleSlashCommand(
             return;
         }
     }
+
+    const cooldownKey = `${botKey}:${interaction.user.id}:${interaction.commandName}`;
+    const lastUsed = cooldownMap.get(cooldownKey) ?? 0;
+    const remaining = COOLDOWN_MS - (Date.now() - lastUsed);
+    if (remaining > 0) {
+        await interaction.reply({
+            content: `Please wait ${(remaining / 1000).toFixed(1)}s before using this command again.`,
+            flags: MessageFlags.Ephemeral,
+        });
+        return;
+    }
+    cooldownMap.set(cooldownKey, Date.now());
 
     await handler(interaction);
 }

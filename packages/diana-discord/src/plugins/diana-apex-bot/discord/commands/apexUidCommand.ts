@@ -39,12 +39,12 @@ export const apexUidCommand: SlashCommand = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            // Use the fuzzy /bridge endpoint — exact /nametouid may 404 for some names
+            // Use the fuzzy /bridge endpoint - exact /nametouid may 404 for some names
             const data = await apexService.getPlayerByName(name, platform);
             const { uid, name: resolvedName } = data.global;
 
             await interaction.editReply(
-                `Found: **${resolvedName}** (${platform}) — UID: \`${uid}\`\n\n` +
+                `Found: **${resolvedName}** (${platform}) - UID: \`${uid}\`\n\n` +
                     `Is this you? Run:\n` +
                     `\`/apex-add name:${name} uid:${uid}\``
             );

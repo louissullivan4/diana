@@ -41,8 +41,8 @@ async function main() {
                     process.exit(1);
                 }
 
-                if (password.length < 8) {
-                    console.error('Error: Password must be at least 8 characters');
+                if (!isStrongPassword(password)) {
+                    printPasswordPolicy();
                     process.exit(1);
                 }
 
@@ -104,8 +104,8 @@ async function main() {
                     process.exit(1);
                 }
 
-                if (newPassword.length < 8) {
-                    console.error('Error: Password must be at least 8 characters');
+                if (!isStrongPassword(newPassword)) {
+                    printPasswordPolicy();
                     process.exit(1);
                 }
 
@@ -130,6 +130,20 @@ async function main() {
     }
 
     process.exit(0);
+}
+
+function isStrongPassword(password: string): boolean {
+    return (
+        password.length >= 12 &&
+        /[A-Z]/.test(password) &&
+        /[0-9]/.test(password)
+    );
+}
+
+function printPasswordPolicy(): void {
+    console.error(
+        'Error: Password must be at least 12 characters and contain at least one uppercase letter and one number.'
+    );
 }
 
 function printUsage() {

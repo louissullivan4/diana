@@ -63,7 +63,7 @@ export const apexMatchesCommand: SlashCommand = {
             const lines = formatMatchHistory(matches);
 
             const embed = new EmbedBuilder()
-                .setTitle(`🔫 **${name} — Recent Matches**`)
+                .setTitle(`🔫 **${name} - Recent Matches**`)
                 .setColor(0xe74c3c)
                 .setTimestamp()
                 .setFooter({ text: 'Apex Legends' });

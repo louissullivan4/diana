@@ -92,11 +92,11 @@ interface SessionInput {
     legendIconUrl?: string | null;
     rpChange: number;
     newRankMsg: string;
-    /** Kills gained this session — null if snapshot not available */
+    /** Kills gained this session - null if snapshot not available */
     killsGained: number | null;
-    /** Damage dealt this session — null if snapshot not available */
+    /** Damage dealt this session - null if snapshot not available */
     damageGained: number | null;
-    /** Wins gained this session — null if snapshot not available */
+    /** Wins gained this session - null if snapshot not available */
     winsGained: number | null;
     discordChannelId: string;
 }
@@ -133,7 +133,7 @@ export function buildApexSessionMessage({
         },
     ];
 
-    // Stat diffs — shown only when snapshot data is available
+    // Stat diffs - shown only when snapshot data is available
     const hasStats =
         killsGained !== null || damageGained !== null || winsGained !== null;
     const anyNonZero =

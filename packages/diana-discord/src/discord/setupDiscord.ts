@@ -15,7 +15,9 @@ const WELCOME_MESSAGES: Record<BotKey, string> = {
         'Get started:\n' +
         '1. Run `/setchannel` to choose where match notifications are posted.\n' +
         '2. Run `/add` to start tracking summoners.\n' +
-        '3. Run `/help` to see all available commands.',
+        '3. Run `/help` to see all available commands.' +
+        '\n\n' +
+        'Please upvote on [top.gg](https://top.gg/bot/1327445461107347567) and share Diana if you find her useful! [Support development here](https://buymeacoffee.com/yngstew).',
     pathfinder:
         "Hi! I'm **Pathfinder**, an Apex Legends tracking bot.\n\n" +
         'Get started:\n' +

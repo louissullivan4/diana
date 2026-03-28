@@ -1,5 +1,6 @@
 // Set required env vars before any test module loads
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-for-jest';
+process.env.JWT_SECRET =
+    process.env.JWT_SECRET || 'test-secret-for-jest-must-be-32-chars';
 
 module.exports = {
     preset: 'ts-jest',

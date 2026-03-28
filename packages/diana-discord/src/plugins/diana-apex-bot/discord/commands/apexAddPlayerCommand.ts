@@ -52,7 +52,7 @@ export const apexAddPlayerCommand: SlashCommand = {
                 opt
                     .setName('uid')
                     .setDescription(
-                        'Apex UID (optional). Use if name lookup fails — find yours at mozambiquehe.re.'
+                        'Apex UID (optional). Use if name lookup fails - find yours at mozambiquehe.re.'
                     )
                     .setRequired(false)
             );

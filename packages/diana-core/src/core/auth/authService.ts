@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { randomInt } from 'crypto';
 import { Pool } from 'pg';
 import 'dotenv/config';
 
@@ -9,6 +10,11 @@ const pool = new Pool({
 
 if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required but not set.');
+}
+if (process.env.JWT_SECRET.length < 32) {
+    throw new Error(
+        "JWT_SECRET must be at least 32 characters long. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+    );
 }
 const JWT_SECRET: string = process.env.JWT_SECRET;
 const JWT_EXPIRY = '30d'; // 1 month session duration
@@ -109,8 +115,8 @@ export async function createUser(
 ): Promise<User> {
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Generate a random ID (1-999999) to avoid IDENTITY/SERIAL issues
-    const randomId = Math.floor(Math.random() * 999999) + 1;
+    // Generate a cryptographically secure random ID (1-999999)
+    const randomId = randomInt(1, 1000000);
 
     const result = await pool.query(
         'INSERT INTO users (id, username, password_hash) VALUES ($1, $2, $3) RETURNING id, username, created_at, last_login',

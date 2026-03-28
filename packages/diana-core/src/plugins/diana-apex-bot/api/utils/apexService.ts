@@ -19,7 +19,6 @@ export class ApexService implements IApexService {
         params: Record<string, string> = {}
     ): Promise<T> {
         const url = new URL(`${BASE_URL}${path}`);
-        url.searchParams.set('auth', this.apiKey);
         for (const [key, value] of Object.entries(params)) {
             url.searchParams.set(key, value);
         }

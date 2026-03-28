@@ -33,7 +33,7 @@ export async function runApexTick(
     }
 
     if (players.length === 0) return;
-    console.log(`[Apex] Tick — checking ${players.length} player(s)`);
+    console.log(`[Apex] Tick - checking ${players.length} player(s)`);
 
     for (const player of players) {
         try {
@@ -77,7 +77,7 @@ async function postSessionIfChanged(
         return;
     }
 
-    // Rank (tier/division) unchanged — update DB silently, skip notification
+    // Rank (tier/division) unchanged - update DB silently, skip notification
     const rankChanged = player.tier !== newTier || player.division !== newDiv;
 
     const rpChange = newRp - player.rp;

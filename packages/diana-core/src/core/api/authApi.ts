@@ -1,6 +1,19 @@
 import { Router, type Request, type Response } from 'express';
-import { authenticateUser, findUserById } from '../auth/authService';
+import rateLimit from 'express-rate-limit';
+import {
+    authenticateUser,
+    findUserById,
+    verifyToken,
+} from '../auth/authService';
 import { requireAuth, type AuthenticatedRequest } from '../auth/authMiddleware';
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many login attempts, please try again later.' },
+});
 
 const router = Router();
 
@@ -27,7 +40,7 @@ const COOKIE_OPTIONS = {
  * POST /api/auth/login
  * Authenticate user and return JWT token
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     try {
         const { username, password } = req.body as {
             username?: string;
@@ -42,11 +55,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
         const result = await authenticateUser(username, password);
         if (!result) {
-            logAuth(
-                'POST',
-                '/api/auth/login',
-                `Failed login attempt for: ${username}`
-            );
+            logAuth('POST', '/api/auth/login', 'Failed login attempt');
             res.status(401).json({ error: 'Invalid username or password' });
             return;
         }
@@ -56,10 +65,7 @@ router.post('/login', async (req: Request, res: Response) => {
         // Set token as httpOnly cookie
         res.cookie('diana_token', result.token, COOKIE_OPTIONS);
 
-        res.json({
-            user: result.user,
-            token: result.token,
-        });
+        res.json({ user: result.user });
     } catch (err) {
         console.error(`[${timestamp()}] [Diana:Auth] Login error:`, err);
         res.status(500).json({ error: 'Login failed' });
@@ -114,9 +120,12 @@ router.get('/check', (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     const cookieToken = req.cookies?.diana_token;
 
-    const hasToken = !!(authHeader?.startsWith('Bearer ') || cookieToken);
+    const rawToken = authHeader?.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : cookieToken;
 
-    res.json({ authenticated: hasToken });
+    const authenticated = !!(rawToken && verifyToken(rawToken));
+    res.json({ authenticated });
 });
 
 export const authApiRouter = router;
