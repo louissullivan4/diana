@@ -62,15 +62,6 @@ async function main() {
         });
         next();
     });
-    const allowedOrigins = new Set([
-        'https://diana-bot-production.up.railway.app',
-        'http://localhost:5173',
-        'http://localhost:3000',
-    ]);
-    // Also allow whatever Railway assigns at runtime
-    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-        allowedOrigins.add(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
-    }
     app.use(
         cors({
             origin: (
@@ -78,9 +69,23 @@ async function main() {
                 callback: (err: Error | null, allow?: boolean) => void
             ) => {
                 // Allow server-to-server requests (no Origin header)
-                if (!origin || allowedOrigins.has(origin)) {
+                if (!origin) {
+                    callback(null, true);
+                    return;
+                }
+                const isLocalhost =
+                    origin === 'http://localhost:5173' ||
+                    origin === 'http://localhost:3000';
+                // Accept any Railway subdomain (*.up.railway.app) — Railway
+                // controls this namespace and may assign new subdomains on redeploy.
+                const isRailway = origin.endsWith('.up.railway.app');
+                const isConfiguredDomain = process.env.RAILWAY_PUBLIC_DOMAIN
+                    ? origin === `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+                    : false;
+                if (isLocalhost || isRailway || isConfiguredDomain) {
                     callback(null, true);
                 } else {
+                    console.warn(`[Diana:CORS] Rejected origin: ${origin}`);
                     callback(new Error('Not allowed by CORS'));
                 }
             },
