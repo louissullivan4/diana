@@ -75,7 +75,10 @@ async function main() {
                 }
                 const isLocalhost =
                     origin === 'http://localhost:5173' ||
-                    origin === 'http://localhost:3000';
+                    origin === 'http://localhost:3000' ||
+                    // Tauri desktop app origins
+                    origin === 'https://tauri.localhost' ||
+                    origin === 'tauri://localhost';
                 // Accept any Railway subdomain (*.up.railway.app) — Railway
                 // controls this namespace and may assign new subdomains on redeploy.
                 const isRailway = origin.endsWith('.up.railway.app');
