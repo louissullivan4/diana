@@ -29,4 +29,4 @@ RUN mkdir -p /usr/app/data && chmod 755 /usr/app/data
 
 # Railway sets PORT env var dynamically
 EXPOSE ${PORT:-3000}
-CMD ["node", "apps/server/dist/index.js"]
+CMD ["node", "--dns-result-order=ipv4first", "apps/server/dist/index.js"]
