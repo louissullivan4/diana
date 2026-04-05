@@ -20,6 +20,7 @@ import {
     getSummonerByPuuid,
     createRankHistory,
     getMostRecentRankByParticipantIdAndQueueType,
+    getRankByMatchAndQueueType,
     updateSummonerIdentityByPuuid,
 } from '../api/summoners/summonerService';
 import {
@@ -285,11 +286,20 @@ const handleNewMatchCompleted = async (
                 (e) => e.queueType === matchRank
             );
 
-            let oldRankInfo =
-                await getMostRecentRankByParticipantIdAndQueueType(
-                    puuid,
-                    matchRank
-                );
+            let oldRankInfo = summoner.currentMatchId
+                ? await getRankByMatchAndQueueType(
+                      summoner.currentMatchId,
+                      puuid,
+                      matchRank
+                  )
+                : null;
+            if (!oldRankInfo) {
+                oldRankInfo =
+                    await getMostRecentRankByParticipantIdAndQueueType(
+                        puuid,
+                        matchRank
+                    );
+            }
 
             if (rankPost) {
                 const summonerNewRankInfo = {

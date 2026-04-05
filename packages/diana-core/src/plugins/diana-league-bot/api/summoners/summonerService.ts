@@ -468,6 +468,29 @@ export const getMostRecentRankByParticipantIdAndQueueType = async (
     }
 };
 
+export const getRankByMatchAndQueueType = async (
+    matchId: string,
+    entryParticipantId: string,
+    queueType: string
+): Promise<any> => {
+    try {
+        const query = `
+            SELECT * FROM rank_tracking
+            WHERE "matchId" = $1 AND "entryParticipantId" = $2 AND "queueType" = $3
+            LIMIT 1
+        `;
+        const result = await db.query(query, [
+            matchId,
+            entryParticipantId,
+            queueType,
+        ]);
+        return result.rows[0] ?? null;
+    } catch (error) {
+        console.error('Error retrieving rank by match ID:', error);
+        throw new Error('Failed to retrieve rank by match ID.');
+    }
+};
+
 export const createRankHistory = async (
     matchId: string,
     entryParticipantId: string,
