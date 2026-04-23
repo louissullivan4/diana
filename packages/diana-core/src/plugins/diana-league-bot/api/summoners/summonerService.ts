@@ -509,7 +509,7 @@ export const createRankHistory = async (
                 "lp",
                 "queueType"
             ) VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT ON CONSTRAINT unique_rank_tracking_participant DO NOTHING
+            ON CONFLICT ("matchId", "entryParticipantId") DO NOTHING
             RETURNING *;
         `;
         const params = [matchId, entryParticipantId, tier, rank, lp, queueType];

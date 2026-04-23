@@ -216,7 +216,7 @@ export const createApexRankHistory = async (
         `INSERT INTO rank_tracking
             ("matchId", "entryParticipantId", "tier", "rank", "lp", "queueType", "game_id")
          VALUES ($1, $2, $3, $4, $5, 'RANKED_BATTLE_ROYALE', $6)
-         ON CONFLICT ON CONSTRAINT unique_rank_tracking_participant DO NOTHING`,
+         ON CONFLICT ("matchId", "entryParticipantId") DO NOTHING`,
         [matchId, uid, tier, String(div), rp, APEX_GAME_ID]
     );
 };
