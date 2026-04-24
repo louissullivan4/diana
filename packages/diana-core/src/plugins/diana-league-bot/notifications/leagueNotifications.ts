@@ -27,7 +27,7 @@ interface MatchEndMessageInput {
     result: string;
     gameLengthSeconds: number;
     newRankMsg: string;
-    lpChangeMsg: number;
+    lpChangeMsg: number | null;
     championDisplay: string;
     role: string;
     kdaStr: string;
@@ -45,7 +45,7 @@ interface RankChangeMessageInput {
     summonerName: string;
     direction: string;
     newRankMsg: string;
-    lpChangeMsg: number;
+    lpChangeMsg: number | null;
     deepLolLink: string;
 }
 
@@ -113,20 +113,21 @@ export function buildMatchEndMessage({
         });
     }
     if (queueName.toLowerCase().includes('ranked')) {
-        fields.splice(
-            1,
-            0,
+        const rankedFields = [
             {
                 name: '📈 **Rank Update**',
                 value: `**${newRankMsg}**`,
                 inline: true,
             },
-            {
+        ];
+        if (lpChangeMsg !== null) {
+            rankedFields.push({
                 name: '🔄 **LP Change**',
                 value: `**${lpChangeMsg} LP**`,
                 inline: true,
-            }
-        );
+            });
+        }
+        fields.splice(1, 0, ...rankedFields);
     }
     const supportUrl =
         process.env.SUPPORT_URL || 'https://buymeacoffee.com/yngstew';
@@ -160,24 +161,27 @@ export function buildRankChangeMessage({
           ? '📉 **Rank Demotion...**'
           : null;
     if (!colorHex || !title) return null;
+    const rankChangeFields = [
+        {
+            name: '🏆 **Rank Change**',
+            value: `**${newRankMsg}**`,
+            inline: true,
+        },
+    ];
+    if (lpChangeMsg !== null) {
+        rankChangeFields.push({
+            name: '🔄 **LP Change**',
+            value: `**${lpChangeMsg} LP**`,
+            inline: true,
+        });
+    }
     return {
         title,
         description: `${summonerName} has ${isPromotion ? 'ranked up!' : 'been demoted.'}`,
         url: deepLolLink,
         colorHex,
         thumbnailUrl: getRankedEmblem(tier) ?? undefined,
-        fields: [
-            {
-                name: '🏆 **Rank Change**',
-                value: `**${newRankMsg}**`,
-                inline: true,
-            },
-            {
-                name: '🔄 **LP Change**',
-                value: `**${lpChangeMsg} LP**`,
-                inline: true,
-            },
-        ],
+        fields: rankChangeFields,
         footer: 'Rank Change Notification',
         timestamp: new Date().toISOString(),
     };

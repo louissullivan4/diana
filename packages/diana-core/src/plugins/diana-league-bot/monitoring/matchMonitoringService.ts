@@ -19,7 +19,6 @@ import {
     setSummonerCurrentMatchIdByPuuid,
     getSummonerByPuuid,
     createRankHistory,
-    getMostRecentRankByParticipantIdAndQueueType,
     getRankByMatchAndQueueType,
     updateSummonerIdentityByPuuid,
 } from '../api/summoners/summonerService';
@@ -275,7 +274,7 @@ const handleNewMatchCompleted = async (
     const matchRank = getRankTagsById(info.queueId ?? 0);
 
     let newRankMsg = 'Unranked N/A (0 LP)';
-    let lpChangeMsg = 0;
+    let lpChangeMsg: number | null = null;
     let checkForRankUp = 'no_change';
 
     try {
@@ -286,6 +285,11 @@ const handleNewMatchCompleted = async (
                 (e) => e.queueType === matchRank
             );
 
+            // Anchor the previous rank to a SPECIFIC known row — either the
+            // rank recorded during the last monitored match, or the INIT row
+            // written when the summoner was first added. Never fall back to
+            // "most recent rank for this summoner" — that can return a row
+            // from before a data gap, producing misleading deltas.
             let oldRankInfo = summoner.currentMatchId
                 ? await getRankByMatchAndQueueType(
                       summoner.currentMatchId,
@@ -294,11 +298,11 @@ const handleNewMatchCompleted = async (
                   )
                 : null;
             if (!oldRankInfo) {
-                oldRankInfo =
-                    await getMostRecentRankByParticipantIdAndQueueType(
-                        puuid,
-                        matchRank
-                    );
+                oldRankInfo = await getRankByMatchAndQueueType(
+                    'INIT',
+                    puuid,
+                    matchRank
+                );
             }
 
             if (rankPost) {
@@ -309,16 +313,23 @@ const handleNewMatchCompleted = async (
                     puuid,
                 };
 
-                const rankChange = calculateRankChange(
-                    oldRankInfo,
-                    summonerNewRankInfo
-                );
-                checkForRankUp = determineRankMovement(
-                    oldRankInfo,
-                    summonerNewRankInfo
-                );
                 newRankMsg = `${summonerNewRankInfo.tier} ${summonerNewRankInfo.rank} (${summonerNewRankInfo.lp} LP)`;
-                lpChangeMsg = rankChange.lpChange;
+
+                if (oldRankInfo) {
+                    const rankChange = calculateRankChange(
+                        oldRankInfo,
+                        summonerNewRankInfo
+                    );
+                    checkForRankUp = determineRankMovement(
+                        oldRankInfo,
+                        summonerNewRankInfo
+                    );
+                    lpChangeMsg = rankChange.lpChange;
+                } else {
+                    console.warn(
+                        `[Warn] [${new Date().toISOString()}] No rank baseline for ${summonerName} (${newMatchId}, ${matchRank}); suppressing LP delta for this match.`
+                    );
+                }
 
                 try {
                     await createRankHistory(

@@ -118,6 +118,17 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🔄 **LP Change**');
     });
 
+    it('omits LP Change field when lpChangeMsg is null (no rank baseline)', () => {
+        const msg = buildMatchEndMessage({
+            ...baseMatchInput,
+            queueName: 'Ranked Solo',
+            lpChangeMsg: null,
+        });
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).toContain('📈 **Rank Update**');
+        expect(fieldNames).not.toContain('🔄 **LP Change**');
+    });
+
     it('includes Role field for a role queue (Ranked Solo)', () => {
         const msg = buildMatchEndMessage({
             ...baseMatchInput,
@@ -368,6 +379,16 @@ describe('buildRankChangeMessage', () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         const lpField = msg.fields!.find((f) => f.name === '🔄 **LP Change**');
         expect(lpField?.value).toContain('60 LP');
+    });
+
+    it('omits LP Change field when lpChangeMsg is null', () => {
+        const msg = buildRankChangeMessage({
+            ...promotionInput,
+            lpChangeMsg: null,
+        })!;
+        const fieldNames = msg.fields!.map((f) => f.name);
+        expect(fieldNames).toContain('🏆 **Rank Change**');
+        expect(fieldNames).not.toContain('🔄 **LP Change**');
     });
 
     it('uses deepLolLink as url', () => {
