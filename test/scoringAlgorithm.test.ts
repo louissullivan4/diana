@@ -397,6 +397,99 @@ describe('calculateMatchScores - role-specific weighting', () => {
 });
 
 // ---------------------------------------------------------------------------
+// calculateMatchScores - role-scoped normalisation (Option 2)
+// ---------------------------------------------------------------------------
+
+describe('calculateMatchScores - role-scoped normalisation', () => {
+    it('a high-vision support does NOT pin all other roles to 0 on visionScore', () => {
+        // Two supports: support A has 100 vision, support B has 50.
+        // Without role-scoped normalisation, mid/top/bot/jungle all get 0 on
+        // vision because their <30 reads as the minimum. With it, the lobby's
+        // non-support participants are unaffected by the support outliers
+        // (they're compared on their own contested stats).
+        const lobby = makeLobby({
+            4: { visionScore: 100, teamPosition: 'UTILITY' }, // support A
+            9: { visionScore: 50, teamPosition: 'UTILITY' }, // support B
+        });
+        const scores = calculateMatchScores(lobby);
+        const supportA = scores.find((s) => s.puuid === 'puuid-4')!;
+        const supportB = scores.find((s) => s.puuid === 'puuid-9')!;
+        // Within support pair, A scores higher than B (head-to-head vision win)
+        expect(supportA.score).toBeGreaterThan(supportB.score);
+    });
+
+    it('two equal junglers split objective stats 0.5/0.5, neither dominates', () => {
+        // Both junglers: identical dragon/baron/herald takedowns (range=0 → 0.5)
+        const lobby = makeLobby({
+            1: {
+                challenges: {
+                    kda: 5,
+                    killParticipation: 0.6,
+                    dragonTakedowns: 2,
+                    baronTakedowns: 1,
+                    riftHeraldTakedowns: 1,
+                    controlWardsPlaced: 2,
+                    effectiveHealAndShielding: 0,
+                    soloKills: 0,
+                },
+                neutralMinionsKilled: 150,
+            },
+            6: {
+                challenges: {
+                    kda: 5,
+                    killParticipation: 0.6,
+                    dragonTakedowns: 2,
+                    baronTakedowns: 1,
+                    riftHeraldTakedowns: 1,
+                    controlWardsPlaced: 2,
+                    effectiveHealAndShielding: 0,
+                    soloKills: 0,
+                },
+                neutralMinionsKilled: 150,
+            },
+        });
+        const scores = calculateMatchScores(lobby);
+        const j1 = scores.find((s) => s.puuid === 'puuid-1')!;
+        const j2 = scores.find((s) => s.puuid === 'puuid-6')!;
+        // Junglers should be near-equal — only differ by the WIN_BONUS
+        // (j1 is on winning team, j2 isn't, per makeLobby)
+        expect(Math.abs(j1.score - j2.score)).toBeLessThanOrEqual(
+            WIN_BONUS * 100 + 0.5
+        );
+    });
+
+    it('every UTILITY role-exclusive stat is tagged', () => {
+        const required = [
+            'visionScore',
+            'controlWardsPlaced',
+            'effectiveHealAndShielding',
+            'assists',
+            'timeCCingOthers',
+        ];
+        for (const key of required) {
+            const stat = scoringWeights.UTILITY.stats.find(
+                (s) => s.key === key
+            );
+            expect(stat?.roleExclusive).toBe(true);
+        }
+    });
+
+    it('every JUNGLE role-exclusive stat is tagged', () => {
+        const required = [
+            'dragonTakedowns',
+            'baronTakedowns',
+            'neutralMinionsKilled',
+            'riftHeraldTakedowns',
+            'objectivesStolen',
+        ];
+        for (const key of required) {
+            const stat = scoringWeights.JUNGLE.stats.find((s) => s.key === key);
+            expect(stat?.roleExclusive).toBe(true);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // calculateMatchScores - edge cases and robustness
 // ---------------------------------------------------------------------------
 

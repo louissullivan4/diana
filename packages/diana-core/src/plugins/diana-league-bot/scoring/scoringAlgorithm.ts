@@ -18,6 +18,14 @@ export interface StatDef {
     higherIsBetter: boolean;
     /** Contribution fraction - ideally all weights per role sum to 1.0 */
     weight: number;
+    /**
+     * When true, this stat is normalised against same-role peers in the lobby
+     * (e.g. support vs support, jungle vs jungle) instead of the whole lobby.
+     * Use for stats that only one role realistically competes in (vision,
+     * dragon takedowns, heal/shield) so role-winners don't get a free 1.0
+     * just by playing the role.
+     */
+    roleExclusive?: boolean;
 }
 
 export interface RoleWeightConfig {
@@ -100,68 +108,82 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
     },
     JUNGLE: {
         stats: [
-            // KDA captures efficient skirmishing
+            // KDA — contested cross-role
             {
                 key: 'kda',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.2,
+                weight: 0.22,
             },
-            // Kill participation is the primary jungler performance metric
+            // Kill participation — contested cross-role
             {
                 key: 'killParticipation',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.2,
+                weight: 0.22,
             },
-            // Dragon control is a core jungler objective
+            // Damage to champions — contested, rewards skirmish/teamfight
+            // junglers and prevents farm-only afk-jg from coasting
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.15,
+            },
+            // Dragon control — only the jungler realistically takes drakes,
+            // compare jungler-vs-jungler
             {
                 key: 'dragonTakedowns',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.08,
+                roleExclusive: true,
             },
-            // Baron secures late-game win conditions
+            // Baron — same story, jungler-vs-jungler
             {
                 key: 'baronTakedowns',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.08,
+                roleExclusive: true,
             },
-            // Camp clear efficiency separates good from great junglers
+            // Gold — contested, validates efficient farming and skirmishing
+            {
+                key: 'goldEarned',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.07,
+            },
+            // Camp clear efficiency — jungler-only stat
             {
                 key: 'neutralMinionsKilled',
                 source: 'direct',
                 higherIsBetter: true,
-                weight: 0.1,
+                weight: 0.05,
+                roleExclusive: true,
             },
-            // Rift Herald usage drives early tower advantages
+            // Rift Herald — jungler-only objective
             {
                 key: 'riftHeraldTakedowns',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.07,
-            },
-            // Stealing objectives from the enemy is high-value play
-            {
-                key: 'objectivesStolen',
-                source: 'direct',
-                higherIsBetter: true,
                 weight: 0.05,
+                roleExclusive: true,
             },
-            // Vision around objectives is specifically a jungler's job
+            // Vision around objectives — contested with support
             {
                 key: 'visionScore',
                 source: 'direct',
                 higherIsBetter: true,
                 weight: 0.05,
             },
-            // Gold income validates efficient pathing
+            // Steals — jungler vs jungler
             {
-                key: 'goldEarned',
+                key: 'objectivesStolen',
                 source: 'direct',
                 higherIsBetter: true,
                 weight: 0.03,
+                roleExclusive: true,
             },
         ],
     },
@@ -266,54 +288,75 @@ export const scoringWeights: Record<string, RoleWeightConfig> = {
     },
     UTILITY: {
         stats: [
-            // Vision is the entire job description of a support
+            // Vision is the entire job description of a support — but supports
+            // always own this stat in the lobby, so compare support-vs-support
             {
                 key: 'visionScore',
                 source: 'direct',
                 higherIsBetter: true,
-                weight: 0.25,
+                weight: 0.15,
+                roleExclusive: true,
             },
-            // Control wards are the most impactful vision tool
+            // Control wards: same story — only supports buy them at scale
             {
                 key: 'controlWardsPlaced',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.08,
+                roleExclusive: true,
             },
-            // Presence in fights validates roaming and engage
+            // Presence in fights — contested across all roles
             {
                 key: 'killParticipation',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.18,
             },
-            // Assists are the support's primary combat contribution
+            // Assists — supports lead the lobby almost every game
             {
                 key: 'assists',
                 source: 'direct',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.12,
+                roleExclusive: true,
             },
-            // Healing and shielding quantifies protective value
+            // Heal and shield — only enchanters generate meaningful values
             {
                 key: 'effectiveHealAndShielding',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.15,
+                weight: 0.08,
+                roleExclusive: true,
             },
-            // Hard CC secures kills and saves allies
+            // Hard CC — supports usually top this; compare support-vs-support
             {
                 key: 'timeCCingOthers',
                 source: 'direct',
                 higherIsBetter: true,
                 weight: 0.1,
+                roleExclusive: true,
             },
-            // KDA matters but support deaths are less punishing
+            // KDA — contested cross-role, weight increased so a feeding
+            // support can't coast on vision alone
             {
                 key: 'kda',
                 source: 'challenges',
                 higherIsBetter: true,
-                weight: 0.05,
+                weight: 0.12,
+            },
+            // Damage soaked — contested with frontline tanks/junglers
+            {
+                key: 'damageTakenOnTeamPercentage',
+                source: 'challenges',
+                higherIsBetter: true,
+                weight: 0.1,
+            },
+            // Damage to champions — minor, but rewards engage/poke supports
+            {
+                key: 'totalDamageDealtToChampions',
+                source: 'direct',
+                higherIsBetter: true,
+                weight: 0.07,
             },
         ],
     },
@@ -416,7 +459,9 @@ export function calculateMatchScores(
 ): PlayerScore[] {
     if (!participants || participants.length === 0) return [];
 
-    // Build a deduplicated set of every stat referenced by any role config
+    // Build a deduplicated set of every stat referenced by any role config.
+    // We track whether a stat is ever used as roleExclusive so we know to
+    // build per-role normalisation tables for it.
     const allStatDefs = new Map<string, StatDef>();
     for (const roleConfig of Object.values(scoringWeights)) {
         for (const stat of roleConfig.stats) {
@@ -427,30 +472,74 @@ export function calculateMatchScores(
         }
     }
 
-    // Normalise every stat once across all participants - O(stats * participants)
-    const normalisedCache = new Map<string, number[]>();
+    // Determine the effective role for every participant once
+    const participantRoles: string[] = participants.map((p) => {
+        const pos: string = p.teamPosition || p.individualPosition || '';
+        return pos in scoringWeights ? pos : 'DEFAULT';
+    });
+
+    // Group participant indices by role for role-scoped normalisation
+    const roleGroups = new Map<string, number[]>();
+    for (let i = 0; i < participants.length; i++) {
+        const r = participantRoles[i];
+        if (!roleGroups.has(r)) roleGroups.set(r, []);
+        roleGroups.get(r)!.push(i);
+    }
+
+    // Lobby-wide normalisation (used for non-role-exclusive stats)
+    const lobbyNormalised = new Map<string, number[]>();
     for (const [cacheKey, statDef] of allStatDefs) {
         const rawValues = participants.map((p) => getStatValue(p, statDef));
         const normalised = minMaxNormalize(rawValues);
-        normalisedCache.set(
+        lobbyNormalised.set(
             cacheKey,
             statDef.higherIsBetter ? normalised : normalised.map((v) => 1 - v)
         );
     }
 
+    // Role-scoped normalisation for stats tagged roleExclusive on a given
+    // role's config. Key: `${role}:${cacheKey}` → array indexed by lobby idx
+    // (entries for participants outside the role are unused).
+    const roleScopedNormalised = new Map<string, number[]>();
+    for (const [role, config] of Object.entries(scoringWeights)) {
+        const indices = roleGroups.get(role);
+        if (!indices || indices.length === 0) continue;
+        for (const stat of config.stats) {
+            if (!stat.roleExclusive) continue;
+            const cacheKey = `${stat.source}:${stat.key}`;
+            const mapKey = `${role}:${cacheKey}`;
+            if (roleScopedNormalised.has(mapKey)) continue;
+            const rawValues = indices.map((i) =>
+                getStatValue(participants[i], stat)
+            );
+            const normalised = minMaxNormalize(rawValues);
+            const adjusted = stat.higherIsBetter
+                ? normalised
+                : normalised.map((v) => 1 - v);
+            const fullArr = new Array(participants.length).fill(0);
+            for (let j = 0; j < indices.length; j++) {
+                fullArr[indices[j]] = adjusted[j];
+            }
+            roleScopedNormalised.set(mapKey, fullArr);
+        }
+    }
+
     // Compute weighted score for each participant
     const rawScores = participants.map((participant, idx) => {
-        const position: string =
-            participant.teamPosition || participant.individualPosition || '';
-        const role = position in scoringWeights ? position : 'DEFAULT';
+        const role = participantRoles[idx];
         const roleConfig = scoringWeights[role];
 
         let total = 0;
         for (const statDef of roleConfig.stats) {
             const cacheKey = `${statDef.source}:${statDef.key}`;
-            const values = normalisedCache.get(cacheKey);
-            if (values) {
-                total += statDef.weight * values[idx];
+            let value: number | undefined;
+            if (statDef.roleExclusive) {
+                value = roleScopedNormalised.get(`${role}:${cacheKey}`)?.[idx];
+            } else {
+                value = lobbyNormalised.get(cacheKey)?.[idx];
+            }
+            if (value !== undefined) {
+                total += statDef.weight * value;
             }
         }
 
@@ -461,7 +550,6 @@ export function calculateMatchScores(
             puuid: String(participant.puuid ?? ''),
             participantId: Number(participant.participantId ?? idx + 1),
             role,
-            // round this score and mupltiple by 100
             score: Math.round((Math.round(total * 10000) / 10000) * 100),
             win: Boolean(participant.win),
         };
