@@ -222,34 +222,44 @@ const handleNewMatchCompleted = async (
         );
     }
 
+    let createdMatchDetail: Awaited<ReturnType<typeof createMatchDetail>>;
     try {
-        const createdMatchDetail = await createMatchDetail(matchDetails);
-        if (createdMatchDetail) {
-            console.log(
-                `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${newMatchId})`
-            );
-            try {
-                await saveMatchScores(newMatchId, scores);
-                console.log(
-                    `[Info] [${new Date().toISOString()}] Saved match scores for [${newMatchId}] (${scores.length} participants)`
-                );
-            } catch (scoringError) {
-                console.error(
-                    `[Error] Failed to save match scores for [${newMatchId}]:`,
-                    scoringError
-                );
-            }
-        } else {
-            console.log(
-                `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping insert (matchId: ${newMatchId})`
-            );
-        }
+        createdMatchDetail = await createMatchDetail(matchDetails);
     } catch (error: any) {
         console.error(
             `[Error] [${new Date().toISOString()}] Failed to create match detail for [${summonerName}]:`,
             error
         );
         throw error;
+    }
+
+    // The INSERT uses `ON CONFLICT ("matchId","entryPlayerPuuid") DO NOTHING`,
+    // so the first concurrent tick to reach this point wins and gets a row
+    // back. Subsequent ticks (queued by Riot rate-limiting; cron has no
+    // concurrency guard) get `null` — they must NOT re-fan-out notifications,
+    // or each match gets spammed N times. We still advance this summoner's
+    // pointer so the next tick sees the match as already processed.
+    if (!createdMatchDetail) {
+        console.log(
+            `[Info] [${new Date().toISOString()}] Match detail already exists for [${summonerName}], skipping notifications (matchId: ${newMatchId})`
+        );
+        await setSummonerCurrentMatchIdByPuuid(puuid, newMatchId);
+        return;
+    }
+
+    console.log(
+        `[Info] [${new Date().toISOString()}] Stored match detail for [${summonerName}] (matchId: ${newMatchId})`
+    );
+    try {
+        await saveMatchScores(newMatchId, scores);
+        console.log(
+            `[Info] [${new Date().toISOString()}] Saved match scores for [${newMatchId}] (${scores.length} participants)`
+        );
+    } catch (scoringError) {
+        console.error(
+            `[Error] Failed to save match scores for [${newMatchId}]:`,
+            scoringError
+        );
     }
 
     const participant = participants.find(

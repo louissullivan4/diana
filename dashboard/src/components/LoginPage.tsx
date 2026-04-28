@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import './LoginPage.css';
 
 interface LoginPageProps {
-    onLogin: (token: string) => void;
+    onLogin: () => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -31,12 +31,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 return;
             }
 
-            // Store token in localStorage as backup (cookie is primary)
-            if (data.token) {
-                localStorage.setItem('diana_token', data.token);
-            }
-
-            onLogin(data.token);
+            onLogin();
         } catch (err) {
             setError('Unable to connect to server');
         } finally {

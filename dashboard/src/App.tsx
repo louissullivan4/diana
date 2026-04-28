@@ -49,16 +49,9 @@ class AuthError extends Error {
     }
 }
 
-/** Get auth headers from localStorage token */
-function getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('diana_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function fetchPlugins(): Promise<PluginInfo[]> {
     const res = await fetch(`${API_BASE}/api/plugins`, {
         credentials: 'include',
-        headers: getAuthHeaders(),
     });
     if (res.status === 401) throw new AuthError('Authentication required');
     if (!res.ok) throw new Error('Failed to fetch plugins');
@@ -73,10 +66,7 @@ async function setPluginEnabled(
         `${API_BASE}/api/plugins/${encodeURIComponent(id)}`,
         {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders(),
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ enabled }),
             credentials: 'include',
         }
@@ -97,10 +87,7 @@ async function updatePluginConfig(
         `${API_BASE}/api/plugins/${encodeURIComponent(id)}`,
         {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders(),
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ config }),
             credentials: 'include',
         }
@@ -118,7 +105,6 @@ async function logout(): Promise<void> {
         method: 'POST',
         credentials: 'include',
     });
-    localStorage.removeItem('diana_token');
 }
 
 /** Render a single config field input */
@@ -785,20 +771,14 @@ export default function App() {
 
     // Check if user is already authenticated on mount
     useEffect(() => {
-        const checkAuth = async () => {
-            // Check for token in localStorage or cookie
-            const token = localStorage.getItem('diana_token');
-            if (!token) {
-                setIsAuthenticated(false);
-                setCheckingAuth(false);
-                return;
-            }
+        // Clear any leftover token from the old localStorage-based auth flow
+        // (could be the literal string "undefined" from a prior bug).
+        localStorage.removeItem('diana_token');
 
-            // Verify token is still valid by calling /api/auth/me
+        const checkAuth = async () => {
             try {
                 const res = await fetch('/api/auth/me', {
                     credentials: 'include',
-                    headers: { Authorization: `Bearer ${token}` },
                 });
                 setIsAuthenticated(res.ok);
             } catch {
@@ -811,8 +791,7 @@ export default function App() {
         checkAuth();
     }, []);
 
-    const handleLogin = (token: string) => {
-        localStorage.setItem('diana_token', token);
+    const handleLogin = () => {
         setIsAuthenticated(true);
         showToast('Logged in successfully', 'success');
     };
