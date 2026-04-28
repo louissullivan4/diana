@@ -92,7 +92,7 @@ export interface ILolService {
  * League Bot plugin configuration
  */
 export interface LeagueBotConfig {
-    /** Cron schedule for match checking (default: every 20 seconds) */
+    /** Cron schedule for match checking (default: every minute) */
     matchCheckCron: string;
     /** Default Discord channel ID for notifications */
     defaultDiscordChannelId?: string;

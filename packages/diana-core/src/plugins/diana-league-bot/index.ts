@@ -5,7 +5,7 @@ import { createMatchMonitoringTick } from './monitoring/matchMonitoringService';
 import type { LeagueBotConfig } from './types';
 
 const defaultConfig: LeagueBotConfig = {
-    matchCheckCron: '*/20 * * * * *',
+    matchCheckCron: '0 * * * * *',
     defaultDiscordChannelId: undefined,
 };
 
@@ -15,9 +15,9 @@ const configSchema: ConfigField[] = [
         label: 'Match Check Schedule',
         type: 'string',
         description:
-            'Cron expression for match checking (default: every 20 seconds)',
+            'Cron expression for match checking (default: every minute)',
         required: false,
-        default: '*/20 * * * * *',
+        default: '0 * * * * *',
     },
     {
         key: 'defaultDiscordChannelId',
