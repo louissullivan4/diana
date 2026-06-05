@@ -22,7 +22,7 @@
         "backfill:rank-anchors": "ts-node src/plugins/diana-league-bot/scripts/backfillRankAnchors.ts"
     },
     "dependencies": {
-        "axios": "^1.15.0",
+        "axios": "^1.17.0",
         "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.7",
         "dotenv": "^17.3.1",
