@@ -1,6 +1,6 @@
 {
     "name": "diana-core",
-    "version": "2.0.6",
+    "version": "2.0.7",
     "private": false,
     "license": "ISC",
     "main": "dist/index.js",
@@ -19,7 +19,8 @@
         "build:check": "tsc -b --noEmit",
         "dev": "tsc -b -w",
         "backfill:matches": "ts-node src/plugins/diana-league-bot/scripts/backfillMissingMatches.ts",
-        "backfill:rank-anchors": "ts-node src/plugins/diana-league-bot/scripts/backfillRankAnchors.ts"
+        "backfill:rank-anchors": "ts-node src/plugins/diana-league-bot/scripts/backfillRankAnchors.ts",
+        "seed:missing-match-ids": "ts-node src/plugins/diana-league-bot/scripts/seedMissingCurrentMatchIds.ts"
     },
     "dependencies": {
         "axios": "^1.15.0",

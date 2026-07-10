@@ -26,34 +26,55 @@ const regionMeta: Record<
         matchRegionPrefix: 'EUN1',
         regionGroup: 'EUROPE',
     },
-    [Constants.Regions.NA_1]: {
+    [Constants.Regions.AMERICA_NORTH]: {
         matchRegionPrefix: 'NA1',
         regionGroup: 'AMERICAS',
     },
-    [Constants.Regions.LA_1]: {
+    [Constants.Regions.LAT_NORTH]: {
         matchRegionPrefix: 'LA1',
         regionGroup: 'AMERICAS',
     },
-    [Constants.Regions.LA_2]: {
+    [Constants.Regions.LAT_SOUTH]: {
         matchRegionPrefix: 'LA2',
         regionGroup: 'AMERICAS',
     },
-    [Constants.Regions.KR]: { matchRegionPrefix: 'KR', regionGroup: 'ASIA' },
-    [Constants.Regions.JP_1]: { matchRegionPrefix: 'JP1', regionGroup: 'ASIA' },
-    [Constants.Regions.BR_1]: {
+    [Constants.Regions.KOREA]: {
+        matchRegionPrefix: 'KR',
+        regionGroup: 'ASIA',
+    },
+    [Constants.Regions.JAPAN]: {
+        matchRegionPrefix: 'JP1',
+        regionGroup: 'ASIA',
+    },
+    [Constants.Regions.BRAZIL]: {
         matchRegionPrefix: 'BR1',
         regionGroup: 'AMERICAS',
     },
-    [Constants.Regions.TR_1]: {
+    [Constants.Regions.TURKEY]: {
         matchRegionPrefix: 'TR1',
         regionGroup: 'EUROPE',
     },
-    [Constants.Regions.RU]: { matchRegionPrefix: 'RU', regionGroup: 'EUROPE' },
-    [Constants.Regions.OC_1]: { matchRegionPrefix: 'OC1', regionGroup: 'SEA' },
-    [Constants.Regions.SG_2]: { matchRegionPrefix: 'SG2', regionGroup: 'SEA' },
-    [Constants.Regions.TW_2]: { matchRegionPrefix: 'TW2', regionGroup: 'SEA' },
-    [Constants.Regions.VN_2]: { matchRegionPrefix: 'VN2', regionGroup: 'SEA' },
-    [Constants.Regions.ME_1]: {
+    [Constants.Regions.RUSSIA]: {
+        matchRegionPrefix: 'RU',
+        regionGroup: 'EUROPE',
+    },
+    [Constants.Regions.OCEANIA]: {
+        matchRegionPrefix: 'OC1',
+        regionGroup: 'SEA',
+    },
+    [Constants.Regions.SINGAPORE]: {
+        matchRegionPrefix: 'SG2',
+        regionGroup: 'SEA',
+    },
+    [Constants.Regions.TAIWAN]: {
+        matchRegionPrefix: 'TW2',
+        regionGroup: 'SEA',
+    },
+    [Constants.Regions.VIETNAM]: {
+        matchRegionPrefix: 'VN2',
+        regionGroup: 'SEA',
+    },
+    [Constants.Regions.MIDDLE_EAST]: {
         matchRegionPrefix: 'ME1',
         regionGroup: 'EUROPE',
     },
