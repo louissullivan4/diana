@@ -8,6 +8,13 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+pool.on('error', (err) => {
+    console.error(
+        `[Error] [${new Date().toISOString()}] Auth Postgres pool idle client error:`,
+        err
+    );
+});
+
 if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required but not set.');
 }

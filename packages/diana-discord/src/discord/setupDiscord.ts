@@ -51,6 +51,17 @@ async function sendWelcomeMessage(guild: Guild, botKey: BotKey): Promise<void> {
 }
 
 function attachClientListeners(client: Client, botKey: BotKey): void {
+    client.on('error', (err) => {
+        console.error(`[Diana:${botKey}] Discord client error:`, err);
+    });
+
+    client.on('shardError', (err) => {
+        console.error(
+            `[Diana:${botKey}] Discord gateway connection error:`,
+            err
+        );
+    });
+
     client.once('ready', async () => {
         console.log(
             `[Diana:${botKey}] Discord client ready as ${client.user?.tag ?? 'unknown'}.`
