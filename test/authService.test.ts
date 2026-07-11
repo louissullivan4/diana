@@ -1,7 +1,7 @@
 // Mock pg Pool before importing the module under test
 jest.mock('pg', () => {
     const mockQuery = jest.fn();
-    const mockPool = { query: mockQuery };
+    const mockPool = { query: mockQuery, on: jest.fn() };
     return { Pool: jest.fn(() => mockPool) };
 });
 
