@@ -26,3 +26,10 @@ npm start
 - Dashboard: `http://localhost:3000/dashboard` (build first with `npm run build:dashboard`)
 
 See [docs/development.md](docs/development.md) for full setup, environment variables, plugin development, and deployment.
+
+## Legal
+
+- [Terms of Service](https://louissullivan4.github.io/diana/terms.html)
+- [Privacy Policy](https://louissullivan4.github.io/diana/privacy.html)
+
+Diana isn't endorsed by Riot Games or Electronic Arts and doesn't reflect the views or opinions of either. League of Legends is a trademark of Riot Games, Inc.; Apex Legends is a trademark of Electronic Arts Inc.
