@@ -1,4 +1,4 @@
-FROM node:24.10.0-bookworm-slim AS build
+FROM node:24.18.0-bookworm-slim AS build
 WORKDIR /usr/app
 
 # Install workspace dependencies
@@ -15,7 +15,7 @@ RUN npm run build
 # Prune dev dependencies
 RUN npm prune --omit=dev
 
-FROM node:24.10.0-bookworm-slim
+FROM node:24.18.0-bookworm-slim
 WORKDIR /usr/app
 ENV NODE_ENV=production
 
