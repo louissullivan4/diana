@@ -26,6 +26,7 @@ import {
     getAllTrackedPuuids,
     getGuildsTrackingSummoner,
 } from '../api/summoners/guildService.js';
+import { buildDeepLolLink } from '../utils/deepLol.js';
 import {
     notifyMatchEnd,
     notifyRankChange,
@@ -42,12 +43,6 @@ const shouldForceDevelopmentTimers = Boolean(
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 let lastSummonerMetadataSync = 0;
 
-const buildDeepLolLink = (gameName: string, tagLine: string) => {
-    const encodedGameName = encodeURIComponent(gameName);
-    const encodedTagLine = encodeURIComponent(tagLine);
-    return `https://www.deeplol.gg/summoner/euw/${encodedGameName}-${encodedTagLine}`;
-};
-
 const syncTrackedSummonerMetadata = async (puuid: string) => {
     const summoner = await getSummonerByPuuid(puuid);
 
@@ -62,7 +57,11 @@ const syncTrackedSummonerMetadata = async (puuid: string) => {
         puuid,
         summoner.regionGroup as any
     );
-    const deepLolLink = buildDeepLolLink(account.gameName, account.tagLine);
+    const deepLolLink = buildDeepLolLink(
+        account.gameName,
+        account.tagLine,
+        summoner.matchRegionPrefix
+    );
     const envDiscordChannelId = process.env.DISCORD_CHANNEL_ID;
     const targetDiscordChannelId =
         envDiscordChannelId ?? summoner.discordChannelId ?? null;

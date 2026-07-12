@@ -9,6 +9,7 @@ import {
     isSummonerInGuild,
     createRankHistory,
     setSummonerCurrentMatchIdByPuuid,
+    buildDeepLolLink,
 } from 'diana-core';
 
 const lolService = createLolService();
@@ -88,9 +89,6 @@ const regionChoices = Object.entries(Constants.Regions)
     )
     .slice(0, 25);
 
-const buildDeepLolLink = (gameName: string, tagLine: string) =>
-    `https://www.deeplol.gg/summoner/euw/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`;
-
 export const addSummonerCommand: SlashCommand = {
     data: (() => {
         const builder = new SlashCommandBuilder()
@@ -169,7 +167,8 @@ export const addSummonerCommand: SlashCommand = {
             if (isNew) {
                 const deepLolLink = buildDeepLolLink(
                     account.gameName,
-                    account.tagLine
+                    account.tagLine,
+                    meta.matchRegionPrefix
                 );
 
                 let initialTier = 'UNRANKED';

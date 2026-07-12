@@ -78,6 +78,12 @@ jest.mock('diana-core', () => ({
     isSummonerInGuild: isSummonerInGuildMock,
     createRankHistory: createRankHistoryMock,
     setSummonerCurrentMatchIdByPuuid: setSummonerCurrentMatchIdByPuuidMock,
+    buildDeepLolLink: (
+        gameName: string,
+        tagLine: string,
+        matchRegionPrefix?: string
+    ) =>
+        `https://www.deeplol.gg/summoner/${matchRegionPrefix === 'VN2' ? 'vn' : 'euw'}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`,
 }));
 
 const {
