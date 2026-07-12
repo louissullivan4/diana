@@ -35,6 +35,9 @@
     "author": "",
     "license": "ISC",
     "description": "Diana - plugin-based Discord bot with dashboard.",
+    "overrides": {
+        "undici": "^6.27.0"
+    },
     "devDependencies": {
         "@anthropic-ai/claude-code": "^2.1.206",
         "@eslint/js": "^10.0.1",
