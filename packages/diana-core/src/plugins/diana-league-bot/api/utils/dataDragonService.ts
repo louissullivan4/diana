@@ -8,7 +8,7 @@ let cachedLatestVersion: string;
 let championDataCache: Record<string, any>;
 let championIdMapCache: Record<string, any>;
 
-const fetchLatestVersion = async () => {
+export const fetchLatestVersion = async () => {
     if (!cachedLatestVersion) {
         const { data: versions } = await axios.get(VERSIONS_URL);
         cachedLatestVersion = versions[0];
@@ -52,13 +52,26 @@ export const getChampionInfoById = async (championId: string) => {
 export const getQueueNameById = (queueId: number) => {
     const queueMap = new Map<number, string>([
         [0, 'Custom Game'],
+        [400, 'Normal Draft'],
         [420, 'Ranked Solo'],
         [430, 'Normal Blind'],
         [440, 'Ranked Flex'],
         [450, 'ARAM'],
         [480, 'Swiftplay'],
+        [490, 'Normal Blind (SR)'],
         [700, 'Clash'],
+        [720, 'Clash (AR)'],
+        [770, 'Arena'],
+        [800, 'Bot SR'],
+        [830, 'Bot Intro SR'],
+        [840, 'Bot Beginner SR'],
+        [850, 'Bot Intermediate SR'],
         [900, 'ARURF'],
+        [910, 'URF'],
+        [920, 'Poro King'],
+        [950, 'ARURF (Snow)'],
+        [1700, 'Arena'],
+        [1710, 'Arena'],
     ]);
     return queueMap.get(queueId) || `Unknown Queue (ID: ${queueId})`;
 };
