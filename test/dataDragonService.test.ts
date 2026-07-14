@@ -39,6 +39,23 @@ describe('getQueueNameById', () => {
         expect(getQueueNameById(900)).toBe('ARURF');
     });
 
+    it('returns "Arena" for queues 1700 and 1710', () => {
+        expect(getQueueNameById(1700)).toBe('Arena');
+        expect(getQueueNameById(1710)).toBe('Arena');
+    });
+
+    it('returns "Quickplay" for queue 490', () => {
+        expect(getQueueNameById(490)).toBe('Quickplay');
+    });
+
+    it('returns "Normal Draft" for queue 400', () => {
+        expect(getQueueNameById(400)).toBe('Normal Draft');
+    });
+
+    it('returns "Ultimate Spellbook" for queue 1400', () => {
+        expect(getQueueNameById(1400)).toBe('Ultimate Spellbook');
+    });
+
     it('returns a fallback string containing the unknown ID', () => {
         expect(getQueueNameById(9999)).toBe('Unknown Queue (ID: 9999)');
     });

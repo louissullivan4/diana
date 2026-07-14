@@ -52,13 +52,27 @@ export const getChampionInfoById = async (championId: string) => {
 export const getQueueNameById = (queueId: number) => {
     const queueMap = new Map<number, string>([
         [0, 'Custom Game'],
+        [400, 'Normal Draft'],
         [420, 'Ranked Solo'],
         [430, 'Normal Blind'],
         [440, 'Ranked Flex'],
         [450, 'ARAM'],
         [480, 'Swiftplay'],
+        [490, 'Quickplay'],
         [700, 'Clash'],
+        [720, 'ARAM Clash'],
+        [830, 'Co-op vs AI Intro'],
+        [840, 'Co-op vs AI Beginner'],
+        [850, 'Co-op vs AI Intermediate'],
         [900, 'ARURF'],
+        [1020, 'One for All'],
+        [1400, 'Ultimate Spellbook'],
+        [1700, 'Arena'],
+        [1710, 'Arena'],
+        [1900, 'URF'],
+        [2000, 'Tutorial'],
+        [2010, 'Tutorial'],
+        [2020, 'Tutorial'],
     ]);
     return queueMap.get(queueId) || `Unknown Queue (ID: ${queueId})`;
 };
