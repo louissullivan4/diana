@@ -1,5 +1,4 @@
 import type { MessageAdapter, MessagePayload } from '../../../core/pluginTypes';
-import type { SummonerSummary } from '../types';
 import {
     getChampionThumbnail,
     getRankedEmblem,
@@ -39,6 +38,13 @@ interface MatchEndMessageInput {
     totalPlayers?: number;
     /** Raw AI score from the scoring algorithm */
     aiScore?: number;
+    /** Kill participation as a whole percentage (0-100) */
+    killParticipationPct?: number;
+    damagePerMinute?: number;
+    soloKills?: number;
+    visionScore?: number;
+    /** Roast/praise line appended to the embed description */
+    flavorLine?: string | null;
 }
 
 interface RankChangeMessageInput {
@@ -59,7 +65,7 @@ function formatGameLength(totalSeconds: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function buildMatchEndMessage({
+export async function buildMatchEndMessage({
     summonerName,
     queueName,
     result,
@@ -74,7 +80,12 @@ export function buildMatchEndMessage({
     placement,
     totalPlayers,
     aiScore,
-}: MatchEndMessageInput): MessagePayload {
+    killParticipationPct,
+    damagePerMinute,
+    soloKills,
+    visionScore,
+    flavorLine,
+}: MatchEndMessageInput): Promise<MessagePayload> {
     const colorHex = resultColors.get(result.toLowerCase()) || 0x95a5a6;
     const fields = [
         { name: '🏁 **Result**', value: `**${result}**`, inline: true },
@@ -98,6 +109,34 @@ export function buildMatchEndMessage({
         { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
         { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
     );
+    if (killParticipationPct != null) {
+        fields.push({
+            name: '🤝 **Kill Participation**',
+            value: `**${killParticipationPct}%**`,
+            inline: true,
+        });
+    }
+    if (damagePerMinute != null) {
+        fields.push({
+            name: '📊 **Damage / Min**',
+            value: `**${Math.round(damagePerMinute)}**`,
+            inline: true,
+        });
+    }
+    if (visionScore != null) {
+        fields.push({
+            name: '👁️ **Vision Score**',
+            value: `**${visionScore}**`,
+            inline: true,
+        });
+    }
+    if (soloKills != null && soloKills > 0) {
+        fields.push({
+            name: '🗡️ **Solo Kills**',
+            value: `**${soloKills}**`,
+            inline: true,
+        });
+    }
     if (placement != null && totalPlayers != null) {
         fields.push({
             name: '🏆 **Match Placement**',
@@ -131,12 +170,15 @@ export function buildMatchEndMessage({
     }
     const supportUrl =
         process.env.SUPPORT_URL || 'https://buymeacoffee.com/yngstew';
+    const description = flavorLine
+        ? `${summonerName} has completed a match!\n\n${flavorLine}`
+        : `${summonerName} has completed a match!`;
     return {
         title: '🎮 **Match Summary**',
-        description: `${summonerName} has completed a match!`,
+        description,
         url: deepLolLink,
         colorHex,
-        thumbnailUrl: getChampionThumbnail(championDisplay),
+        thumbnailUrl: await getChampionThumbnail(championDisplay),
         fields,
         footer: `Match Summary • Length ${formatGameLength(gameLengthSeconds)}`,
         timestamp: new Date().toISOString(),
@@ -187,70 +229,6 @@ export function buildRankChangeMessage({
     };
 }
 
-function buildMissingDataMessage(
-    summonerSummary: SummonerSummary
-): MessagePayload {
-    const {
-        name,
-        tier,
-        rank,
-        lp,
-        totalGames,
-        wins,
-        losses,
-        winRate,
-        totalTimeInHours,
-        mostPlayedChampion,
-        averageDamageDealtToChampions,
-        mostPlayedRole,
-    } = summonerSummary;
-
-    const colorHex = rankColors.get(rank) || 0x3498db;
-    const title = `📊 ${name}'s Summary`;
-    const description = `Missing data for ${name}.`;
-
-    const fields = [
-        {
-            name: '🏅 **Rank**',
-            value: `${tier} ${rank} (${lp} LP)`,
-            inline: false,
-        },
-        {
-            name: '🎮 **Missing Games Found**',
-            value: `${totalGames}`,
-            inline: false,
-        },
-        {
-            name: '✅ **Wins / ❌ Losses**',
-            value: `${wins} / ${losses}`,
-            inline: false,
-        },
-        { name: '📈 **Win Rate**', value: `${winRate}%`, inline: false },
-        { name: '⏱️ **Time Played**', value: totalTimeInHours, inline: false },
-        {
-            name: '💪 **Avg Damage**',
-            value: averageDamageDealtToChampions,
-            inline: false,
-        },
-        {
-            name: '👑 **Most Played Champ**',
-            value: `${mostPlayedChampion.name}`,
-            inline: false,
-        },
-        { name: '🧭 **Fav Role**', value: mostPlayedRole, inline: false },
-    ];
-
-    return {
-        title,
-        description,
-        colorHex,
-        thumbnailUrl: getChampionThumbnail(mostPlayedChampion.name),
-        fields,
-        footer: 'Summoner Stats Overview',
-        timestamp: new Date().toISOString(),
-    };
-}
-
 async function sendWithAdapter(
     adapter: MessageAdapter | null | undefined,
     channelId: string | undefined,
@@ -289,7 +267,7 @@ export async function notifyMatchEnd(
     adapter: MessageAdapter | null | undefined,
     { discordChannelId, ...payload }: NotifyMatchEnd
 ): Promise<boolean> {
-    const message = buildMatchEndMessage(payload);
+    const message = await buildMatchEndMessage(payload);
     return sendWithAdapter(adapter, discordChannelId, message, 'match end');
 }
 
@@ -306,15 +284,94 @@ export async function notifyRankChange(
     return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
 }
 
-export async function notifyMissingData(
+interface StreakMessageInput {
+    summonerName: string;
+    kind: 'win' | 'loss';
+    length: number;
+    deepLolLink: string;
+}
+
+export function buildStreakMessage({
+    summonerName,
+    kind,
+    length,
+    deepLolLink,
+}: StreakMessageInput): MessagePayload {
+    const isWin = kind === 'win';
+    return {
+        title: isWin ? '🔥 **Win Streak!**' : '🧊 **Loss Streak...**',
+        description: isWin
+            ? `${summonerName} is on a **${length}-game win streak**! Someone stop them.`
+            : `${summonerName} has lost **${length} in a row**. Thoughts and prayers.`,
+        url: deepLolLink,
+        colorHex: isWin ? 0x28a745 : 0xe74c3c,
+        fields: [
+            {
+                name: isWin ? '📈 **Streak**' : '📉 **Streak**',
+                value: `**${length} ${isWin ? 'wins' : 'losses'}**`,
+                inline: true,
+            },
+        ],
+        footer: 'Streak Notification',
+        timestamp: new Date().toISOString(),
+    };
+}
+
+interface NotifyStreak extends StreakMessageInput {
+    discordChannelId: string;
+}
+
+export async function notifyStreak(
     adapter: MessageAdapter | null | undefined,
-    summonerSummary: SummonerSummary
+    { discordChannelId, ...payload }: NotifyStreak
 ): Promise<boolean> {
-    const message = buildMissingDataMessage(summonerSummary);
-    return sendWithAdapter(
-        adapter,
-        summonerSummary.discordChannelId,
-        message,
-        'missing data'
-    );
+    const message = buildStreakMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'streak');
+}
+
+interface MilestoneMessageInput {
+    summonerName: string;
+    milestone: 'new_peak' | 'first_time_tier';
+    newRankMsg: string;
+    deepLolLink: string;
+}
+
+export function buildMilestoneMessage({
+    summonerName,
+    milestone,
+    newRankMsg,
+    deepLolLink,
+}: MilestoneMessageInput): MessagePayload {
+    const tier = newRankMsg.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase() ?? '';
+    const isFirstTime = milestone === 'first_time_tier';
+    return {
+        title: isFirstTime ? '🎉 **New Tier Reached!**' : '🏔️ **New Peak!**',
+        description: isFirstTime
+            ? `${summonerName} has reached **${newRankMsg}** for the first time!`
+            : `${summonerName} just set a new rank peak: **${newRankMsg}**!`,
+        url: deepLolLink,
+        colorHex: rankColors.get(tier) || 0x3498db,
+        thumbnailUrl: getRankedEmblem(tier) ?? undefined,
+        fields: [
+            {
+                name: '🏅 **Rank**',
+                value: `**${newRankMsg}**`,
+                inline: true,
+            },
+        ],
+        footer: 'Milestone Notification',
+        timestamp: new Date().toISOString(),
+    };
+}
+
+interface NotifyMilestone extends MilestoneMessageInput {
+    discordChannelId: string;
+}
+
+export async function notifyMilestone(
+    adapter: MessageAdapter | null | undefined,
+    { discordChannelId, ...payload }: NotifyMilestone
+): Promise<boolean> {
+    const message = buildMilestoneMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'milestone');
 }

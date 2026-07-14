@@ -58,7 +58,7 @@ npm run dev
 | `PORT`                   | No               | HTTP port (default `3000`)                                                                         |
 | `DISCORD_GUILD_ID`       | No               | Restrict Diana commands to one server (faster for dev)                                             |
 | `APEX_DISCORD_GUILD_ID`  | No               | Restrict Pathfinder commands to one server                                                         |
-| `USE_RIOT_API`           | No               | `true` to use real Riot API (default: mock data)                                                   |
+| `USE_MOCK_RIOT_API`      | No               | `true` to use mock Riot data (default: real API)                                                   |
 | `MOCK_APEX_SERVICE`      | No               | `true` to force mock Apex data                                                                     |
 | `SUPPORT_URL`            | No               | URL shown at the bottom of match-end embeds                                                        |
 | `DISABLE_DISCORD_POSTS`  | No               | Dry-run - suppresses all Discord messages                                                          |
@@ -108,7 +108,6 @@ export const myPlugin: DianaPlugin = {
     version: '1.0.0',
 
     async onLoad(context) {
-        context.registerSlashCommands([mySlashCommand]);
         context.mountRouter('/my-api', myRouter);
     },
 
@@ -126,13 +125,12 @@ export const myPlugin: DianaPlugin = {
 
 **`PluginContext` API:**
 
-| Method                        | Description                                   |
-| ----------------------------- | --------------------------------------------- |
-| `registerSlashCommands(cmds)` | Register Discord slash commands               |
-| `mountRouter(path, router)`   | Mount an Express router                       |
-| `registerCron(schedule, fn)`  | Register a cron job (auto-stopped on disable) |
-| `getConfig<T>()`              | Read plugin config saved from the dashboard   |
-| `getMessageAdapter()`         | Send messages via the plugin's bot account    |
+| Method                       | Description                                   |
+| ---------------------------- | --------------------------------------------- |
+| `mountRouter(path, router)`  | Mount an Express router                       |
+| `registerCron(schedule, fn)` | Register a cron job (auto-stopped on disable) |
+| `getConfig<T>()`             | Read plugin config saved from the dashboard   |
+| `getMessageAdapter()`        | Send messages via the plugin's bot account    |
 
 Register the plugin in `apps/server/src/index.ts`:
 
@@ -140,6 +138,10 @@ Register the plugin in `apps/server/src/index.ts`:
 registerPlugin(myPlugin);
 await loadPlugin(myPlugin.id);
 ```
+
+Slash commands are registered out-of-band in `apps/server/src/index.ts` via
+`registerSlashCommands(commands, botKey)` from `diana-discord` — there is no
+`PluginContext` method for them.
 
 See `packages/diana-core/src/plugins/diana-league-bot/` for a complete reference implementation.
 

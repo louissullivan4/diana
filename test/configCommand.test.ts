@@ -17,9 +17,31 @@ class MockBooleanOption {
     }
 }
 
+class MockStringOption {
+    public config: Record<string, unknown> = {};
+    setName(n: string) {
+        this.config.name = n;
+        return this;
+    }
+    setDescription(_d: string) {
+        return this;
+    }
+    setRequired(r: boolean) {
+        this.config.required = r;
+        return this;
+    }
+    addChoices(...choices: Array<Record<string, unknown>>) {
+        const existing =
+            (this.config.choices as Record<string, unknown>[] | undefined) ??
+            [];
+        this.config.choices = [...existing, ...choices];
+        return this;
+    }
+}
+
 class MockSubcommand {
     public name?: string;
-    public options: MockBooleanOption[] = [];
+    public options: Array<MockBooleanOption | MockStringOption> = [];
     setName(n: string) {
         this.name = n;
         return this;
@@ -29,6 +51,12 @@ class MockSubcommand {
     }
     addBooleanOption(cb: (o: MockBooleanOption) => unknown) {
         const o = new MockBooleanOption();
+        cb(o);
+        this.options.push(o);
+        return this;
+    }
+    addStringOption(cb: (o: MockStringOption) => unknown) {
+        const o = new MockStringOption();
         cb(o);
         this.options.push(o);
         return this;
@@ -80,6 +108,31 @@ class MockEmbedBuilder {
 
 const getGuildConfigMock = jest.fn();
 const setGuildLivePostingMock = jest.fn();
+const setGuildNotificationPrefMock = jest.fn();
+
+const NOTIFICATION_PREF_DEFAULTS: Record<string, boolean> = {
+    match_posts: true,
+    rank_posts: true,
+    streaks: true,
+    digest: true,
+    rotation: false,
+    live_alerts: false,
+};
+
+function getNotificationPrefImpl(
+    config: {
+        live_posting?: boolean;
+        notification_prefs?: Record<string, boolean> | null;
+    } | null,
+    key: string
+): boolean {
+    const explicit = config?.notification_prefs?.[key];
+    if (typeof explicit === 'boolean') return explicit;
+    if ((key === 'match_posts' || key === 'rank_posts') && config) {
+        return config.live_posting ?? true;
+    }
+    return NOTIFICATION_PREF_DEFAULTS[key];
+}
 
 jest.mock('discord.js', () => ({
     SlashCommandBuilder: MockSlashCommandBuilder,
@@ -91,6 +144,8 @@ jest.mock('discord.js', () => ({
 jest.mock('diana-core', () => ({
     getGuildConfig: getGuildConfigMock,
     setGuildLivePosting: setGuildLivePostingMock,
+    setGuildNotificationPref: setGuildNotificationPrefMock,
+    getNotificationPref: getNotificationPrefImpl,
 }));
 
 const {
@@ -104,18 +159,21 @@ function makeInteraction(
         subcommand?: string;
         enabled?: boolean;
         guildId?: string | null;
+        type?: string;
     } = {}
 ) {
     const {
         subcommand = 'live-posting',
         enabled = true,
         guildId = 'guild-7',
+        type = 'digest',
     } = opts;
     return {
         guildId,
         options: {
             getSubcommand: jest.fn().mockReturnValue(subcommand),
             getBoolean: jest.fn().mockReturnValue(enabled),
+            getString: jest.fn().mockReturnValue(type),
         },
         reply: jest.fn().mockResolvedValue(undefined),
         deferReply: jest.fn().mockResolvedValue(undefined),
@@ -193,6 +251,59 @@ describe('configCommand', () => {
 
             expect(interaction.deferReply).toHaveBeenCalledWith(
                 expect.objectContaining({ flags: 64 })
+            );
+        });
+    });
+
+    describe('execute - notifications subcommand', () => {
+        it('registers the notifications subcommand with type choices', () => {
+            const names = configCommand.data.subcommands.map(
+                (s: any) => s.name
+            );
+            expect(names).toContain('notifications');
+        });
+
+        it('persists the pref and confirms', async () => {
+            setGuildNotificationPrefMock.mockResolvedValue(undefined);
+            const interaction = makeInteraction({
+                subcommand: 'notifications',
+                type: 'digest',
+                enabled: false,
+            });
+
+            await configCommand.execute(interaction as any);
+
+            expect(setGuildNotificationPrefMock).toHaveBeenCalledWith(
+                'guild-7',
+                'digest',
+                false
+            );
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    content: expect.stringContaining('disabled'),
+                })
+            );
+        });
+
+        it('enables a pref and confirms', async () => {
+            setGuildNotificationPrefMock.mockResolvedValue(undefined);
+            const interaction = makeInteraction({
+                subcommand: 'notifications',
+                type: 'rotation',
+                enabled: true,
+            });
+
+            await configCommand.execute(interaction as any);
+
+            expect(setGuildNotificationPrefMock).toHaveBeenCalledWith(
+                'guild-7',
+                'rotation',
+                true
+            );
+            expect(interaction.editReply).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    content: expect.stringContaining('enabled'),
+                })
             );
         });
     });

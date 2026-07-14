@@ -1,12 +1,17 @@
+jest.mock(
+    '../packages/diana-core/src/plugins/diana-league-bot/api/utils/dataDragonService',
+    () => ({
+        fetchLatestVersion: jest.fn().mockResolvedValue('15.2.1'),
+    })
+);
+
 import {
     buildMatchEndMessage,
     buildRankChangeMessage,
     notifyMatchEnd,
     notifyRankChange,
-    notifyMissingData,
 } from '../packages/diana-core/src/plugins/diana-league-bot/notifications/leagueNotifications';
 import type { MessageAdapter } from '../packages/diana-core/src/core/pluginTypes';
-import type { SummonerSummary } from '../packages/diana-core/src/plugins/diana-league-bot/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,66 +35,59 @@ const baseMatchInput = {
     deepLolLink: 'https://deeplol.gg/test',
 };
 
-const baseSummonerSummary: SummonerSummary = {
-    name: 'TestPlayer',
-    tier: 'Gold',
-    rank: 'IV',
-    lp: 50,
-    totalGames: 5,
-    wins: 3,
-    losses: 2,
-    winRate: '60',
-    totalTimeInHours: '12h',
-    mostPlayedChampion: { name: 'Ahri' },
-    averageDamageDealtToChampions: '35000',
-    mostPlayedRole: 'Middle',
-    discordChannelId: 'chan-123',
-};
-
 // ---------------------------------------------------------------------------
 // buildMatchEndMessage
 // ---------------------------------------------------------------------------
 
 describe('buildMatchEndMessage', () => {
-    it('returns correct title and description', () => {
-        const msg = buildMatchEndMessage(baseMatchInput);
+    it('returns correct title and description', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
         expect(msg.title).toBe('🎮 **Match Summary**');
         expect(msg.description).toBe('TestPlayer has completed a match!');
     });
 
-    it('sets green colour for a win', () => {
-        const msg = buildMatchEndMessage({ ...baseMatchInput, result: 'win' });
+    it('sets green colour for a win', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            result: 'win',
+        });
         expect(msg.colorHex).toBe(0x28a745);
     });
 
-    it('sets red colour for a loss', () => {
-        const msg = buildMatchEndMessage({ ...baseMatchInput, result: 'lose' });
+    it('sets red colour for a loss', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            result: 'lose',
+        });
         expect(msg.colorHex).toBe(0xe74c3c);
     });
 
-    it('sets orange colour for a remake', () => {
-        const msg = buildMatchEndMessage({
+    it('sets orange colour for a remake', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             result: 'remake',
         });
         expect(msg.colorHex).toBe(0xe67e22);
     });
 
-    it('uses fallback colour for unknown result', () => {
-        const msg = buildMatchEndMessage({
+    it('uses fallback colour for unknown result', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             result: 'unknown',
         });
         expect(msg.colorHex).toBe(0x95a5a6);
     });
 
-    it('result matching is case-insensitive', () => {
-        const msg = buildMatchEndMessage({ ...baseMatchInput, result: 'WIN' });
+    it('result matching is case-insensitive', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            result: 'WIN',
+        });
         expect(msg.colorHex).toBe(0x28a745);
     });
 
-    it('includes Rank Update and LP Change fields for ranked queue', () => {
-        const msg = buildMatchEndMessage({
+    it('includes Rank Update and LP Change fields for ranked queue', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Solo',
         });
@@ -98,8 +96,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🔄 **LP Change**');
     });
 
-    it('includes Rank Update and LP Change fields for Ranked Flex queue', () => {
-        const msg = buildMatchEndMessage({
+    it('includes Rank Update and LP Change fields for Ranked Flex queue', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Flex',
         });
@@ -108,8 +106,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🔄 **LP Change**');
     });
 
-    it('does not include Rank Update / LP Change fields for non-ranked queue', () => {
-        const msg = buildMatchEndMessage({
+    it('does not include Rank Update / LP Change fields for non-ranked queue', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'ARAM',
         });
@@ -118,8 +116,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🔄 **LP Change**');
     });
 
-    it('omits LP Change field when lpChangeMsg is null (no rank baseline)', () => {
-        const msg = buildMatchEndMessage({
+    it('omits LP Change field when lpChangeMsg is null (no rank baseline)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Solo',
             lpChangeMsg: null,
@@ -129,8 +127,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🔄 **LP Change**');
     });
 
-    it('includes Role field for a role queue (Ranked Solo)', () => {
-        const msg = buildMatchEndMessage({
+    it('includes Role field for a role queue (Ranked Solo)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Solo',
         });
@@ -138,8 +136,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🎯 **Role**');
     });
 
-    it('includes Role field for Normal Blind (role queue)', () => {
-        const msg = buildMatchEndMessage({
+    it('includes Role field for Normal Blind (role queue)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Normal Blind',
         });
@@ -147,8 +145,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🎯 **Role**');
     });
 
-    it('does not include Role field for ARAM (non-role queue)', () => {
-        const msg = buildMatchEndMessage({
+    it('does not include Role field for ARAM (non-role queue)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'ARAM',
         });
@@ -156,8 +154,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🎯 **Role**');
     });
 
-    it('role queue matching is case-insensitive', () => {
-        const msg = buildMatchEndMessage({
+    it('role queue matching is case-insensitive', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'ranked solo',
         });
@@ -165,31 +163,31 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🎯 **Role**');
     });
 
-    it('includes the deepLolLink as url', () => {
-        const msg = buildMatchEndMessage(baseMatchInput);
+    it('includes the deepLolLink as url', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
         expect(msg.url).toBe('https://deeplol.gg/test');
     });
 
-    it('footer includes formatted game length', () => {
+    it('footer includes formatted game length', async () => {
         // 1830 seconds = 30:30
-        const msg = buildMatchEndMessage({
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             gameLengthSeconds: 1830,
         });
         expect(msg.footer).toContain('30:30');
     });
 
-    it('footer handles zero-padded seconds', () => {
+    it('footer handles zero-padded seconds', async () => {
         // 65 seconds = 1:05
-        const msg = buildMatchEndMessage({
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             gameLengthSeconds: 65,
         });
         expect(msg.footer).toContain('1:05');
     });
 
-    it('always includes Result, Champion, Queue, KDA, Damage fields', () => {
-        const msg = buildMatchEndMessage({
+    it('always includes Result, Champion, Queue, KDA, Damage fields', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'ARAM',
         });
@@ -201,8 +199,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('💥 **Damage Dealt**');
     });
 
-    it('includes Match Placement field when placement and totalPlayers are provided', () => {
-        const msg = buildMatchEndMessage({
+    it('includes Match Placement field when placement and totalPlayers are provided', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             placement: 3,
             totalPlayers: 10,
@@ -211,8 +209,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).toContain('🏆 **Match Placement**');
     });
 
-    it('placement field value shows ordinal and total (e.g. "3rd / 10")', () => {
-        const msg = buildMatchEndMessage({
+    it('placement field value shows ordinal and total (e.g. "3rd / 10")', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             placement: 3,
             totalPlayers: 10,
@@ -223,8 +221,8 @@ describe('buildMatchEndMessage', () => {
         expect(placementField?.value).toContain('3rd');
     });
 
-    it('placement field uses correct ordinal for 1st place', () => {
-        const msg = buildMatchEndMessage({
+    it('placement field uses correct ordinal for 1st place', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             placement: 1,
             totalPlayers: 10,
@@ -235,8 +233,8 @@ describe('buildMatchEndMessage', () => {
         expect(placementField?.value).toContain('1st');
     });
 
-    it('placement field uses correct ordinal for 2nd place', () => {
-        const msg = buildMatchEndMessage({
+    it('placement field uses correct ordinal for 2nd place', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             placement: 2,
             totalPlayers: 10,
@@ -247,14 +245,14 @@ describe('buildMatchEndMessage', () => {
         expect(placementField?.value).toContain('2nd');
     });
 
-    it('does not include Match Placement field when placement is omitted', () => {
-        const msg = buildMatchEndMessage(baseMatchInput);
+    it('does not include Match Placement field when placement is omitted', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
         const fieldNames = msg.fields!.map((f) => f.name);
         expect(fieldNames).not.toContain('🏆 **Match Placement**');
     });
 
-    it('does not include Match Placement field when only placement is provided (no totalPlayers)', () => {
-        const msg = buildMatchEndMessage({
+    it('does not include Match Placement field when only placement is provided (no totalPlayers)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             placement: 3,
         });
@@ -262,8 +260,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🏆 **Match Placement**');
     });
 
-    it('does not include Match Placement field when only totalPlayers is provided (no placement)', () => {
-        const msg = buildMatchEndMessage({
+    it('does not include Match Placement field when only totalPlayers is provided (no placement)', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             totalPlayers: 10,
         });
@@ -271,8 +269,8 @@ describe('buildMatchEndMessage', () => {
         expect(fieldNames).not.toContain('🏆 **Match Placement**');
     });
 
-    it('rank fields appear before champion field in ranked queues', () => {
-        const msg = buildMatchEndMessage({
+    it('rank fields appear before champion field in ranked queues', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Solo',
         });
@@ -287,8 +285,8 @@ describe('buildMatchEndMessage', () => {
         expect(lpChangeIdx).toBeLessThan(championIdx);
     });
 
-    it('LP Change field value includes " LP" suffix', () => {
-        const msg = buildMatchEndMessage({
+    it('LP Change field value includes " LP" suffix', async () => {
+        const msg = await buildMatchEndMessage({
             ...baseMatchInput,
             queueName: 'Ranked Solo',
             lpChangeMsg: 18,
@@ -317,42 +315,42 @@ describe('buildRankChangeMessage', () => {
         newRankMsg: 'Silver I',
     };
 
-    it('returns a payload for promotion', () => {
+    it('returns a payload for promotion', async () => {
         const msg = buildRankChangeMessage(promotionInput);
         expect(msg).not.toBeNull();
     });
 
-    it('promotion title is correct', () => {
+    it('promotion title is correct', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         expect(msg.title).toBe('📈 **Rank Promotion!**');
     });
 
-    it('promotion description mentions ranking up', () => {
+    it('promotion description mentions ranking up', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         expect(msg.description).toContain('ranked up');
     });
 
-    it('uses correct tier colour for promotion (Gold → 0xffd700)', () => {
+    it('uses correct tier colour for promotion (Gold → 0xffd700)', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         expect(msg.colorHex).toBe(0xffd700);
     });
 
-    it('returns a payload for demotion', () => {
+    it('returns a payload for demotion', async () => {
         const msg = buildRankChangeMessage(demotionInput);
         expect(msg).not.toBeNull();
     });
 
-    it('demotion title is correct', () => {
+    it('demotion title is correct', async () => {
         const msg = buildRankChangeMessage(demotionInput)!;
         expect(msg.title).toBe('📉 **Rank Demotion...**');
     });
 
-    it('demotion description mentions being demoted', () => {
+    it('demotion description mentions being demoted', async () => {
         const msg = buildRankChangeMessage(demotionInput)!;
         expect(msg.description).toContain('demoted');
     });
 
-    it('returns null for no_change direction', () => {
+    it('returns null for no_change direction', async () => {
         const msg = buildRankChangeMessage({
             ...promotionInput,
             direction: 'no_change',
@@ -360,7 +358,7 @@ describe('buildRankChangeMessage', () => {
         expect(msg).toBeNull();
     });
 
-    it('returns null for an empty direction string', () => {
+    it('returns null for an empty direction string', async () => {
         const msg = buildRankChangeMessage({
             ...promotionInput,
             direction: '',
@@ -368,20 +366,20 @@ describe('buildRankChangeMessage', () => {
         expect(msg).toBeNull();
     });
 
-    it('payload has Rank Change and LP Change fields', () => {
+    it('payload has Rank Change and LP Change fields', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         const fieldNames = msg.fields!.map((f) => f.name);
         expect(fieldNames).toContain('🏆 **Rank Change**');
         expect(fieldNames).toContain('🔄 **LP Change**');
     });
 
-    it('LP Change field value includes " LP" suffix', () => {
+    it('LP Change field value includes " LP" suffix', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         const lpField = msg.fields!.find((f) => f.name === '🔄 **LP Change**');
         expect(lpField?.value).toContain('60 LP');
     });
 
-    it('omits LP Change field when lpChangeMsg is null', () => {
+    it('omits LP Change field when lpChangeMsg is null', async () => {
         const msg = buildRankChangeMessage({
             ...promotionInput,
             lpChangeMsg: null,
@@ -391,17 +389,17 @@ describe('buildRankChangeMessage', () => {
         expect(fieldNames).not.toContain('🔄 **LP Change**');
     });
 
-    it('uses deepLolLink as url', () => {
+    it('uses deepLolLink as url', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         expect(msg.url).toBe('https://deeplol.gg/test');
     });
 
-    it('footer is "Rank Change Notification"', () => {
+    it('footer is "Rank Change Notification"', async () => {
         const msg = buildRankChangeMessage(promotionInput)!;
         expect(msg.footer).toBe('Rank Change Notification');
     });
 
-    it('uses fallback colour when tier is unrecognised', () => {
+    it('uses fallback colour when tier is unrecognised', async () => {
         const msg = buildRankChangeMessage({
             ...promotionInput,
             newRankMsg: 'Unknown X',
@@ -533,48 +531,57 @@ describe('notifyRankChange', () => {
 });
 
 // ---------------------------------------------------------------------------
-// notifyMissingData
+// buildMatchEndMessage - challenge stats & flavor lines
 // ---------------------------------------------------------------------------
 
-describe('notifyMissingData', () => {
-    beforeEach(() => {
-        jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-        jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
-    it('calls adapter.sendMessage with the summoner discordChannelId', async () => {
-        const adapter = makeAdapter();
-        await notifyMissingData(adapter, baseSummonerSummary);
-        expect(adapter.sendMessage).toHaveBeenCalledTimes(1);
-        expect(adapter.sendMessage).toHaveBeenCalledWith(
-            { channelId: 'chan-123' },
-            expect.objectContaining({
-                description: expect.stringContaining('TestPlayer'),
-            })
+describe('buildMatchEndMessage rich stats', () => {
+    it('adds kill participation, DPM, vision and solo kill fields when provided', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            killParticipationPct: 62,
+            damagePerMinute: 733.4,
+            visionScore: 31,
+            soloKills: 2,
+        });
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).toContain('🤝 **Kill Participation**');
+        expect(names).toContain('📊 **Damage / Min**');
+        expect(names).toContain('👁️ **Vision Score**');
+        expect(names).toContain('🗡️ **Solo Kills**');
+        const dpm = (msg.fields ?? []).find(
+            (f) => f.name === '📊 **Damage / Min**'
         );
+        expect(dpm?.value).toBe('**733**');
     });
 
-    it('returns true on success', async () => {
-        const adapter = makeAdapter();
-        const result = await notifyMissingData(adapter, baseSummonerSummary);
-        expect(result).toBe(true);
+    it('omits the new fields when stats are missing', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).not.toContain('🤝 **Kill Participation**');
+        expect(names).not.toContain('📊 **Damage / Min**');
+        expect(names).not.toContain('🗡️ **Solo Kills**');
     });
 
-    it('returns true with warn when adapter is null', async () => {
-        const result = await notifyMissingData(null, baseSummonerSummary);
-        expect(result).toBe(true);
-        expect(console.warn).toHaveBeenCalled();
+    it('omits the solo kills field when zero', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            soloKills: 0,
+        });
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).not.toContain('🗡️ **Solo Kills**');
     });
 
-    it('returns false and logs when adapter throws', async () => {
-        const adapter = makeAdapter();
-        adapter.sendMessage.mockRejectedValue(new Error('send failed'));
-        const result = await notifyMissingData(adapter, baseSummonerSummary);
-        expect(result).toBe(false);
-        expect(console.error).toHaveBeenCalled();
+    it('appends the flavor line to the description', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            flavorLine: '💀 Zero deaths.',
+        });
+        expect(msg.description).toContain('has completed a match!');
+        expect(msg.description).toContain('💀 Zero deaths.');
+    });
+
+    it('keeps the plain description when no flavor line', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
+        expect(msg.description).toBe('TestPlayer has completed a match!');
     });
 });

@@ -6,6 +6,8 @@ export interface RiotParticipant {
     puuid: string;
     championName?: string;
     totalDamageDealtToChampions?: number;
+    totalMinionsKilled?: number;
+    neutralMinionsKilled?: number;
     kills?: number;
     deaths?: number;
     assists?: number;
@@ -46,13 +48,22 @@ export interface InterCandidate {
     totalDeaths: number;
     totalAssists: number;
     totalVisionScore: number;
+    totalCs: number;
     latestProfileIconId?: number;
     avgDamage: number;
     kdaRatio: number;
     winRate: number;
     avgVisionScore: number;
+    avgCsPerMin: number;
     avgAiScore: number;
     scoredMatchesCount: number;
+}
+
+export interface InterStatsOptions {
+    /** Restrict aggregation to a single summoner */
+    targetPuuid?: string;
+    /** Restrict aggregation to summoners tracked in this guild */
+    guildId?: string;
 }
 
 export function parseParticipants(
@@ -82,9 +93,15 @@ function buildDisplayName(gameName: string, tagLine: string) {
 
 export async function getInterCandidatesSince(
     sinceTimestamp: number,
-    targetPuuid?: string
+    { targetPuuid, guildId }: InterStatsOptions = {}
 ): Promise<InterCandidate[]> {
     const params: Array<string | number> = [sinceTimestamp];
+
+    let guildJoin = '';
+    if (guildId) {
+        params.push(guildId);
+        guildJoin = `JOIN guild_summoners gs ON gs.puuid = s.puuid AND gs.guild_id = $${params.length}`;
+    }
 
     let query = `
         SELECT
@@ -95,17 +112,19 @@ export async function getInterCandidatesSince(
             md."matchId",
             md."participants",
             md."gameCreation",
+            md."gameDuration",
             ms."score" AS "aiScore"
         FROM summoners s
         JOIN match_details md ON md."entryPlayerPuuid" = s."puuid"
+        ${guildJoin}
         LEFT JOIN match_scores ms ON ms."matchId" = md."matchId" AND ms."puuid" = s."puuid"
         WHERE md."gameCreation" IS NOT NULL
           AND md."gameCreation" >= $1
     `;
 
     if (targetPuuid) {
-        query += ' AND s."puuid" = $2';
         params.push(targetPuuid);
+        query += ` AND s."puuid" = $${params.length}`;
     }
 
     query += ' ORDER BY md."gameCreation" DESC';
@@ -115,7 +134,11 @@ export async function getInterCandidatesSince(
 
     const accumulator = new Map<
         string,
-        InterCandidate & { matchIds: Set<string>; totalAiScore: number }
+        InterCandidate & {
+            matchIds: Set<string>;
+            totalAiScore: number;
+            totalDurationSeconds: number;
+        }
     >();
 
     for (const row of rows) {
@@ -126,6 +149,7 @@ export async function getInterCandidatesSince(
             deepLolLink,
             participants,
             matchId,
+            gameDuration,
             aiScore,
         } = row;
 
@@ -147,14 +171,17 @@ export async function getInterCandidatesSince(
                 totalDeaths: 0,
                 totalAssists: 0,
                 totalVisionScore: 0,
+                totalCs: 0,
                 latestProfileIconId: undefined,
                 avgDamage: 0,
                 kdaRatio: 0,
                 winRate: 0,
                 avgVisionScore: 0,
+                avgCsPerMin: 0,
                 avgAiScore: 0,
                 scoredMatchesCount: 0,
                 totalAiScore: 0,
+                totalDurationSeconds: 0,
                 matchIds: new Set<string>(),
             };
             accumulator.set(puuid, candidate);
@@ -174,6 +201,10 @@ export async function getInterCandidatesSince(
         const assists = participant.assists ?? 0;
         const win = participant.win ?? false;
         const visionScore = participant.visionScore ?? 0;
+        const cs =
+            (participant.totalMinionsKilled ?? 0) +
+            (participant.neutralMinionsKilled ?? 0);
+        const durationSeconds = Number(gameDuration ?? 0);
 
         candidate.matchesPlayed += 1;
         candidate.totalDamage += damage;
@@ -181,6 +212,10 @@ export async function getInterCandidatesSince(
         candidate.totalDeaths += deaths;
         candidate.totalAssists += assists;
         candidate.totalVisionScore += visionScore;
+        candidate.totalCs += cs;
+        candidate.totalDurationSeconds += Number.isFinite(durationSeconds)
+            ? durationSeconds
+            : 0;
         candidate.wins += win ? 1 : 0;
         candidate.losses += win ? 0 : 1;
         candidate.latestProfileIconId =
@@ -206,6 +241,10 @@ export async function getInterCandidatesSince(
             ? entry.wins / entry.matchesPlayed
             : 0;
         const avgVisionScore = entry.totalVisionScore / entry.matchesPlayed;
+        const avgCsPerMin =
+            entry.totalDurationSeconds > 0
+                ? entry.totalCs / (entry.totalDurationSeconds / 60)
+                : 0;
         const avgAiScore =
             entry.scoredMatchesCount > 0
                 ? entry.totalAiScore / entry.scoredMatchesCount
@@ -214,6 +253,7 @@ export async function getInterCandidatesSince(
         const {
             matchIds: _matchIds,
             totalAiScore: _totalAiScore,
+            totalDurationSeconds: _totalDurationSeconds,
             ...rest
         } = entry;
 
@@ -223,6 +263,7 @@ export async function getInterCandidatesSince(
             kdaRatio,
             winRate,
             avgVisionScore,
+            avgCsPerMin,
             avgAiScore,
         });
     }
@@ -230,6 +271,6 @@ export async function getInterCandidatesSince(
     return candidates;
 }
 
-export function getInterCandidatesLastWeek(targetPuuid?: string) {
-    return getInterCandidatesSince(Date.now() - ONE_WEEK_IN_MS, targetPuuid);
+export function getInterCandidatesLastWeek(opts: InterStatsOptions = {}) {
+    return getInterCandidatesSince(Date.now() - ONE_WEEK_IN_MS, opts);
 }

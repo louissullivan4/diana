@@ -321,11 +321,46 @@ describe('interStats', () => {
         it('filters by targetPuuid when provided', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
-            await getInterCandidatesSince(1000, 'specific-puuid');
+            await getInterCandidatesSince(1000, {
+                targetPuuid: 'specific-puuid',
+            });
 
             const [query, params] = queryMock.mock.calls[0];
             expect(query).toContain('$2');
             expect(params).toContain('specific-puuid');
+        });
+
+        it('joins guild_summoners when guildId is provided', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            await getInterCandidatesSince(1000, { guildId: 'guild-1' });
+
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('guild_summoners');
+            expect(query).toContain('gs.guild_id = $2');
+            expect(params).toContain('guild-1');
+        });
+
+        it('does not join guild_summoners without a guildId', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            await getInterCandidatesSince(1000);
+
+            const [query] = queryMock.mock.calls[0];
+            expect(query).not.toContain('guild_summoners');
+        });
+
+        it('numbers parameters correctly with guildId and targetPuuid', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            await getInterCandidatesSince(1000, {
+                guildId: 'guild-1',
+                targetPuuid: 'puuid-9',
+            });
+
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('s."puuid" = $3');
+            expect(params).toEqual([1000, 'guild-1', 'puuid-9']);
         });
 
         it('uses displayName without tagLine when tagLine is empty', async () => {
@@ -405,7 +440,7 @@ describe('interStats', () => {
         it('passes targetPuuid to the query when provided', async () => {
             queryMock.mockResolvedValue({ rows: [] });
 
-            await getInterCandidatesLastWeek('my-puuid');
+            await getInterCandidatesLastWeek({ targetPuuid: 'my-puuid' });
 
             const [, params] = queryMock.mock.calls[0];
             expect(params).toContain('my-puuid');

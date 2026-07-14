@@ -126,6 +126,94 @@ describe('guildService', () => {
         });
     });
 
+    // ─── setGuildNotificationPref ─────────────────────────────────────────────
+
+    describe('setGuildNotificationPref', () => {
+        it('upserts a single pref key via jsonb merge', async () => {
+            const row = {
+                guild_id: 'g1',
+                channel_id: 'c1',
+                live_posting: true,
+                notification_prefs: { digest: false },
+            };
+            queryMock.mockResolvedValue({ rows: [row] });
+
+            const result = await guildService.setGuildNotificationPref(
+                'g1',
+                'digest',
+                false
+            );
+
+            expect(result).toBe(row);
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('notification_prefs');
+            expect(query).toContain('jsonb_build_object');
+            expect(params).toEqual(['g1', 'digest', false]);
+        });
+    });
+
+    // ─── getNotificationPref ──────────────────────────────────────────────────
+
+    describe('getNotificationPref', () => {
+        it('returns the explicit pref when set', () => {
+            const config = {
+                live_posting: true,
+                notification_prefs: { digest: false },
+            };
+            expect(guildService.getNotificationPref(config, 'digest')).toBe(
+                false
+            );
+        });
+
+        it('bridges match_posts and rank_posts to live_posting', () => {
+            const optedOut = { live_posting: false, notification_prefs: {} };
+            expect(
+                guildService.getNotificationPref(optedOut, 'match_posts')
+            ).toBe(false);
+            expect(
+                guildService.getNotificationPref(optedOut, 'rank_posts')
+            ).toBe(false);
+
+            const optedIn = { live_posting: true, notification_prefs: null };
+            expect(
+                guildService.getNotificationPref(optedIn, 'match_posts')
+            ).toBe(true);
+        });
+
+        it('explicit pref beats the live_posting bridge', () => {
+            const config = {
+                live_posting: false,
+                notification_prefs: { match_posts: true },
+            };
+            expect(
+                guildService.getNotificationPref(config, 'match_posts')
+            ).toBe(true);
+        });
+
+        it('falls back to defaults for other keys', () => {
+            const config = { live_posting: true, notification_prefs: {} };
+            expect(guildService.getNotificationPref(config, 'streaks')).toBe(
+                true
+            );
+            expect(guildService.getNotificationPref(config, 'digest')).toBe(
+                true
+            );
+            expect(guildService.getNotificationPref(config, 'rotation')).toBe(
+                false
+            );
+        });
+
+        it('uses defaults when config is null', () => {
+            expect(guildService.getNotificationPref(null, 'digest')).toBe(true);
+            expect(guildService.getNotificationPref(null, 'rotation')).toBe(
+                false
+            );
+            expect(guildService.getNotificationPref(null, 'match_posts')).toBe(
+                true
+            );
+        });
+    });
+
     // ─── addSummonerToGuild ───────────────────────────────────────────────────
 
     describe('addSummonerToGuild', () => {

@@ -10,22 +10,6 @@ export interface Account extends AccountDto {
     region: string;
 }
 
-export interface SummonerSummary {
-    name: string;
-    tier: string;
-    rank: string;
-    lp: number;
-    totalGames: number;
-    wins: number;
-    losses: number;
-    winRate: string;
-    totalTimeInHours: string;
-    mostPlayedChampion: Record<string, string>;
-    averageDamageDealtToChampions: string;
-    mostPlayedRole: string;
-    discordChannelId: string;
-}
-
 export interface Summoner {
     gameName: string;
     tagLine: string;
@@ -36,7 +20,6 @@ export interface Summoner {
     lp: number;
     currentMatchId: string;
     lastUpdated: string;
-    lastMissingDataNotification: number;
     discordChannelId: string;
     deepLolLink: string;
     matchRegionPrefix: string;
@@ -57,6 +40,38 @@ export interface Rank {
     lp: number;
     rank: string;
 }
+export interface ChampionRotation {
+    freeChampionIds: number[];
+    freeChampionIdsForNewPlayers: number[];
+    maxNewPlayerLevel: number;
+}
+
+export interface LiveGameParticipant {
+    puuid: string;
+    teamId: number;
+    championId: number;
+    riotId?: string;
+    [key: string]: unknown;
+}
+
+export interface LiveGameBannedChampion {
+    championId: number;
+    teamId: number;
+    pickTurn?: number;
+}
+
+export interface LiveGameInfo {
+    gameId: number;
+    gameMode: string;
+    gameQueueConfigId: number;
+    gameStartTime?: number;
+    /** Seconds since game start (can be slightly negative in loading screen) */
+    gameLength?: number;
+    participants: LiveGameParticipant[];
+    bannedChampions?: LiveGameBannedChampion[];
+    [key: string]: unknown;
+}
+
 export interface ILolService {
     checkConnection(): Promise<boolean>;
     getMatchesByPUUID(
@@ -86,6 +101,9 @@ export interface ILolService {
         puuid: string,
         regionGroup?: string
     ): Promise<AccountRegionDto>;
+    getChampionRotation(region?: string): Promise<ChampionRotation>;
+    /** Current live game for a player, or null when not in game */
+    getActiveGame(puuid: string, region?: string): Promise<LiveGameInfo | null>;
 }
 
 /**
@@ -94,6 +112,8 @@ export interface ILolService {
 export interface LeagueBotConfig {
     /** Cron schedule for match checking (default: every minute) */
     matchCheckCron: string;
-    /** Default Discord channel ID for notifications */
-    defaultDiscordChannelId?: string;
+    /** Cron schedule for the weekly digest post (server-local time, 6-field) */
+    weeklyDigestCron: string;
+    /** Cron schedule for the free-rotation post (server-local time, 6-field) */
+    rotationPostCron: string;
 }

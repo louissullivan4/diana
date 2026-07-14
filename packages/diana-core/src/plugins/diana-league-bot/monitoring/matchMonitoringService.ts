@@ -21,16 +21,30 @@ import {
     createRankHistory,
     getRankByMatchAndQueueType,
     updateSummonerIdentityByPuuid,
+    updateSummonerRankByPuuid,
+    fetchRankHistory,
 } from '../api/summoners/summonerService';
 import {
     getAllTrackedPuuids,
     getGuildsTrackingSummoner,
+    getNotificationPref,
 } from '../api/summoners/guildService.js';
 import { buildDeepLolLink } from '../utils/deepLol.js';
 import {
     notifyMatchEnd,
     notifyRankChange,
+    notifyStreak,
+    notifyMilestone,
 } from '../notifications/leagueNotifications';
+import { pickFlavorLine } from '../notifications/flavorLines';
+import {
+    computeWinLossStreak,
+    fetchRecentResultsForPuuid,
+    isStreakThreshold,
+    detectRankMilestone,
+    type Streak,
+    type RankMilestone,
+} from '../utils/streaks';
 import { Summoner, LeagueBotConfig } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
 import { Constants } from 'twisted';
@@ -282,9 +296,34 @@ const handleNewMatchCompleted = async (
     const damage = participant?.totalDamageDealtToChampions ?? 0;
     const matchRank = getRankTagsById(info.queueId ?? 0);
 
+    // Challenge-derived stats. `challenges` is untyped in twisted's DTO, so
+    // access is guarded the same way as the scoring algorithm does it.
+    const challenges = (participant as Record<string, any> | undefined)
+        ?.challenges as Record<string, unknown> | undefined;
+    const challengeNumber = (key: string): number | undefined => {
+        const value = challenges?.[key];
+        return typeof value === 'number' && Number.isFinite(value)
+            ? value
+            : undefined;
+    };
+    const rawKillParticipation = challengeNumber('killParticipation');
+    const killParticipationPct =
+        rawKillParticipation != null
+            ? Math.round(rawKillParticipation * 100)
+            : undefined;
+    const damagePerMinute = challengeNumber('damagePerMinute');
+    const soloKills = challengeNumber('soloKills');
+    const visionScore = participant?.visionScore;
+    const enemyMissingPings = (participant as Record<string, any> | undefined)
+        ?.enemyMissingPings as number | undefined;
+    const largestMultikill = (participant as Record<string, any> | undefined)
+        ?.largestMultiKill as number | undefined;
+
     let newRankMsg = 'Unranked N/A (0 LP)';
     let lpChangeMsg: number | null = null;
     let checkForRankUp = 'no_change';
+    let latestRankInfo: { tier: string; rank: string; lp: number } | null =
+        null;
 
     try {
         if (matchRank) {
@@ -354,6 +393,25 @@ const handleNewMatchCompleted = async (
                         `[Error] Failed to save rank history for ${summonerName} (${newMatchId}): ${dbError}`
                     );
                 }
+
+                try {
+                    await updateSummonerRankByPuuid(
+                        puuid,
+                        summonerNewRankInfo.tier,
+                        summonerNewRankInfo.rank,
+                        summonerNewRankInfo.lp
+                    );
+                } catch (dbError) {
+                    console.error(
+                        `[Error] Failed to refresh summoner rank columns for ${summonerName}: ${dbError}`
+                    );
+                }
+
+                latestRankInfo = {
+                    tier: summonerNewRankInfo.tier,
+                    rank: summonerNewRankInfo.rank,
+                    lp: summonerNewRankInfo.lp,
+                };
             }
         }
     } catch (error) {
@@ -377,21 +435,84 @@ const handleNewMatchCompleted = async (
         placement: summonerPlacement,
         totalPlayers: participants.length || undefined,
         aiScore: summonerAiScore,
+        killParticipationPct,
+        damagePerMinute,
+        soloKills,
+        visionScore,
+        flavorLine: pickFlavorLine({
+            result: result.toLowerCase() as 'win' | 'lose' | 'remake',
+            kills: participant?.kills ?? 0,
+            deaths: participant?.deaths ?? 0,
+            assists: participant?.assists ?? 0,
+            killParticipationPct,
+            damagePerMinute,
+            soloKills,
+            visionScore,
+            enemyMissingPings,
+            largestMultikill,
+            placement: summonerPlacement,
+            totalPlayers: participants.length || undefined,
+            gameLengthSeconds: gameDuration,
+        }),
     };
+
+    // Streak and milestone detection - purely from data already stored.
+    let streakToAnnounce: Streak | null = null;
+    try {
+        if (result !== 'Remake') {
+            const recentResults = await fetchRecentResultsForPuuid(puuid, 12);
+            const streak = computeWinLossStreak(recentResults);
+            if (streak && isStreakThreshold(streak)) {
+                streakToAnnounce = streak;
+            }
+        }
+    } catch (error) {
+        console.error(
+            `[Error] Failed to compute streak for ${summonerName}:`,
+            error
+        );
+    }
+
+    let milestoneToAnnounce: RankMilestone | null = null;
+    try {
+        if (latestRankInfo && matchRank) {
+            const history = await fetchRankHistory(
+                puuid,
+                undefined,
+                undefined,
+                matchRank
+            );
+            milestoneToAnnounce = detectRankMilestone(
+                history,
+                latestRankInfo,
+                newMatchId
+            );
+        }
+    } catch (error) {
+        console.error(
+            `[Error] Failed to detect rank milestone for ${summonerName}:`,
+            error
+        );
+    }
 
     let anyMessageSent = false;
     try {
         const guildTargets = await getGuildsTrackingSummoner(puuid);
         for (const target of guildTargets) {
-            if (!target.live_posting) continue;
-            const matchSummary = {
-                ...baseMatchSummary,
-                discordChannelId: target.channel_id,
-            };
-            const sent = await notifyMatchEnd(messageAdapter, matchSummary);
-            if (sent) anyMessageSent = true;
+            const wantsMatchPosts = getNotificationPref(target, 'match_posts');
+            const wantsRankPosts = getNotificationPref(target, 'rank_posts');
+            if (!wantsMatchPosts && !wantsRankPosts) continue;
 
-            if (checkForRankUp !== 'no_change') {
+            if (wantsMatchPosts) {
+                const matchSummary = {
+                    ...baseMatchSummary,
+                    discordChannelId: target.channel_id,
+                };
+                const sent = await notifyMatchEnd(messageAdapter, matchSummary);
+                if (sent) anyMessageSent = true;
+            }
+
+            if (wantsRankPosts && checkForRankUp !== 'no_change') {
                 const rankChangeInfo = {
                     summonerName,
                     direction:
@@ -401,7 +522,32 @@ const handleNewMatchCompleted = async (
                     discordChannelId: target.channel_id,
                     deepLolLink: summoner.deepLolLink || '',
                 };
-                await notifyRankChange(messageAdapter, rankChangeInfo);
+                const sent = await notifyRankChange(
+                    messageAdapter,
+                    rankChangeInfo
+                );
+                if (sent) anyMessageSent = true;
+            }
+
+            if (getNotificationPref(target, 'streaks')) {
+                if (streakToAnnounce) {
+                    await notifyStreak(messageAdapter, {
+                        summonerName,
+                        kind: streakToAnnounce.kind,
+                        length: streakToAnnounce.length,
+                        deepLolLink: summoner.deepLolLink || '',
+                        discordChannelId: target.channel_id,
+                    });
+                }
+                if (milestoneToAnnounce) {
+                    await notifyMilestone(messageAdapter, {
+                        summonerName,
+                        milestone: milestoneToAnnounce,
+                        newRankMsg,
+                        deepLolLink: summoner.deepLolLink || '',
+                        discordChannelId: target.channel_id,
+                    });
+                }
             }
         }
 

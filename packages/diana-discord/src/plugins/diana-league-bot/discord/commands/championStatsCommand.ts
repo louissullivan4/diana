@@ -13,6 +13,7 @@ import {
     getQueueNameById,
     fetchChampionData,
     calculateWinRatePercentage,
+    getChampionThumbnail,
 } from 'diana-core';
 
 interface RiotParticipant {
@@ -61,7 +62,13 @@ interface ChampionSummary {
     bestDamage?: { amount: number; queueId: number; kda: string };
 }
 
-const CHAMPION_ICON_VERSION = '15.2.1';
+const regionChoices = Object.entries(Constants.Regions)
+    .map(([label, value]) => ({ label, value }))
+    .filter(
+        (choice, index, self) =>
+            self.findIndex((entry) => entry.value === choice.value) === index
+    )
+    .slice(0, 25);
 
 function normalizeChampionString(value: string) {
     return value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -131,13 +138,6 @@ function formatDate(timestamp: number) {
         month: 'short',
         day: 'numeric',
     });
-}
-
-function buildChampionIconUrl(championId: string) {
-    const sanitized = championId.replace(/\s+/g, '');
-    return `https://ddragon.leagueoflegends.com/cdn/${CHAMPION_ICON_VERSION}/img/champion/${encodeURIComponent(
-        sanitized
-    )}.png`;
 }
 
 async function fetchChampionMatches(
@@ -342,12 +342,27 @@ export const championStatsCommand: SlashCommand = {
                 .setDescription('Summoner tagline (e.g. EUW).')
                 .setRequired(false)
                 .setAutocomplete(true)
-        ),
+        )
+        .addStringOption((option: SlashCommandStringOption) => {
+            option
+                .setName('region')
+                .setDescription('Riot platform region.')
+                .setRequired(false);
+            for (const choice of regionChoices) {
+                option.addChoices({
+                    name: choice.label,
+                    value: choice.value,
+                });
+            }
+            return option;
+        }),
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true);
         const tag = interaction.options.getString('tag');
         const championInput = interaction.options.getString('champion', true);
-        const region = Constants.Regions.EU_WEST;
+        const region =
+            interaction.options.getString('region') ||
+            Constants.Regions.EU_WEST;
 
         await interaction.deferReply();
 
@@ -470,7 +485,7 @@ export const championStatsCommand: SlashCommand = {
                     }
                 )
                 .setThumbnail(
-                    buildChampionIconUrl(
+                    await getChampionThumbnail(
                         resolvedChampion?.id ?? displayChampion
                     )
                 )
@@ -493,7 +508,8 @@ export const championStatsCommand: SlashCommand = {
             if (focused.name === 'name') {
                 const names = (await searchSummonerGameNames(
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as string[];
                 await interaction.respond(
                     names.map((gameName: string) => ({
@@ -509,7 +525,8 @@ export const championStatsCommand: SlashCommand = {
                 const tags = (await searchSummonerTags(
                     selectedName,
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as Array<{
                     tagLine: string;
                     matchRegionPrefix?: string | null;

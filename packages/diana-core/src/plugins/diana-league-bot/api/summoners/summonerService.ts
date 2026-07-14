@@ -324,6 +324,39 @@ export const updateSummonerRegionDataByPuuid = async (
     }
 };
 
+export const updateSummonerRankByPuuid = async (
+    puuid: string,
+    tier: string,
+    rank: string,
+    lp: number
+) => {
+    try {
+        const query = `
+            UPDATE summoners
+            SET
+                "tier" = $1,
+                "rank" = $2,
+                "lp" = $3,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $4
+            RETURNING *;
+        `;
+        const params = [tier, rank, lp, puuid];
+        const result = await db.query(query, params);
+        const updatedSummoner = result.rows[0];
+        if (!updatedSummoner) {
+            console.info(
+                `Summoner with PUUID ${puuid} not found for rank update.`
+            );
+            return null;
+        }
+        return updatedSummoner;
+    } catch (error) {
+        console.error('Error updating summoner rank:', error);
+        throw new Error('Failed to update summoner rank.');
+    }
+};
+
 export const deleteSummoner = async (puuid: string) => {
     try {
         const query = `
@@ -369,25 +402,6 @@ export const setSummonerCurrentMatchIdByPuuid = async (
         throw new Error('Failed to delete summoner.');
     }
 };
-
-export async function updateSummonerMissingDataNotificationTimeByPuuid(
-    summonerPuuid: string
-) {
-    try {
-        const query = `
-            UPDATE summoners
-            SET "lastMissingDataNotification" = NOW()
-            WHERE puuid = $1
-        `;
-        const params = [summonerPuuid];
-        await db.query(query, params);
-        console.info(
-            `[Info] [${new Date().toISOString()}] Updated missing data notification time for PUUID: ${summonerPuuid}`
-        );
-    } catch (error) {
-        console.error('Error updating missing data notification time:', error);
-    }
-}
 
 export const fetchRankHistory = async (
     entryParticipantId: string,
@@ -465,6 +479,36 @@ export const getMostRecentRankByParticipantIdAndQueueType = async (
     } catch (error) {
         console.error('Error retrieving most recent rank history:', error);
         throw new Error('Failed to retrieve rank history.');
+    }
+};
+
+export interface LatestRankRow {
+    entryParticipantId: string;
+    tier: string;
+    rank: string;
+    lp: number;
+    queueType: string;
+    lastUpdated: string;
+}
+
+export const getLatestRanksForPuuids = async (
+    puuids: string[],
+    queueType: string
+): Promise<LatestRankRow[]> => {
+    if (puuids.length === 0) return [];
+    try {
+        const query = `
+            SELECT DISTINCT ON ("entryParticipantId")
+                "entryParticipantId", "tier", "rank", "lp", "queueType", "lastUpdated"
+            FROM rank_tracking
+            WHERE "entryParticipantId" = ANY($1) AND "queueType" = $2
+            ORDER BY "entryParticipantId", "lastUpdated" DESC
+        `;
+        const result = await db.query(query, [puuids, queueType]);
+        return result.rows;
+    } catch (error) {
+        console.error('Error retrieving latest ranks for puuids:', error);
+        throw new Error('Failed to retrieve latest ranks.');
     }
 };
 

@@ -1,5 +1,5 @@
 import { LolApi, Constants, RiotApi } from 'twisted';
-import { ILolService } from '../../../types';
+import { ILolService, ChampionRotation, LiveGameInfo } from '../../../types';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
     MatchV5DTOs,
@@ -182,6 +182,48 @@ export class LolService implements ILolService {
             );
             return response;
         } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
+    async getChampionRotation(
+        region: Region = Constants.Regions.EU_WEST
+    ): Promise<ChampionRotation> {
+        try {
+            const { response } = await this.lolApi.Champion.rotation(region);
+            return response as ChampionRotation;
+        } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
+    async getActiveGame(
+        puuid: string,
+        region: Region = Constants.Regions.EU_WEST
+    ): Promise<LiveGameInfo | null> {
+        try {
+            const result = await this.lolApi.SpectatorV5.activeGame(
+                puuid,
+                region
+            );
+            // SpectatorV5 returns a SpectatorNotAvailableDTO (no `response`
+            // property) when the player is not in a game.
+            if (
+                !result ||
+                typeof result !== 'object' ||
+                !('response' in result)
+            ) {
+                return null;
+            }
+            return result.response as LiveGameInfo;
+        } catch (error: any) {
+            if (error?.status === 404) return null;
             throw new LolApiError(
                 error?.status ?? 500,
                 error?.message ?? 'Unknown error'

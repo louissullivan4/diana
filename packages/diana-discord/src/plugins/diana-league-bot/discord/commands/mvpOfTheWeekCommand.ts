@@ -26,11 +26,6 @@ function linkedName(candidate: InterCandidate): string {
 function buildFunStats(candidates: InterCandidate[]): string {
     if (candidates.length === 0) return '';
 
-    const byAsc = (key: keyof InterCandidate) =>
-        [...candidates].sort(
-            (a, b) => ((a[key] as number) ?? 0) - ((b[key] as number) ?? 0)
-        )[0];
-
     const byDesc = (key: keyof InterCandidate) =>
         [...candidates].sort(
             (a, b) => ((b[key] as number) ?? 0) - ((a[key] as number) ?? 0)
@@ -39,35 +34,35 @@ function buildFunStats(candidates: InterCandidate[]): string {
     const eligible = (minMatches: number) =>
         candidates.filter((c) => c.matchesPlayed >= minMatches);
 
-    const leastDamage = byAsc('avgDamage');
-    const worstKda = byAsc('kdaRatio');
-    const worstVision = byAsc('avgVisionScore');
+    const mostDamage = byDesc('avgDamage');
+    const bestKda = byDesc('kdaRatio');
+    const bestVision = byDesc('avgVisionScore');
     const mostGames = byDesc('matchesPlayed');
 
     const winRateCandidates = eligible(3);
-    const lowestWinRate =
+    const highestWinRate =
         winRateCandidates.length > 0
-            ? [...winRateCandidates].sort((a, b) => a.winRate - b.winRate)[0]
+            ? [...winRateCandidates].sort((a, b) => b.winRate - a.winRate)[0]
             : null;
 
     const lines: string[] = [];
 
     lines.push(
-        `💥 **Least damage** - ${linkedName(leastDamage)} (${formatNumber(leastDamage.avgDamage)} dmg/game)`
+        `💥 **Most damage** - ${linkedName(mostDamage)} (${formatNumber(mostDamage.avgDamage)} dmg/game)`
     );
     lines.push(
-        `⚰️ **Worst KDA** - ${linkedName(worstKda)} (${Number.isFinite(worstKda.kdaRatio) ? worstKda.kdaRatio.toFixed(2) : '0.00'} - ${worstKda.totalKills}/${worstKda.totalDeaths}/${worstKda.totalAssists})`
+        `⚔️ **Best KDA** - ${linkedName(bestKda)} (${Number.isFinite(bestKda.kdaRatio) ? bestKda.kdaRatio.toFixed(2) : '0.00'} - ${bestKda.totalKills}/${bestKda.totalDeaths}/${bestKda.totalAssists})`
     );
     lines.push(
-        `👁️‍🗨️ **Worst vision** - ${linkedName(worstVision)} (avg ${formatNumber(worstVision.avgVisionScore, 1)})`
+        `👁️ **Best vision** - ${linkedName(bestVision)} (avg ${formatNumber(bestVision.avgVisionScore, 1)})`
     );
     lines.push(
         `🕒 **Most games** - ${linkedName(mostGames)} (${mostGames.matchesPlayed} game${mostGames.matchesPlayed === 1 ? '' : 's'})`
     );
-    if (lowestWinRate) {
-        const winPct = (lowestWinRate.winRate * 100).toFixed(1);
+    if (highestWinRate) {
+        const winPct = (highestWinRate.winRate * 100).toFixed(1);
         lines.push(
-            `📉 **Lowest winrate** - ${linkedName(lowestWinRate)} (${winPct}% - ${lowestWinRate.wins}W/${lowestWinRate.losses}L)`
+            `📈 **Highest winrate** - ${linkedName(highestWinRate)} (${winPct}% - ${highestWinRate.wins}W/${highestWinRate.losses}L)`
         );
     }
 
@@ -77,7 +72,7 @@ function buildFunStats(candidates: InterCandidate[]): string {
 function buildLeaderboard(candidates: InterCandidate[]): string {
     const scored = [...candidates]
         .filter((c) => c.scoredMatchesCount > 0)
-        .sort((a, b) => a.avgAiScore - b.avgAiScore);
+        .sort((a, b) => b.avgAiScore - a.avgAiScore);
 
     if (scored.length === 0) return '';
 
@@ -101,24 +96,23 @@ function buildEmbed(candidates: InterCandidate[]): EmbedBuilder {
     const scoredCandidates = candidates.filter((c) => c.scoredMatchesCount > 0);
 
     let description: string;
-    let crowned: InterCandidate | null = null;
 
     if (scoredCandidates.length > 0) {
-        crowned = [...scoredCandidates].sort(
-            (a, b) => a.avgAiScore - b.avgAiScore
+        const crowned = [...scoredCandidates].sort(
+            (a, b) => b.avgAiScore - a.avgAiScore
         )[0];
         const name = linkedName(crowned);
         const score = crowned.avgAiScore;
-        description = `**${name}** 👑\nInter of the Week with an average AI score of **${score}** across ${crowned.scoredMatchesCount} game${crowned.scoredMatchesCount === 1 ? '' : 's'}.`;
+        description = `**${name}** 🏆\nMVP of the Week with an average AI score of **${score}** across ${crowned.scoredMatchesCount} game${crowned.scoredMatchesCount === 1 ? '' : 's'}. Bow down.`;
     } else {
         description =
             'No scored matches found this week. Nobody can be crowned yet!';
     }
 
     const embed = new EmbedBuilder()
-        .setTitle('Inter Of the Week')
+        .setTitle('MVP Of the Week')
         .setDescription(description)
-        .setColor(0xe74c3c)
+        .setColor(0xffd700)
         .setFooter({ text: 'Last week of matches' })
         .setTimestamp();
 
@@ -133,7 +127,7 @@ function buildEmbed(candidates: InterCandidate[]): EmbedBuilder {
     const funStats = buildFunStats(candidates);
     if (funStats) {
         embed.addFields({
-            name: 'Fun Stats',
+            name: 'Honour Roll',
             value: funStats,
         });
     }
@@ -141,10 +135,10 @@ function buildEmbed(candidates: InterCandidate[]): EmbedBuilder {
     return embed;
 }
 
-export const interOfTheWeekCommand: SlashCommand = {
+export const mvpOfTheWeekCommand: SlashCommand = {
     data: new SlashCommandBuilder()
-        .setName('iotw')
-        .setDescription('Crowns the Inter of the Week from the past week.'),
+        .setName('mvp')
+        .setDescription('Crowns the MVP of the Week from the past week.'),
     execute: async (interaction) => {
         await interaction.deferReply();
 
@@ -154,7 +148,7 @@ export const interOfTheWeekCommand: SlashCommand = {
 
             if (candidates.length === 0) {
                 await interaction.editReply(
-                    'No matches found in the last 7 days. Nobody is inting-yet.'
+                    'No matches found in the last 7 days. No heroics to report.'
                 );
                 return;
             }
@@ -177,9 +171,9 @@ export const interOfTheWeekCommand: SlashCommand = {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error('Failed to compute Inter of the Week:', error);
+            console.error('Failed to compute MVP of the Week:', error);
             await interaction.editReply(
-                'Something went wrong while picking the Inter of the Week.'
+                'Something went wrong while picking the MVP of the Week.'
             );
         }
     },

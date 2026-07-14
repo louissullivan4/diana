@@ -4,16 +4,30 @@ const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
 const CHAMPION_URL = (version: string) =>
     `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
 
-let cachedLatestVersion: string;
+// Used when the Data Dragon version list cannot be fetched
+export const FALLBACK_DDRAGON_VERSION = '15.2.1';
+const VERSION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+let cachedLatestVersion: string | undefined;
+let versionFetchedAt = 0;
 let championDataCache: Record<string, any>;
 let championIdMapCache: Record<string, any>;
 
-const fetchLatestVersion = async () => {
-    if (!cachedLatestVersion) {
-        const { data: versions } = await axios.get(VERSIONS_URL);
-        cachedLatestVersion = versions[0];
+export const fetchLatestVersion = async (): Promise<string> => {
+    const now = Date.now();
+    if (!cachedLatestVersion || now - versionFetchedAt > VERSION_CACHE_TTL_MS) {
+        try {
+            const { data: versions } = await axios.get(VERSIONS_URL);
+            cachedLatestVersion = versions[0];
+            versionFetchedAt = now;
+        } catch (error) {
+            console.error(
+                '[DataDragon] Failed to fetch latest version:',
+                error
+            );
+        }
     }
-    return cachedLatestVersion;
+    return cachedLatestVersion || FALLBACK_DDRAGON_VERSION;
 };
 
 export const fetchChampionData = async () => {
@@ -52,13 +66,27 @@ export const getChampionInfoById = async (championId: string) => {
 export const getQueueNameById = (queueId: number) => {
     const queueMap = new Map<number, string>([
         [0, 'Custom Game'],
+        [400, 'Normal Draft'],
         [420, 'Ranked Solo'],
         [430, 'Normal Blind'],
         [440, 'Ranked Flex'],
         [450, 'ARAM'],
         [480, 'Swiftplay'],
+        [490, 'Quickplay'],
         [700, 'Clash'],
+        [720, 'ARAM Clash'],
+        [830, 'Co-op vs AI Intro'],
+        [840, 'Co-op vs AI Beginner'],
+        [850, 'Co-op vs AI Intermediate'],
         [900, 'ARURF'],
+        [1020, 'One for All'],
+        [1400, 'Ultimate Spellbook'],
+        [1700, 'Arena'],
+        [1710, 'Arena'],
+        [1900, 'URF'],
+        [2000, 'Tutorial'],
+        [2010, 'Tutorial'],
+        [2020, 'Tutorial'],
     ]);
     return queueMap.get(queueId) || `Unknown Queue (ID: ${queueId})`;
 };

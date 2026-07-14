@@ -197,7 +197,7 @@ export const getRecentMatchDetailsHandler = async (
                         : null;
                 const summoner = await getSummonerByPuuid(row.entryPlayerPuuid);
                 const deepLolLink = (summoner as any)?.deepLolLink || '';
-                const notificationPayload = buildMatchEndMessage({
+                const notificationPayload = await buildMatchEndMessage({
                     summonerName:
                         entry?.riotIdGameName ||
                         entry?.summonerName ||
@@ -257,7 +257,7 @@ export const getRecentMatchDetailsHandler = async (
                     queueName,
                     result,
                     champion,
-                    championImageUrl: getChampionThumbnail(champion),
+                    championImageUrl: await getChampionThumbnail(champion),
                     role: getRoleNameTranslation(role),
                     kda: kdaStr,
                     damage,

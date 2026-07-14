@@ -35,6 +35,18 @@ class MockSlashCommandStringOption {
         this.config.autocomplete = autocomplete;
         return this;
     }
+
+    addChoices(...choices: Array<Record<string, unknown>>) {
+        const normalized =
+            Array.isArray(choices[0]) && choices.length === 1
+                ? (choices[0] as Record<string, unknown>[])
+                : choices;
+        const existing =
+            (this.config.choices as Record<string, unknown>[] | undefined) ??
+            [];
+        this.config.choices = [...existing, ...normalized];
+        return this;
+    }
 }
 
 class MockSlashCommandBuilder {
@@ -123,6 +135,11 @@ jest.mock('diana-core', () => ({
     fetchChampionData: fetchChampionDataMock,
     calculateWinRatePercentage: calculateWinRatePercentageMock,
     getQueueNameById: getQueueNameByIdMock,
+    getChampionThumbnail: jest
+        .fn()
+        .mockImplementation((championName: string) =>
+            Promise.resolve(`https://example.com/${championName}.png`)
+        ),
 }));
 
 const {
@@ -454,6 +471,7 @@ describe('championStatsCommand', () => {
     describe('autocomplete', () => {
         it('responds with summoner game name suggestions when "name" is focused', async () => {
             const interaction = {
+                guildId: 'guild-123',
                 options: {
                     getFocused: jest.fn(() => ({ name: 'name', value: 'fa' })),
                     getString: jest.fn(),
@@ -466,7 +484,11 @@ describe('championStatsCommand', () => {
 
             await championStatsCommand.autocomplete(interaction as any);
 
-            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith('fa', 25);
+            expect(searchSummonerGameNamesMock).toHaveBeenCalledWith(
+                'fa',
+                25,
+                'guild-123'
+            );
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'Faker', value: 'Faker' },
                 { name: 'Fariq', value: 'Fariq' },
@@ -475,6 +497,7 @@ describe('championStatsCommand', () => {
 
         it('responds with tag suggestions (with region label) when "tag" is focused', async () => {
             const interaction = {
+                guildId: 'guild-123',
                 options: {
                     getFocused: jest.fn(() => ({ name: 'tag', value: 'eu' })),
                     getString: jest.fn(() => 'Faker'),
@@ -493,7 +516,8 @@ describe('championStatsCommand', () => {
             expect(searchSummonerTagsMock).toHaveBeenCalledWith(
                 'Faker',
                 'eu',
-                25
+                25,
+                'guild-123'
             );
             expect(interaction.respond).toHaveBeenCalledWith([
                 { name: 'EUW (Europe)', value: 'EUW' },

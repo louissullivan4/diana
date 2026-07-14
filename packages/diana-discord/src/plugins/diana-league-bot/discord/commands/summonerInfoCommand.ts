@@ -10,9 +10,11 @@ import {
     searchSummonerGameNames,
     searchSummonerTags,
     getMostRecentRankByParticipantIdAndQueueType,
+    fetchRankHistory,
+    getTotalPoints,
+    buildSparkline,
     db,
     calculateWinRatePercentage,
-    createLolService,
     getQueueNameById,
     rankColors,
     getRankedEmblem,
@@ -23,8 +25,6 @@ import {
     type RawMatchRow,
     type RiotParticipant,
 } from 'diana-core';
-
-const lolService = createLolService();
 
 type QueueResult = 'WIN' | 'LOSS' | 'REMAKE';
 
@@ -295,12 +295,10 @@ export const summonerInfoCommand: SlashCommand = {
             const { puuid, gameName, tagLine, tier, rank, lp, deepLolLink } =
                 summonerRecord as any;
 
-            const [matches, rankEntries, iotwCandidates] = (await Promise.all([
+            const [matches, iotwCandidates] = (await Promise.all([
                 fetchRecentMatches(puuid),
-                lolService.getRankEntriesByPUUID(puuid),
-                getInterCandidatesLastWeek(puuid),
-            ])) as [ParsedMatch[], unknown, InterCandidate[]];
-            void rankEntries;
+                getInterCandidatesLastWeek({ targetPuuid: puuid }),
+            ])) as [ParsedMatch[], InterCandidate[]];
 
             const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
                 puuid,
@@ -345,6 +343,30 @@ export const summonerInfoCommand: SlashCommand = {
                 embedTier = displayFlexRank.tier;
             }
 
+            // LP trend sparkline from stored rank history (oldest -> newest)
+            let lpSparkline = '';
+            try {
+                const rankHistory = await fetchRankHistory(
+                    puuid,
+                    undefined,
+                    undefined,
+                    'RANKED_SOLO_5x5'
+                );
+                const lpPoints = rankHistory
+                    .map((row: { tier: string; rank: string; lp: number }) =>
+                        getTotalPoints(row.tier, row.rank, row.lp)
+                    )
+                    .filter((value: number | null): value is number =>
+                        Number.isFinite(value as number)
+                    )
+                    .reverse();
+                if (lpPoints.length >= 2) {
+                    lpSparkline = buildSparkline(lpPoints);
+                }
+            } catch (sparklineError) {
+                console.error('Failed to build LP sparkline:', sparklineError);
+            }
+
             const stats = summarizePeriod(matches);
             const weeklyWinRate = formatWinRate(stats);
             const recentMatches = buildRecentMatches(matches);
@@ -382,6 +404,15 @@ export const summonerInfoCommand: SlashCommand = {
                         value: `• ${displayFlexRank.tier} ${displayFlexRank.rank} (${displayFlexRank.lp} LP)`,
                         inline: false,
                     },
+                    ...(lpSparkline
+                        ? [
+                              {
+                                  name: 'LP Trend (Solo/Duo)',
+                                  value: `\`${lpSparkline}\``,
+                                  inline: false,
+                              },
+                          ]
+                        : []),
                     {
                         name: 'Performance (Last 7 Days)',
                         value: `• Record: ${stats.wins}W - ${stats.losses}L${stats.remakes ? ` (${stats.remakes} remakes)` : ''}\n• Win Rate: ${

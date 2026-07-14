@@ -17,6 +17,7 @@ export const helpCommand: SlashCommand = {
                     value: [
                         '`/setchannel #channel` - Set the channel where match notifications are posted. Requires **Manage Channels**.',
                         '`/config live-posting true/false` - Enable or disable live match notifications. Requires **Manage Server**.',
+                        '`/config notifications <type> true/false` - Toggle a specific notification type. Requires **Manage Server**.',
                         '`/config view` - View the current bot settings for this server.',
                     ].join('\n'),
                     inline: false,
@@ -33,8 +34,13 @@ export const helpCommand: SlashCommand = {
                     name: '📊 Stats',
                     value: [
                         "`/summoner <name> [tag] [region]` - View a tracked summoner's profile and recent stats.",
-                        '`/champion-stats` - View champion statistics.',
-                        '`/inter-of-the-week` - View the Inter of the Week rankings.',
+                        "`/champion <name> [tag] <champion>` - View a summoner's stats on a specific champion.",
+                        '`/iotw` - View the Inter of the Week rankings.',
+                        '`/mvp` - View the MVP of the Week rankings.',
+                        "`/leaderboard lp [queue]` - This server's rank ladder.",
+                        '`/livegame <name> [tag]` - Check if a tracked summoner is in a game right now.',
+                        '`/compare <player1> <player2>` - Head-to-head and duo stats for two tracked summoners.',
+                        '`/leaderboard stats <board>` - Weekly stat boards (KDA, damage, vision...).',
                     ].join('\n'),
                     inline: false,
                 },

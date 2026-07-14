@@ -2,11 +2,14 @@ import type { DianaPlugin, ConfigField } from '../../core/pluginTypes';
 import { summonerRouter } from './api/summoners/summonerRoutes';
 import { matchRouter } from './api/matches/matchRoutes';
 import { createMatchMonitoringTick } from './monitoring/matchMonitoringService';
+import { createWeeklyDigestTick } from './monitoring/weeklyDigestService';
+import { createRotationPostTick } from './monitoring/rotationPostService';
 import type { LeagueBotConfig } from './types';
 
 const defaultConfig: LeagueBotConfig = {
     matchCheckCron: '0 * * * * *',
-    defaultDiscordChannelId: undefined,
+    weeklyDigestCron: '0 0 19 * * 0',
+    rotationPostCron: '0 0 12 * * 2',
 };
 
 const configSchema: ConfigField[] = [
@@ -20,11 +23,22 @@ const configSchema: ConfigField[] = [
         default: '0 * * * * *',
     },
     {
-        key: 'defaultDiscordChannelId',
-        label: 'Default Discord Channel ID',
+        key: 'weeklyDigestCron',
+        label: 'Weekly Digest Schedule',
         type: 'string',
-        description: 'Default Discord channel for match notifications',
+        description:
+            '6-field cron expression, server-local time (default: Sunday 19:00)',
         required: false,
+        default: '0 0 19 * * 0',
+    },
+    {
+        key: 'rotationPostCron',
+        label: 'Free Rotation Post Schedule',
+        type: 'string',
+        description:
+            '6-field cron expression, server-local time (default: Tuesday 12:00)',
+        required: false,
+        default: '0 0 12 * * 2',
     },
 ];
 
@@ -48,7 +62,6 @@ export const leagueBotPlugin: DianaPlugin = {
 
         console.log(`[LeagueBot] Enabling with config:`, {
             matchCheckCron: config.matchCheckCron,
-            defaultDiscordChannelId: config.defaultDiscordChannelId,
         });
 
         const runTick = createMatchMonitoringTick(
@@ -56,5 +69,17 @@ export const leagueBotPlugin: DianaPlugin = {
             context.getMessageAdapter()
         );
         context.registerCron(config.matchCheckCron, runTick);
+
+        const runDigest = createWeeklyDigestTick(
+            config,
+            context.getMessageAdapter()
+        );
+        context.registerCron(config.weeklyDigestCron, runDigest);
+
+        const runRotationPost = createRotationPostTick(
+            config,
+            context.getMessageAdapter()
+        );
+        context.registerCron(config.rotationPostCron, runRotationPost);
     },
 };

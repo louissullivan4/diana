@@ -260,6 +260,85 @@ describe('summonerService', () => {
         });
     });
 
+    describe('getLatestRanksForPuuids', () => {
+        it('returns [] without querying for an empty puuid list', async () => {
+            const result = await summonerService.getLatestRanksForPuuids(
+                [],
+                'RANKED_SOLO_5x5'
+            );
+            expect(result).toEqual([]);
+            expect(queryMock).not.toHaveBeenCalled();
+        });
+
+        it('selects the latest rank per puuid via DISTINCT ON', async () => {
+            const rows = [
+                {
+                    entryParticipantId: 'p1',
+                    tier: 'GOLD',
+                    rank: 'I',
+                    lp: 20,
+                },
+            ];
+            queryMock.mockResolvedValue({ rows });
+
+            const result = await summonerService.getLatestRanksForPuuids(
+                ['p1', 'p2'],
+                'RANKED_SOLO_5x5'
+            );
+
+            expect(result).toBe(rows);
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('DISTINCT ON ("entryParticipantId")');
+            expect(query).toContain('ANY($1)');
+            expect(params).toEqual([['p1', 'p2'], 'RANKED_SOLO_5x5']);
+        });
+    });
+
+    describe('updateSummonerRankByPuuid', () => {
+        it('updates tier/rank/lp and returns the summoner', async () => {
+            const row = { puuid: '123', tier: 'GOLD', rank: 'II', lp: 44 };
+            queryMock.mockResolvedValue({ rows: [row] });
+
+            const result = await summonerService.updateSummonerRankByPuuid(
+                '123',
+                'GOLD',
+                'II',
+                44
+            );
+
+            expect(result).toBe(row);
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('UPDATE summoners');
+            expect(query).toContain('"tier" = $1');
+            expect(params).toEqual(['GOLD', 'II', 44, '123']);
+        });
+
+        it('returns null when summoner missing', async () => {
+            queryMock.mockResolvedValue({ rows: [] });
+
+            const result = await summonerService.updateSummonerRankByPuuid(
+                '123',
+                'GOLD',
+                'II',
+                44
+            );
+            expect(result).toBeNull();
+        });
+
+        it('throws when the db query fails', async () => {
+            queryMock.mockRejectedValue(new Error('db down'));
+
+            await expect(
+                summonerService.updateSummonerRankByPuuid(
+                    '123',
+                    'GOLD',
+                    'II',
+                    44
+                )
+            ).rejects.toThrow('Failed to update summoner rank.');
+        });
+    });
+
     describe('fetchRankHistory', () => {
         it('builds query with optional filters', async () => {
             queryMock.mockResolvedValue({ rows: [{ rid: 1 }] });
