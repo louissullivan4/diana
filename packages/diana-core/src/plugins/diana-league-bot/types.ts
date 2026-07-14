@@ -46,6 +46,32 @@ export interface ChampionRotation {
     maxNewPlayerLevel: number;
 }
 
+export interface LiveGameParticipant {
+    puuid: string;
+    teamId: number;
+    championId: number;
+    riotId?: string;
+    [key: string]: unknown;
+}
+
+export interface LiveGameBannedChampion {
+    championId: number;
+    teamId: number;
+    pickTurn?: number;
+}
+
+export interface LiveGameInfo {
+    gameId: number;
+    gameMode: string;
+    gameQueueConfigId: number;
+    gameStartTime?: number;
+    /** Seconds since game start (can be slightly negative in loading screen) */
+    gameLength?: number;
+    participants: LiveGameParticipant[];
+    bannedChampions?: LiveGameBannedChampion[];
+    [key: string]: unknown;
+}
+
 export interface ILolService {
     checkConnection(): Promise<boolean>;
     getMatchesByPUUID(
@@ -76,6 +102,8 @@ export interface ILolService {
         regionGroup?: string
     ): Promise<AccountRegionDto>;
     getChampionRotation(region?: string): Promise<ChampionRotation>;
+    /** Current live game for a player, or null when not in game */
+    getActiveGame(puuid: string, region?: string): Promise<LiveGameInfo | null>;
 }
 
 /**

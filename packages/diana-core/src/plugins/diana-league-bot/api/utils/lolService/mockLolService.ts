@@ -1,4 +1,4 @@
-import { ILolService, ChampionRotation } from '../../../types';
+import { ILolService, ChampionRotation, LiveGameInfo } from '../../../types';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
@@ -101,5 +101,12 @@ export class MockLolService implements ILolService {
 
     async getChampionRotation(_region?: string): Promise<ChampionRotation> {
         return JsonLoader.load<ChampionRotation>('riot_champion_rotation.json');
+    }
+
+    async getActiveGame(
+        _puuid: string,
+        _region?: string
+    ): Promise<LiveGameInfo | null> {
+        return JsonLoader.load<LiveGameInfo>('riot_active_game_found.json');
     }
 }

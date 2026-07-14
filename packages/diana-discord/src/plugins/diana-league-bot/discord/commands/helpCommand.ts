@@ -38,6 +38,7 @@ export const helpCommand: SlashCommand = {
                         '`/iotw` - View the Inter of the Week rankings.',
                         '`/mvp` - View the MVP of the Week rankings.',
                         "`/leaderboard lp [queue]` - This server's rank ladder.",
+                        '`/livegame <name> [tag]` - Check if a tracked summoner is in a game right now.',
                         '`/leaderboard stats <board>` - Weekly stat boards (KDA, damage, vision...).',
                     ].join('\n'),
                     inline: false,
