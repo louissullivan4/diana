@@ -324,6 +324,39 @@ export const updateSummonerRegionDataByPuuid = async (
     }
 };
 
+export const updateSummonerRankByPuuid = async (
+    puuid: string,
+    tier: string,
+    rank: string,
+    lp: number
+) => {
+    try {
+        const query = `
+            UPDATE summoners
+            SET
+                "tier" = $1,
+                "rank" = $2,
+                "lp" = $3,
+                "lastUpdated" = NOW()
+            WHERE "puuid" = $4
+            RETURNING *;
+        `;
+        const params = [tier, rank, lp, puuid];
+        const result = await db.query(query, params);
+        const updatedSummoner = result.rows[0];
+        if (!updatedSummoner) {
+            console.info(
+                `Summoner with PUUID ${puuid} not found for rank update.`
+            );
+            return null;
+        }
+        return updatedSummoner;
+    } catch (error) {
+        console.error('Error updating summoner rank:', error);
+        throw new Error('Failed to update summoner rank.');
+    }
+};
+
 export const deleteSummoner = async (puuid: string) => {
     try {
         const query = `

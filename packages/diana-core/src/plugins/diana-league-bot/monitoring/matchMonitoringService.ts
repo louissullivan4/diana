@@ -21,6 +21,7 @@ import {
     createRankHistory,
     getRankByMatchAndQueueType,
     updateSummonerIdentityByPuuid,
+    updateSummonerRankByPuuid,
 } from '../api/summoners/summonerService';
 import {
     getAllTrackedPuuids,
@@ -352,6 +353,19 @@ const handleNewMatchCompleted = async (
                 } catch (dbError) {
                     console.error(
                         `[Error] Failed to save rank history for ${summonerName} (${newMatchId}): ${dbError}`
+                    );
+                }
+
+                try {
+                    await updateSummonerRankByPuuid(
+                        puuid,
+                        summonerNewRankInfo.tier,
+                        summonerNewRankInfo.rank,
+                        summonerNewRankInfo.lp
+                    );
+                } catch (dbError) {
+                    console.error(
+                        `[Error] Failed to refresh summoner rank columns for ${summonerName}: ${dbError}`
                     );
                 }
             }
