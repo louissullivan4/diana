@@ -2,10 +2,12 @@ import type { DianaPlugin, ConfigField } from '../../core/pluginTypes';
 import { summonerRouter } from './api/summoners/summonerRoutes';
 import { matchRouter } from './api/matches/matchRoutes';
 import { createMatchMonitoringTick } from './monitoring/matchMonitoringService';
+import { createWeeklyDigestTick } from './monitoring/weeklyDigestService';
 import type { LeagueBotConfig } from './types';
 
 const defaultConfig: LeagueBotConfig = {
     matchCheckCron: '0 * * * * *',
+    weeklyDigestCron: '0 0 19 * * 0',
 };
 
 const configSchema: ConfigField[] = [
@@ -17,6 +19,15 @@ const configSchema: ConfigField[] = [
             'Cron expression for match checking (default: every minute)',
         required: false,
         default: '0 * * * * *',
+    },
+    {
+        key: 'weeklyDigestCron',
+        label: 'Weekly Digest Schedule',
+        type: 'string',
+        description:
+            '6-field cron expression, server-local time (default: Sunday 19:00)',
+        required: false,
+        default: '0 0 19 * * 0',
     },
 ];
 
@@ -47,5 +58,11 @@ export const leagueBotPlugin: DianaPlugin = {
             context.getMessageAdapter()
         );
         context.registerCron(config.matchCheckCron, runTick);
+
+        const runDigest = createWeeklyDigestTick(
+            config,
+            context.getMessageAdapter()
+        );
+        context.registerCron(config.weeklyDigestCron, runDigest);
     },
 };

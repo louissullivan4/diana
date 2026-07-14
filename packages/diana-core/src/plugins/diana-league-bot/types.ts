@@ -77,4 +77,6 @@ export interface ILolService {
 export interface LeagueBotConfig {
     /** Cron schedule for match checking (default: every minute) */
     matchCheckCron: string;
+    /** Cron schedule for the weekly digest post (server-local time, 6-field) */
+    weeklyDigestCron: string;
 }

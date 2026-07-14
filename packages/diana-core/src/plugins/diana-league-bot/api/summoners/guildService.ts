@@ -203,6 +203,15 @@ export const getGuildsTrackingSummoner = async (
     return result.rows;
 };
 
+/** All guilds with a configured notification channel. */
+export const getAllGuildConfigs = async (): Promise<GuildConfig[]> => {
+    const result = await db.query(
+        `SELECT * FROM guild_config WHERE channel_id IS NOT NULL`,
+        []
+    );
+    return result.rows;
+};
+
 export const getAllTrackedPuuids = async (): Promise<string[]> => {
     const result = await db.query(
         `SELECT DISTINCT gs.puuid
