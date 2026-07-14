@@ -283,3 +283,95 @@ export async function notifyRankChange(
     if (!message) return false;
     return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
 }
+
+interface StreakMessageInput {
+    summonerName: string;
+    kind: 'win' | 'loss';
+    length: number;
+    deepLolLink: string;
+}
+
+export function buildStreakMessage({
+    summonerName,
+    kind,
+    length,
+    deepLolLink,
+}: StreakMessageInput): MessagePayload {
+    const isWin = kind === 'win';
+    return {
+        title: isWin ? '🔥 **Win Streak!**' : '🧊 **Loss Streak...**',
+        description: isWin
+            ? `${summonerName} is on a **${length}-game win streak**! Someone stop them.`
+            : `${summonerName} has lost **${length} in a row**. Thoughts and prayers.`,
+        url: deepLolLink,
+        colorHex: isWin ? 0x28a745 : 0xe74c3c,
+        fields: [
+            {
+                name: isWin ? '📈 **Streak**' : '📉 **Streak**',
+                value: `**${length} ${isWin ? 'wins' : 'losses'}**`,
+                inline: true,
+            },
+        ],
+        footer: 'Streak Notification',
+        timestamp: new Date().toISOString(),
+    };
+}
+
+interface NotifyStreak extends StreakMessageInput {
+    discordChannelId: string;
+}
+
+export async function notifyStreak(
+    adapter: MessageAdapter | null | undefined,
+    { discordChannelId, ...payload }: NotifyStreak
+): Promise<boolean> {
+    const message = buildStreakMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'streak');
+}
+
+interface MilestoneMessageInput {
+    summonerName: string;
+    milestone: 'new_peak' | 'first_time_tier';
+    newRankMsg: string;
+    deepLolLink: string;
+}
+
+export function buildMilestoneMessage({
+    summonerName,
+    milestone,
+    newRankMsg,
+    deepLolLink,
+}: MilestoneMessageInput): MessagePayload {
+    const tier = newRankMsg.match(/(\w+)\s+\w+/)?.[1]?.toUpperCase() ?? '';
+    const isFirstTime = milestone === 'first_time_tier';
+    return {
+        title: isFirstTime ? '🎉 **New Tier Reached!**' : '🏔️ **New Peak!**',
+        description: isFirstTime
+            ? `${summonerName} has reached **${newRankMsg}** for the first time!`
+            : `${summonerName} just set a new rank peak: **${newRankMsg}**!`,
+        url: deepLolLink,
+        colorHex: rankColors.get(tier) || 0x3498db,
+        thumbnailUrl: getRankedEmblem(tier) ?? undefined,
+        fields: [
+            {
+                name: '🏅 **Rank**',
+                value: `**${newRankMsg}**`,
+                inline: true,
+            },
+        ],
+        footer: 'Milestone Notification',
+        timestamp: new Date().toISOString(),
+    };
+}
+
+interface NotifyMilestone extends MilestoneMessageInput {
+    discordChannelId: string;
+}
+
+export async function notifyMilestone(
+    adapter: MessageAdapter | null | undefined,
+    { discordChannelId, ...payload }: NotifyMilestone
+): Promise<boolean> {
+    const message = buildMilestoneMessage(payload);
+    return sendWithAdapter(adapter, discordChannelId, message, 'milestone');
+}

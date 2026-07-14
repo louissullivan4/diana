@@ -22,6 +22,7 @@ import {
     getRankByMatchAndQueueType,
     updateSummonerIdentityByPuuid,
     updateSummonerRankByPuuid,
+    fetchRankHistory,
 } from '../api/summoners/summonerService';
 import {
     getAllTrackedPuuids,
@@ -32,8 +33,18 @@ import { buildDeepLolLink } from '../utils/deepLol.js';
 import {
     notifyMatchEnd,
     notifyRankChange,
+    notifyStreak,
+    notifyMilestone,
 } from '../notifications/leagueNotifications';
 import { pickFlavorLine } from '../notifications/flavorLines';
+import {
+    computeWinLossStreak,
+    fetchRecentResultsForPuuid,
+    isStreakThreshold,
+    detectRankMilestone,
+    type Streak,
+    type RankMilestone,
+} from '../utils/streaks';
 import { Summoner, LeagueBotConfig } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
 import { Constants } from 'twisted';
@@ -311,6 +322,8 @@ const handleNewMatchCompleted = async (
     let newRankMsg = 'Unranked N/A (0 LP)';
     let lpChangeMsg: number | null = null;
     let checkForRankUp = 'no_change';
+    let latestRankInfo: { tier: string; rank: string; lp: number } | null =
+        null;
 
     try {
         if (matchRank) {
@@ -393,6 +406,12 @@ const handleNewMatchCompleted = async (
                         `[Error] Failed to refresh summoner rank columns for ${summonerName}: ${dbError}`
                     );
                 }
+
+                latestRankInfo = {
+                    tier: summonerNewRankInfo.tier,
+                    rank: summonerNewRankInfo.rank,
+                    lp: summonerNewRankInfo.lp,
+                };
             }
         }
     } catch (error) {
@@ -437,6 +456,45 @@ const handleNewMatchCompleted = async (
         }),
     };
 
+    // Streak and milestone detection - purely from data already stored.
+    let streakToAnnounce: Streak | null = null;
+    try {
+        if (result !== 'Remake') {
+            const recentResults = await fetchRecentResultsForPuuid(puuid, 12);
+            const streak = computeWinLossStreak(recentResults);
+            if (streak && isStreakThreshold(streak)) {
+                streakToAnnounce = streak;
+            }
+        }
+    } catch (error) {
+        console.error(
+            `[Error] Failed to compute streak for ${summonerName}:`,
+            error
+        );
+    }
+
+    let milestoneToAnnounce: RankMilestone | null = null;
+    try {
+        if (latestRankInfo && matchRank) {
+            const history = await fetchRankHistory(
+                puuid,
+                undefined,
+                undefined,
+                matchRank
+            );
+            milestoneToAnnounce = detectRankMilestone(
+                history,
+                latestRankInfo,
+                newMatchId
+            );
+        }
+    } catch (error) {
+        console.error(
+            `[Error] Failed to detect rank milestone for ${summonerName}:`,
+            error
+        );
+    }
+
     let anyMessageSent = false;
     try {
         const guildTargets = await getGuildsTrackingSummoner(puuid);
@@ -469,6 +527,27 @@ const handleNewMatchCompleted = async (
                     rankChangeInfo
                 );
                 if (sent) anyMessageSent = true;
+            }
+
+            if (getNotificationPref(target, 'streaks')) {
+                if (streakToAnnounce) {
+                    await notifyStreak(messageAdapter, {
+                        summonerName,
+                        kind: streakToAnnounce.kind,
+                        length: streakToAnnounce.length,
+                        deepLolLink: summoner.deepLolLink || '',
+                        discordChannelId: target.channel_id,
+                    });
+                }
+                if (milestoneToAnnounce) {
+                    await notifyMilestone(messageAdapter, {
+                        summonerName,
+                        milestone: milestoneToAnnounce,
+                        newRankMsg,
+                        deepLolLink: summoner.deepLolLink || '',
+                        discordChannelId: target.channel_id,
+                    });
+                }
             }
         }
 

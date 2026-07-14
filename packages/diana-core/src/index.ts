@@ -25,3 +25,4 @@ export * from './plugins/diana-league-bot/utils/interStats';
 export * from './plugins/diana-league-bot/utils/deepLol';
 export * from './plugins/diana-league-bot/scoring/scoringService';
 export * from './plugins/diana-league-bot/notifications/flavorLines';
+export * from './plugins/diana-league-bot/utils/streaks';

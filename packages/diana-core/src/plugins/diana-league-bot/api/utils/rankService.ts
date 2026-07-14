@@ -36,7 +36,7 @@ const getDivisionValue = (division?: string | null) => {
     return divisionOrderMap.get(normalizedDivision) ?? -1;
 };
 
-const getTotalPoints = (
+export const getTotalPoints = (
     tier: string,
     division: string,
     lp: number | undefined
