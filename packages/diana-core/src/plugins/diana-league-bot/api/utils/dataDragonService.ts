@@ -4,16 +4,30 @@ const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
 const CHAMPION_URL = (version: string) =>
     `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
 
-let cachedLatestVersion: string;
+// Used when the Data Dragon version list cannot be fetched
+export const FALLBACK_DDRAGON_VERSION = '15.2.1';
+const VERSION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+let cachedLatestVersion: string | undefined;
+let versionFetchedAt = 0;
 let championDataCache: Record<string, any>;
 let championIdMapCache: Record<string, any>;
 
-const fetchLatestVersion = async () => {
-    if (!cachedLatestVersion) {
-        const { data: versions } = await axios.get(VERSIONS_URL);
-        cachedLatestVersion = versions[0];
+export const fetchLatestVersion = async (): Promise<string> => {
+    const now = Date.now();
+    if (!cachedLatestVersion || now - versionFetchedAt > VERSION_CACHE_TTL_MS) {
+        try {
+            const { data: versions } = await axios.get(VERSIONS_URL);
+            cachedLatestVersion = versions[0];
+            versionFetchedAt = now;
+        } catch (error) {
+            console.error(
+                '[DataDragon] Failed to fetch latest version:',
+                error
+            );
+        }
     }
-    return cachedLatestVersion;
+    return cachedLatestVersion || FALLBACK_DDRAGON_VERSION;
 };
 
 export const fetchChampionData = async () => {

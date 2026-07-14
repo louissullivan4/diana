@@ -1,3 +1,5 @@
+import { fetchLatestVersion } from '../api/utils/dataDragonService.js';
+
 export const rankColors = new Map<string, number>([
     ['UNRANKED', 0x95a5a6],
     ['IRON', 0x7f8c8d],
@@ -18,9 +20,10 @@ export function getRankedEmblem(tier: string) {
     return `https://raw.githubusercontent.com/louissullivan4/diana/refs/heads/main/assets/ranked-emblem/${sanitized}.webp`;
 }
 
-export function getChampionThumbnail(championName: string) {
+export async function getChampionThumbnail(championName: string) {
     const sanitized = championName.replace(/\s+/g, '');
-    return `https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/${encodeURIComponent(
+    const version = await fetchLatestVersion();
+    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${encodeURIComponent(
         sanitized
     )}.png`;
 }

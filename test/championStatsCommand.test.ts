@@ -123,6 +123,11 @@ jest.mock('diana-core', () => ({
     fetchChampionData: fetchChampionDataMock,
     calculateWinRatePercentage: calculateWinRatePercentageMock,
     getQueueNameById: getQueueNameByIdMock,
+    getChampionThumbnail: jest
+        .fn()
+        .mockImplementation((championName: string) =>
+            Promise.resolve(`https://example.com/${championName}.png`)
+        ),
 }));
 
 const {

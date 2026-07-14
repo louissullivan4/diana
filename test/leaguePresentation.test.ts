@@ -1,3 +1,10 @@
+jest.mock(
+    '../packages/diana-core/src/plugins/diana-league-bot/api/utils/dataDragonService',
+    () => ({
+        fetchLatestVersion: jest.fn().mockResolvedValue('15.2.1'),
+    })
+);
+
 import {
     rankColors,
     getRankedEmblem,
@@ -93,51 +100,59 @@ describe('leaguePresentation', () => {
         const BASE_URL =
             'https://ddragon.leagueoflegends.com/cdn/15.2.1/img/champion/';
 
-        it('returns correct URL for a single-word champion name', () => {
-            expect(getChampionThumbnail('Ahri')).toBe(`${BASE_URL}Ahri.png`);
+        it('returns correct URL for a single-word champion name', async () => {
+            expect(await getChampionThumbnail('Ahri')).toBe(
+                `${BASE_URL}Ahri.png`
+            );
         });
 
-        it('strips spaces from champion names with multiple words', () => {
-            expect(getChampionThumbnail('Aurelion Sol')).toBe(
+        it('uses the fetched Data Dragon version in the URL', async () => {
+            const url = await getChampionThumbnail('Ahri');
+            expect(url).toContain('/cdn/15.2.1/');
+        });
+
+        it('strips spaces from champion names with multiple words', async () => {
+            expect(await getChampionThumbnail('Aurelion Sol')).toBe(
                 `${BASE_URL}AurelionSol.png`
             );
         });
 
-        it('strips spaces from champions with three words', () => {
-            expect(getChampionThumbnail('Dr. Mundo')).toBe(
+        it('strips spaces from champions with three words', async () => {
+            expect(await getChampionThumbnail('Dr. Mundo')).toBe(
                 `${BASE_URL}Dr.Mundo.png`
             );
         });
 
-        it('preserves casing of the champion name', () => {
-            expect(getChampionThumbnail('MissFortune')).toBe(
+        it('preserves casing of the champion name', async () => {
+            expect(await getChampionThumbnail('MissFortune')).toBe(
                 `${BASE_URL}MissFortune.png`
             );
         });
 
-        it('URL-encodes special characters', () => {
-            const url = getChampionThumbnail("Cho'Gath");
+        it('URL-encodes special characters', async () => {
+            const url = await getChampionThumbnail("Cho'Gath");
             expect(url).toBe(`${BASE_URL}Cho'Gath.png`);
         });
 
-        it('returns a URL ending in .png', () => {
-            const url = getChampionThumbnail('Lux');
+        it('returns a URL ending in .png', async () => {
+            const url = await getChampionThumbnail('Lux');
             expect(url).toMatch(/\.png$/);
         });
 
-        it('returns a URL containing the ddragon CDN base', () => {
-            const url = getChampionThumbnail('Jinx');
+        it('returns a URL containing the ddragon CDN base', async () => {
+            const url = await getChampionThumbnail('Jinx');
             expect(url).toContain('ddragon.leagueoflegends.com');
         });
 
-        it('handles champion names that are all uppercase (no crash)', () => {
-            const url = getChampionThumbnail('GAREN');
+        it('handles champion names that are all uppercase (no crash)', async () => {
+            const url = await getChampionThumbnail('GAREN');
             expect(url).toBe(`${BASE_URL}GAREN.png`);
         });
 
-        it('handles empty string input without throwing', () => {
-            expect(() => getChampionThumbnail('')).not.toThrow();
-            expect(getChampionThumbnail('')).toBe(`${BASE_URL}.png`);
+        it('handles empty string input without throwing', async () => {
+            await expect(getChampionThumbnail('')).resolves.toBe(
+                `${BASE_URL}.png`
+            );
         });
     });
 });

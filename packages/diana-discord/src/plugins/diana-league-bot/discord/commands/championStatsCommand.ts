@@ -13,6 +13,7 @@ import {
     getQueueNameById,
     fetchChampionData,
     calculateWinRatePercentage,
+    getChampionThumbnail,
 } from 'diana-core';
 
 interface RiotParticipant {
@@ -60,8 +61,6 @@ interface ChampionSummary {
     goldAvg: number;
     bestDamage?: { amount: number; queueId: number; kda: string };
 }
-
-const CHAMPION_ICON_VERSION = '15.2.1';
 
 function normalizeChampionString(value: string) {
     return value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -131,13 +130,6 @@ function formatDate(timestamp: number) {
         month: 'short',
         day: 'numeric',
     });
-}
-
-function buildChampionIconUrl(championId: string) {
-    const sanitized = championId.replace(/\s+/g, '');
-    return `https://ddragon.leagueoflegends.com/cdn/${CHAMPION_ICON_VERSION}/img/champion/${encodeURIComponent(
-        sanitized
-    )}.png`;
 }
 
 async function fetchChampionMatches(
@@ -470,7 +462,7 @@ export const championStatsCommand: SlashCommand = {
                     }
                 )
                 .setThumbnail(
-                    buildChampionIconUrl(
+                    await getChampionThumbnail(
                         resolvedChampion?.id ?? displayChampion
                     )
                 )

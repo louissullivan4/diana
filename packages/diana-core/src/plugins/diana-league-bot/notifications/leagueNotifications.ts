@@ -59,7 +59,7 @@ function formatGameLength(totalSeconds: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function buildMatchEndMessage({
+export async function buildMatchEndMessage({
     summonerName,
     queueName,
     result,
@@ -74,7 +74,7 @@ export function buildMatchEndMessage({
     placement,
     totalPlayers,
     aiScore,
-}: MatchEndMessageInput): MessagePayload {
+}: MatchEndMessageInput): Promise<MessagePayload> {
     const colorHex = resultColors.get(result.toLowerCase()) || 0x95a5a6;
     const fields = [
         { name: '🏁 **Result**', value: `**${result}**`, inline: true },
@@ -136,7 +136,7 @@ export function buildMatchEndMessage({
         description: `${summonerName} has completed a match!`,
         url: deepLolLink,
         colorHex,
-        thumbnailUrl: getChampionThumbnail(championDisplay),
+        thumbnailUrl: await getChampionThumbnail(championDisplay),
         fields,
         footer: `Match Summary • Length ${formatGameLength(gameLengthSeconds)}`,
         timestamp: new Date().toISOString(),
@@ -187,9 +187,9 @@ export function buildRankChangeMessage({
     };
 }
 
-function buildMissingDataMessage(
+async function buildMissingDataMessage(
     summonerSummary: SummonerSummary
-): MessagePayload {
+): Promise<MessagePayload> {
     const {
         name,
         tier,
@@ -244,7 +244,7 @@ function buildMissingDataMessage(
         title,
         description,
         colorHex,
-        thumbnailUrl: getChampionThumbnail(mostPlayedChampion.name),
+        thumbnailUrl: await getChampionThumbnail(mostPlayedChampion.name),
         fields,
         footer: 'Summoner Stats Overview',
         timestamp: new Date().toISOString(),
@@ -289,7 +289,7 @@ export async function notifyMatchEnd(
     adapter: MessageAdapter | null | undefined,
     { discordChannelId, ...payload }: NotifyMatchEnd
 ): Promise<boolean> {
-    const message = buildMatchEndMessage(payload);
+    const message = await buildMatchEndMessage(payload);
     return sendWithAdapter(adapter, discordChannelId, message, 'match end');
 }
 
@@ -310,7 +310,7 @@ export async function notifyMissingData(
     adapter: MessageAdapter | null | undefined,
     summonerSummary: SummonerSummary
 ): Promise<boolean> {
-    const message = buildMissingDataMessage(summonerSummary);
+    const message = await buildMissingDataMessage(summonerSummary);
     return sendWithAdapter(
         adapter,
         summonerSummary.discordChannelId,
