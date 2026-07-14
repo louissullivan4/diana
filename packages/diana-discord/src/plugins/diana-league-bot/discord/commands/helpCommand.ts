@@ -17,6 +17,7 @@ export const helpCommand: SlashCommand = {
                     value: [
                         '`/setchannel #channel` - Set the channel where match notifications are posted. Requires **Manage Channels**.',
                         '`/config live-posting true/false` - Enable or disable live match notifications. Requires **Manage Server**.',
+                        '`/config notifications <type> true/false` - Toggle a specific notification type. Requires **Manage Server**.',
                         '`/config view` - View the current bot settings for this server.',
                     ].join('\n'),
                     inline: false,

@@ -26,6 +26,7 @@ import {
 import {
     getAllTrackedPuuids,
     getGuildsTrackingSummoner,
+    getNotificationPref,
 } from '../api/summoners/guildService.js';
 import { buildDeepLolLink } from '../utils/deepLol.js';
 import {
@@ -397,15 +398,20 @@ const handleNewMatchCompleted = async (
     try {
         const guildTargets = await getGuildsTrackingSummoner(puuid);
         for (const target of guildTargets) {
-            if (!target.live_posting) continue;
-            const matchSummary = {
-                ...baseMatchSummary,
-                discordChannelId: target.channel_id,
-            };
-            const sent = await notifyMatchEnd(messageAdapter, matchSummary);
-            if (sent) anyMessageSent = true;
+            const wantsMatchPosts = getNotificationPref(target, 'match_posts');
+            const wantsRankPosts = getNotificationPref(target, 'rank_posts');
+            if (!wantsMatchPosts && !wantsRankPosts) continue;
 
-            if (checkForRankUp !== 'no_change') {
+            if (wantsMatchPosts) {
+                const matchSummary = {
+                    ...baseMatchSummary,
+                    discordChannelId: target.channel_id,
+                };
+                const sent = await notifyMatchEnd(messageAdapter, matchSummary);
+                if (sent) anyMessageSent = true;
+            }
+
+            if (wantsRankPosts && checkForRankUp !== 'no_change') {
                 const rankChangeInfo = {
                     summonerName,
                     direction:
@@ -415,7 +421,11 @@ const handleNewMatchCompleted = async (
                     discordChannelId: target.channel_id,
                     deepLolLink: summoner.deepLolLink || '',
                 };
-                await notifyRankChange(messageAdapter, rankChangeInfo);
+                const sent = await notifyRankChange(
+                    messageAdapter,
+                    rankChangeInfo
+                );
+                if (sent) anyMessageSent = true;
             }
         }
 
