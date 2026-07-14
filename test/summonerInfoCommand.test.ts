@@ -12,6 +12,7 @@ const searchSummonerGameNamesMock = jest.fn();
 const searchSummonerTagsMock = jest.fn();
 const getMostRecentRankByParticipantIdAndQueueTypeMock = jest.fn();
 const getInterCandidatesLastWeekMock = jest.fn();
+const fetchRankHistoryMock = jest.fn().mockResolvedValue([]);
 const dbQueryMock = jest.fn();
 
 class MockSlashCommandStringOption {
@@ -152,6 +153,21 @@ jest.mock('diana-core', () => ({
     rankColors: mockRankColors,
     getRankedEmblem: getRankedEmblemMock,
     getInterCandidatesLastWeek: getInterCandidatesLastWeekMock,
+    fetchRankHistory: fetchRankHistoryMock,
+    getTotalPoints: (tier: string, division: string, lp: number) => {
+        const tiers = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM'];
+        const divisions: Record<string, number> = {
+            IV: 1,
+            III: 2,
+            II: 3,
+            I: 4,
+        };
+        const tierValue = tiers.indexOf(tier?.toUpperCase?.() ?? '');
+        const divisionValue = divisions[division?.toUpperCase?.() ?? ''] ?? -1;
+        if (tierValue === -1 || divisionValue === -1) return null;
+        return tierValue * 400 + divisionValue * 100 + lp;
+    },
+    buildSparkline: (values: number[]) => '▁▄█'.slice(0, values.length),
     parseParticipants: jest.fn((p: unknown) =>
         Array.isArray(p) ? p : JSON.parse(p as string)
     ),
