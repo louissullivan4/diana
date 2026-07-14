@@ -529,3 +529,59 @@ describe('notifyRankChange', () => {
         expect(console.warn).toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// buildMatchEndMessage - challenge stats & flavor lines
+// ---------------------------------------------------------------------------
+
+describe('buildMatchEndMessage rich stats', () => {
+    it('adds kill participation, DPM, vision and solo kill fields when provided', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            killParticipationPct: 62,
+            damagePerMinute: 733.4,
+            visionScore: 31,
+            soloKills: 2,
+        });
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).toContain('🤝 **Kill Participation**');
+        expect(names).toContain('📊 **Damage / Min**');
+        expect(names).toContain('👁️ **Vision Score**');
+        expect(names).toContain('🗡️ **Solo Kills**');
+        const dpm = (msg.fields ?? []).find(
+            (f) => f.name === '📊 **Damage / Min**'
+        );
+        expect(dpm?.value).toBe('**733**');
+    });
+
+    it('omits the new fields when stats are missing', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).not.toContain('🤝 **Kill Participation**');
+        expect(names).not.toContain('📊 **Damage / Min**');
+        expect(names).not.toContain('🗡️ **Solo Kills**');
+    });
+
+    it('omits the solo kills field when zero', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            soloKills: 0,
+        });
+        const names = (msg.fields ?? []).map((f) => f.name);
+        expect(names).not.toContain('🗡️ **Solo Kills**');
+    });
+
+    it('appends the flavor line to the description', async () => {
+        const msg = await buildMatchEndMessage({
+            ...baseMatchInput,
+            flavorLine: '💀 Zero deaths.',
+        });
+        expect(msg.description).toContain('has completed a match!');
+        expect(msg.description).toContain('💀 Zero deaths.');
+    });
+
+    it('keeps the plain description when no flavor line', async () => {
+        const msg = await buildMatchEndMessage(baseMatchInput);
+        expect(msg.description).toBe('TestPlayer has completed a match!');
+    });
+});

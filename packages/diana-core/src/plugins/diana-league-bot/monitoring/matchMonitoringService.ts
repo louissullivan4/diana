@@ -33,6 +33,7 @@ import {
     notifyMatchEnd,
     notifyRankChange,
 } from '../notifications/leagueNotifications';
+import { pickFlavorLine } from '../notifications/flavorLines';
 import { Summoner, LeagueBotConfig } from '../types';
 import { MatchV5DTOs } from 'twisted/dist/models-dto/matches/match-v5/match.dto';
 import { Constants } from 'twisted';
@@ -284,6 +285,29 @@ const handleNewMatchCompleted = async (
     const damage = participant?.totalDamageDealtToChampions ?? 0;
     const matchRank = getRankTagsById(info.queueId ?? 0);
 
+    // Challenge-derived stats. `challenges` is untyped in twisted's DTO, so
+    // access is guarded the same way as the scoring algorithm does it.
+    const challenges = (participant as Record<string, any> | undefined)
+        ?.challenges as Record<string, unknown> | undefined;
+    const challengeNumber = (key: string): number | undefined => {
+        const value = challenges?.[key];
+        return typeof value === 'number' && Number.isFinite(value)
+            ? value
+            : undefined;
+    };
+    const rawKillParticipation = challengeNumber('killParticipation');
+    const killParticipationPct =
+        rawKillParticipation != null
+            ? Math.round(rawKillParticipation * 100)
+            : undefined;
+    const damagePerMinute = challengeNumber('damagePerMinute');
+    const soloKills = challengeNumber('soloKills');
+    const visionScore = participant?.visionScore;
+    const enemyMissingPings = (participant as Record<string, any> | undefined)
+        ?.enemyMissingPings as number | undefined;
+    const largestMultikill = (participant as Record<string, any> | undefined)
+        ?.largestMultiKill as number | undefined;
+
     let newRankMsg = 'Unranked N/A (0 LP)';
     let lpChangeMsg: number | null = null;
     let checkForRankUp = 'no_change';
@@ -392,6 +416,25 @@ const handleNewMatchCompleted = async (
         placement: summonerPlacement,
         totalPlayers: participants.length || undefined,
         aiScore: summonerAiScore,
+        killParticipationPct,
+        damagePerMinute,
+        soloKills,
+        visionScore,
+        flavorLine: pickFlavorLine({
+            result: result.toLowerCase() as 'win' | 'lose' | 'remake',
+            kills: participant?.kills ?? 0,
+            deaths: participant?.deaths ?? 0,
+            assists: participant?.assists ?? 0,
+            killParticipationPct,
+            damagePerMinute,
+            soloKills,
+            visionScore,
+            enemyMissingPings,
+            largestMultikill,
+            placement: summonerPlacement,
+            totalPlayers: participants.length || undefined,
+            gameLengthSeconds: gameDuration,
+        }),
     };
 
     let anyMessageSent = false;

@@ -38,6 +38,13 @@ interface MatchEndMessageInput {
     totalPlayers?: number;
     /** Raw AI score from the scoring algorithm */
     aiScore?: number;
+    /** Kill participation as a whole percentage (0-100) */
+    killParticipationPct?: number;
+    damagePerMinute?: number;
+    soloKills?: number;
+    visionScore?: number;
+    /** Roast/praise line appended to the embed description */
+    flavorLine?: string | null;
 }
 
 interface RankChangeMessageInput {
@@ -73,6 +80,11 @@ export async function buildMatchEndMessage({
     placement,
     totalPlayers,
     aiScore,
+    killParticipationPct,
+    damagePerMinute,
+    soloKills,
+    visionScore,
+    flavorLine,
 }: MatchEndMessageInput): Promise<MessagePayload> {
     const colorHex = resultColors.get(result.toLowerCase()) || 0x95a5a6;
     const fields = [
@@ -97,6 +109,34 @@ export async function buildMatchEndMessage({
         { name: '⚔️ **KDA**', value: `**${kdaStr}**`, inline: true },
         { name: '💥 **Damage Dealt**', value: `**${damage}**`, inline: true }
     );
+    if (killParticipationPct != null) {
+        fields.push({
+            name: '🤝 **Kill Participation**',
+            value: `**${killParticipationPct}%**`,
+            inline: true,
+        });
+    }
+    if (damagePerMinute != null) {
+        fields.push({
+            name: '📊 **Damage / Min**',
+            value: `**${Math.round(damagePerMinute)}**`,
+            inline: true,
+        });
+    }
+    if (visionScore != null) {
+        fields.push({
+            name: '👁️ **Vision Score**',
+            value: `**${visionScore}**`,
+            inline: true,
+        });
+    }
+    if (soloKills != null && soloKills > 0) {
+        fields.push({
+            name: '🗡️ **Solo Kills**',
+            value: `**${soloKills}**`,
+            inline: true,
+        });
+    }
     if (placement != null && totalPlayers != null) {
         fields.push({
             name: '🏆 **Match Placement**',
@@ -130,9 +170,12 @@ export async function buildMatchEndMessage({
     }
     const supportUrl =
         process.env.SUPPORT_URL || 'https://buymeacoffee.com/yngstew';
+    const description = flavorLine
+        ? `${summonerName} has completed a match!\n\n${flavorLine}`
+        : `${summonerName} has completed a match!`;
     return {
         title: '🎮 **Match Summary**',
-        description: `${summonerName} has completed a match!`,
+        description,
         url: deepLolLink,
         colorHex,
         thumbnailUrl: await getChampionThumbnail(championDisplay),
