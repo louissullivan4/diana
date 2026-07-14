@@ -12,7 +12,6 @@ import {
     getMostRecentRankByParticipantIdAndQueueType,
     db,
     calculateWinRatePercentage,
-    createLolService,
     getQueueNameById,
     rankColors,
     getRankedEmblem,
@@ -23,8 +22,6 @@ import {
     type RawMatchRow,
     type RiotParticipant,
 } from 'diana-core';
-
-const lolService = createLolService();
 
 type QueueResult = 'WIN' | 'LOSS' | 'REMAKE';
 
@@ -295,12 +292,10 @@ export const summonerInfoCommand: SlashCommand = {
             const { puuid, gameName, tagLine, tier, rank, lp, deepLolLink } =
                 summonerRecord as any;
 
-            const [matches, rankEntries, iotwCandidates] = (await Promise.all([
+            const [matches, iotwCandidates] = (await Promise.all([
                 fetchRecentMatches(puuid),
-                lolService.getRankEntriesByPUUID(puuid),
                 getInterCandidatesLastWeek({ targetPuuid: puuid }),
-            ])) as [ParsedMatch[], unknown, InterCandidate[]];
-            void rankEntries;
+            ])) as [ParsedMatch[], InterCandidate[]];
 
             const soloRank = await getMostRecentRankByParticipantIdAndQueueType(
                 puuid,
