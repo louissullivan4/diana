@@ -36,6 +36,7 @@ export const helpCommand: SlashCommand = {
                         "`/summoner <name> [tag] [region]` - View a tracked summoner's profile and recent stats.",
                         "`/champion <name> [tag] <champion>` - View a summoner's stats on a specific champion.",
                         '`/iotw` - View the Inter of the Week rankings.',
+                        '`/mvp` - View the MVP of the Week rankings.',
                     ].join('\n'),
                     inline: false,
                 },
