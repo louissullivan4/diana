@@ -109,7 +109,31 @@ function createContext(pluginId: string): PluginContext {
                 `Registering cron job with schedule: ${schedule}`
             );
             const cron = require('node-cron') as typeof import('node-cron');
-            const job = cron.schedule(schedule, () => handler());
+            // In-flight guard: if a tick is still running when the next one
+            // fires, skip the new tick instead of running them concurrently.
+            let running = false;
+            const job = cron.schedule(schedule, () => {
+                if (running) {
+                    logPlugin(
+                        'warn',
+                        pluginId,
+                        `Cron tick skipped (previous tick still running) for schedule: ${schedule}`
+                    );
+                    return;
+                }
+                running = true;
+                handler()
+                    .catch((error) => {
+                        logPlugin(
+                            'error',
+                            pluginId,
+                            `Cron tick failed: ${error}`
+                        );
+                    })
+                    .finally(() => {
+                        running = false;
+                    });
+            });
             const cleanup = () => {
                 job.stop();
             };
