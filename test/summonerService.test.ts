@@ -260,6 +260,40 @@ describe('summonerService', () => {
         });
     });
 
+    describe('getLatestRanksForPuuids', () => {
+        it('returns [] without querying for an empty puuid list', async () => {
+            const result = await summonerService.getLatestRanksForPuuids(
+                [],
+                'RANKED_SOLO_5x5'
+            );
+            expect(result).toEqual([]);
+            expect(queryMock).not.toHaveBeenCalled();
+        });
+
+        it('selects the latest rank per puuid via DISTINCT ON', async () => {
+            const rows = [
+                {
+                    entryParticipantId: 'p1',
+                    tier: 'GOLD',
+                    rank: 'I',
+                    lp: 20,
+                },
+            ];
+            queryMock.mockResolvedValue({ rows });
+
+            const result = await summonerService.getLatestRanksForPuuids(
+                ['p1', 'p2'],
+                'RANKED_SOLO_5x5'
+            );
+
+            expect(result).toBe(rows);
+            const [query, params] = queryMock.mock.calls[0];
+            expect(query).toContain('DISTINCT ON ("entryParticipantId")');
+            expect(query).toContain('ANY($1)');
+            expect(params).toEqual([['p1', 'p2'], 'RANKED_SOLO_5x5']);
+        });
+    });
+
     describe('updateSummonerRankByPuuid', () => {
         it('updates tier/rank/lp and returns the summoner', async () => {
             const row = { puuid: '123', tier: 'GOLD', rank: 'II', lp: 44 };

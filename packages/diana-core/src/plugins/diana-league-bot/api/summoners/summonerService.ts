@@ -482,6 +482,36 @@ export const getMostRecentRankByParticipantIdAndQueueType = async (
     }
 };
 
+export interface LatestRankRow {
+    entryParticipantId: string;
+    tier: string;
+    rank: string;
+    lp: number;
+    queueType: string;
+    lastUpdated: string;
+}
+
+export const getLatestRanksForPuuids = async (
+    puuids: string[],
+    queueType: string
+): Promise<LatestRankRow[]> => {
+    if (puuids.length === 0) return [];
+    try {
+        const query = `
+            SELECT DISTINCT ON ("entryParticipantId")
+                "entryParticipantId", "tier", "rank", "lp", "queueType", "lastUpdated"
+            FROM rank_tracking
+            WHERE "entryParticipantId" = ANY($1) AND "queueType" = $2
+            ORDER BY "entryParticipantId", "lastUpdated" DESC
+        `;
+        const result = await db.query(query, [puuids, queueType]);
+        return result.rows;
+    } catch (error) {
+        console.error('Error retrieving latest ranks for puuids:', error);
+        throw new Error('Failed to retrieve latest ranks.');
+    }
+};
+
 export const getRankByMatchAndQueueType = async (
     matchId: string,
     entryParticipantId: string,

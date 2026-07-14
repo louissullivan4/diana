@@ -37,6 +37,8 @@ export const helpCommand: SlashCommand = {
                         "`/champion <name> [tag] <champion>` - View a summoner's stats on a specific champion.",
                         '`/iotw` - View the Inter of the Week rankings.',
                         '`/mvp` - View the MVP of the Week rankings.',
+                        "`/leaderboard lp [queue]` - This server's rank ladder.",
+                        '`/leaderboard stats <board>` - Weekly stat boards (KDA, damage, vision...).',
                     ].join('\n'),
                     inline: false,
                 },
