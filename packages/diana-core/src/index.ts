@@ -27,3 +27,4 @@ export * from './plugins/diana-league-bot/scoring/scoringService';
 export * from './plugins/diana-league-bot/notifications/flavorLines';
 export * from './plugins/diana-league-bot/utils/streaks';
 export * from './plugins/diana-league-bot/monitoring/weeklyDigestService';
+export * from './plugins/diana-league-bot/monitoring/rotationPostService';

@@ -40,6 +40,12 @@ export interface Rank {
     lp: number;
     rank: string;
 }
+export interface ChampionRotation {
+    freeChampionIds: number[];
+    freeChampionIdsForNewPlayers: number[];
+    maxNewPlayerLevel: number;
+}
+
 export interface ILolService {
     checkConnection(): Promise<boolean>;
     getMatchesByPUUID(
@@ -69,6 +75,7 @@ export interface ILolService {
         puuid: string,
         regionGroup?: string
     ): Promise<AccountRegionDto>;
+    getChampionRotation(region?: string): Promise<ChampionRotation>;
 }
 
 /**
@@ -79,4 +86,6 @@ export interface LeagueBotConfig {
     matchCheckCron: string;
     /** Cron schedule for the weekly digest post (server-local time, 6-field) */
     weeklyDigestCron: string;
+    /** Cron schedule for the free-rotation post (server-local time, 6-field) */
+    rotationPostCron: string;
 }

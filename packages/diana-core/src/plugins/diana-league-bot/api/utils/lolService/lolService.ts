@@ -1,5 +1,5 @@
 import { LolApi, Constants, RiotApi } from 'twisted';
-import { ILolService } from '../../../types';
+import { ILolService, ChampionRotation } from '../../../types';
 import { SummonerLeagueDto } from 'twisted/dist/models-dto/league/summoner-league/summoner-league.dto';
 import {
     MatchV5DTOs,
@@ -181,6 +181,20 @@ export class LolService implements ILolService {
                 safeRegionGroup
             );
             return response;
+        } catch (error: any) {
+            throw new LolApiError(
+                error?.status ?? 500,
+                error?.message ?? 'Unknown error'
+            );
+        }
+    }
+
+    async getChampionRotation(
+        region: Region = Constants.Regions.EU_WEST
+    ): Promise<ChampionRotation> {
+        try {
+            const { response } = await this.lolApi.Champion.rotation(region);
+            return response as ChampionRotation;
         } catch (error: any) {
             throw new LolApiError(
                 error?.status ?? 500,
