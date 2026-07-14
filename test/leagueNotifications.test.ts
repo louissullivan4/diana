@@ -10,10 +10,8 @@ import {
     buildRankChangeMessage,
     notifyMatchEnd,
     notifyRankChange,
-    notifyMissingData,
 } from '../packages/diana-core/src/plugins/diana-league-bot/notifications/leagueNotifications';
 import type { MessageAdapter } from '../packages/diana-core/src/core/pluginTypes';
-import type { SummonerSummary } from '../packages/diana-core/src/plugins/diana-league-bot/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,22 +33,6 @@ const baseMatchInput = {
     kdaStr: '7/2/10',
     damage: 42000,
     deepLolLink: 'https://deeplol.gg/test',
-};
-
-const baseSummonerSummary: SummonerSummary = {
-    name: 'TestPlayer',
-    tier: 'Gold',
-    rank: 'IV',
-    lp: 50,
-    totalGames: 5,
-    wins: 3,
-    losses: 2,
-    winRate: '60',
-    totalTimeInHours: '12h',
-    mostPlayedChampion: { name: 'Ahri' },
-    averageDamageDealtToChampions: '35000',
-    mostPlayedRole: 'Middle',
-    discordChannelId: 'chan-123',
 };
 
 // ---------------------------------------------------------------------------
@@ -545,52 +527,5 @@ describe('notifyRankChange', () => {
         const result = await notifyRankChange(null, promotionInput);
         expect(result).toBe(true);
         expect(console.warn).toHaveBeenCalled();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// notifyMissingData
-// ---------------------------------------------------------------------------
-
-describe('notifyMissingData', () => {
-    beforeEach(() => {
-        jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-        jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
-    it('calls adapter.sendMessage with the summoner discordChannelId', async () => {
-        const adapter = makeAdapter();
-        await notifyMissingData(adapter, baseSummonerSummary);
-        expect(adapter.sendMessage).toHaveBeenCalledTimes(1);
-        expect(adapter.sendMessage).toHaveBeenCalledWith(
-            { channelId: 'chan-123' },
-            expect.objectContaining({
-                description: expect.stringContaining('TestPlayer'),
-            })
-        );
-    });
-
-    it('returns true on success', async () => {
-        const adapter = makeAdapter();
-        const result = await notifyMissingData(adapter, baseSummonerSummary);
-        expect(result).toBe(true);
-    });
-
-    it('returns true with warn when adapter is null', async () => {
-        const result = await notifyMissingData(null, baseSummonerSummary);
-        expect(result).toBe(true);
-        expect(console.warn).toHaveBeenCalled();
-    });
-
-    it('returns false and logs when adapter throws', async () => {
-        const adapter = makeAdapter();
-        adapter.sendMessage.mockRejectedValue(new Error('send failed'));
-        const result = await notifyMissingData(adapter, baseSummonerSummary);
-        expect(result).toBe(false);
-        expect(console.error).toHaveBeenCalled();
     });
 });

@@ -370,25 +370,6 @@ export const setSummonerCurrentMatchIdByPuuid = async (
     }
 };
 
-export async function updateSummonerMissingDataNotificationTimeByPuuid(
-    summonerPuuid: string
-) {
-    try {
-        const query = `
-            UPDATE summoners
-            SET "lastMissingDataNotification" = NOW()
-            WHERE puuid = $1
-        `;
-        const params = [summonerPuuid];
-        await db.query(query, params);
-        console.info(
-            `[Info] [${new Date().toISOString()}] Updated missing data notification time for PUUID: ${summonerPuuid}`
-        );
-    } catch (error) {
-        console.error('Error updating missing data notification time:', error);
-    }
-}
-
 export const fetchRankHistory = async (
     entryParticipantId: string,
     startDate?: string,

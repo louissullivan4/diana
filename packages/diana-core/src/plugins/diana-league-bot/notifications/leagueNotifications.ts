@@ -1,5 +1,4 @@
 import type { MessageAdapter, MessagePayload } from '../../../core/pluginTypes';
-import type { SummonerSummary } from '../types';
 import {
     getChampionThumbnail,
     getRankedEmblem,
@@ -187,70 +186,6 @@ export function buildRankChangeMessage({
     };
 }
 
-async function buildMissingDataMessage(
-    summonerSummary: SummonerSummary
-): Promise<MessagePayload> {
-    const {
-        name,
-        tier,
-        rank,
-        lp,
-        totalGames,
-        wins,
-        losses,
-        winRate,
-        totalTimeInHours,
-        mostPlayedChampion,
-        averageDamageDealtToChampions,
-        mostPlayedRole,
-    } = summonerSummary;
-
-    const colorHex = rankColors.get(rank) || 0x3498db;
-    const title = `📊 ${name}'s Summary`;
-    const description = `Missing data for ${name}.`;
-
-    const fields = [
-        {
-            name: '🏅 **Rank**',
-            value: `${tier} ${rank} (${lp} LP)`,
-            inline: false,
-        },
-        {
-            name: '🎮 **Missing Games Found**',
-            value: `${totalGames}`,
-            inline: false,
-        },
-        {
-            name: '✅ **Wins / ❌ Losses**',
-            value: `${wins} / ${losses}`,
-            inline: false,
-        },
-        { name: '📈 **Win Rate**', value: `${winRate}%`, inline: false },
-        { name: '⏱️ **Time Played**', value: totalTimeInHours, inline: false },
-        {
-            name: '💪 **Avg Damage**',
-            value: averageDamageDealtToChampions,
-            inline: false,
-        },
-        {
-            name: '👑 **Most Played Champ**',
-            value: `${mostPlayedChampion.name}`,
-            inline: false,
-        },
-        { name: '🧭 **Fav Role**', value: mostPlayedRole, inline: false },
-    ];
-
-    return {
-        title,
-        description,
-        colorHex,
-        thumbnailUrl: await getChampionThumbnail(mostPlayedChampion.name),
-        fields,
-        footer: 'Summoner Stats Overview',
-        timestamp: new Date().toISOString(),
-    };
-}
-
 async function sendWithAdapter(
     adapter: MessageAdapter | null | undefined,
     channelId: string | undefined,
@@ -304,17 +239,4 @@ export async function notifyRankChange(
     const message = buildRankChangeMessage(payload);
     if (!message) return false;
     return sendWithAdapter(adapter, discordChannelId, message, 'rank change');
-}
-
-export async function notifyMissingData(
-    adapter: MessageAdapter | null | undefined,
-    summonerSummary: SummonerSummary
-): Promise<boolean> {
-    const message = await buildMissingDataMessage(summonerSummary);
-    return sendWithAdapter(
-        adapter,
-        summonerSummary.discordChannelId,
-        message,
-        'missing data'
-    );
 }
