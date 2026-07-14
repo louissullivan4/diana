@@ -62,6 +62,14 @@ interface ChampionSummary {
     bestDamage?: { amount: number; queueId: number; kda: string };
 }
 
+const regionChoices = Object.entries(Constants.Regions)
+    .map(([label, value]) => ({ label, value }))
+    .filter(
+        (choice, index, self) =>
+            self.findIndex((entry) => entry.value === choice.value) === index
+    )
+    .slice(0, 25);
+
 function normalizeChampionString(value: string) {
     return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -334,12 +342,27 @@ export const championStatsCommand: SlashCommand = {
                 .setDescription('Summoner tagline (e.g. EUW).')
                 .setRequired(false)
                 .setAutocomplete(true)
-        ),
+        )
+        .addStringOption((option: SlashCommandStringOption) => {
+            option
+                .setName('region')
+                .setDescription('Riot platform region.')
+                .setRequired(false);
+            for (const choice of regionChoices) {
+                option.addChoices({
+                    name: choice.label,
+                    value: choice.value,
+                });
+            }
+            return option;
+        }),
     execute: async (interaction) => {
         const name = interaction.options.getString('name', true);
         const tag = interaction.options.getString('tag');
         const championInput = interaction.options.getString('champion', true);
-        const region = Constants.Regions.EU_WEST;
+        const region =
+            interaction.options.getString('region') ||
+            Constants.Regions.EU_WEST;
 
         await interaction.deferReply();
 
@@ -485,7 +508,8 @@ export const championStatsCommand: SlashCommand = {
             if (focused.name === 'name') {
                 const names = (await searchSummonerGameNames(
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as string[];
                 await interaction.respond(
                     names.map((gameName: string) => ({
@@ -501,7 +525,8 @@ export const championStatsCommand: SlashCommand = {
                 const tags = (await searchSummonerTags(
                     selectedName,
                     focusedValue,
-                    25
+                    25,
+                    interaction.guildId ?? undefined
                 )) as Array<{
                     tagLine: string;
                     matchRegionPrefix?: string | null;

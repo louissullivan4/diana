@@ -298,7 +298,7 @@ export const summonerInfoCommand: SlashCommand = {
             const [matches, rankEntries, iotwCandidates] = (await Promise.all([
                 fetchRecentMatches(puuid),
                 lolService.getRankEntriesByPUUID(puuid),
-                getInterCandidatesLastWeek(puuid),
+                getInterCandidatesLastWeek({ targetPuuid: puuid }),
             ])) as [ParsedMatch[], unknown, InterCandidate[]];
             void rankEntries;
 

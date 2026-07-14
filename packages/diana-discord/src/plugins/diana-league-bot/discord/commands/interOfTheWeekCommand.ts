@@ -149,7 +149,8 @@ export const interOfTheWeekCommand: SlashCommand = {
         await interaction.deferReply();
 
         try {
-            let candidates = await getInterCandidatesLastWeek();
+            const guildId = interaction.guildId ?? undefined;
+            let candidates = await getInterCandidatesLastWeek({ guildId });
 
             if (candidates.length === 0) {
                 await interaction.editReply(
@@ -168,7 +169,7 @@ export const interOfTheWeekCommand: SlashCommand = {
                     Date.now() - ONE_WEEK_IN_MS
                 );
                 if (backfilled > 0) {
-                    candidates = await getInterCandidatesLastWeek();
+                    candidates = await getInterCandidatesLastWeek({ guildId });
                 }
             }
 
