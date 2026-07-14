@@ -39,6 +39,7 @@ export const helpCommand: SlashCommand = {
                         '`/mvp` - View the MVP of the Week rankings.',
                         "`/leaderboard lp [queue]` - This server's rank ladder.",
                         '`/livegame <name> [tag]` - Check if a tracked summoner is in a game right now.',
+                        '`/compare <player1> <player2>` - Head-to-head and duo stats for two tracked summoners.',
                         '`/leaderboard stats <board>` - Weekly stat boards (KDA, damage, vision...).',
                     ].join('\n'),
                     inline: false,
