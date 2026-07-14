@@ -6,7 +6,6 @@ import type { LeagueBotConfig } from './types';
 
 const defaultConfig: LeagueBotConfig = {
     matchCheckCron: '0 * * * * *',
-    defaultDiscordChannelId: undefined,
 };
 
 const configSchema: ConfigField[] = [
@@ -18,13 +17,6 @@ const configSchema: ConfigField[] = [
             'Cron expression for match checking (default: every minute)',
         required: false,
         default: '0 * * * * *',
-    },
-    {
-        key: 'defaultDiscordChannelId',
-        label: 'Default Discord Channel ID',
-        type: 'string',
-        description: 'Default Discord channel for match notifications',
-        required: false,
     },
 ];
 
@@ -48,7 +40,6 @@ export const leagueBotPlugin: DianaPlugin = {
 
         console.log(`[LeagueBot] Enabling with config:`, {
             matchCheckCron: config.matchCheckCron,
-            defaultDiscordChannelId: config.defaultDiscordChannelId,
         });
 
         const runTick = createMatchMonitoringTick(

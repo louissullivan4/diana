@@ -94,6 +94,4 @@ export interface ILolService {
 export interface LeagueBotConfig {
     /** Cron schedule for match checking (default: every minute) */
     matchCheckCron: string;
-    /** Default Discord channel ID for notifications */
-    defaultDiscordChannelId?: string;
 }

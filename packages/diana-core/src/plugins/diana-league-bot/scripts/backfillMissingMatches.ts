@@ -127,7 +127,7 @@ const run = async () => {
 
     if (!apiValid) {
         console.error(
-            `[Error] [${new Date().toISOString()}] Riot API connection failed. Ensure USE_RIOT_API=true and RIOT_API_KEY are set.`
+            `[Error] [${new Date().toISOString()}] Riot API connection failed. Ensure RIOT_API_KEY is set and USE_MOCK_RIOT_API is not enabled.`
         );
         process.exit(1);
     }
